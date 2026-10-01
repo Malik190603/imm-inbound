@@ -17,6 +17,7 @@
   --s-stock:#1baf7a; --s-store:#eb6834; --s-cust:#2a78d6;
   --bu-hci:#2a78d6; --bu-ahi:#e34948; --bu-tgi:#6dbaf2; --bu-fbi:#7a5ad8; --bu-kwi:#f08a24; --bu-x:#9aa3a9;
   --p1:#86b6ef; --p2:#3987e5; --p3:#256abf; --p4:#184f95; --p5:#0d366b;
+  --lg1:#86b6ef; --lg2:#256abf; --lg3:#F2B230; --on1:#0d2a4f; --on2:#fff; --on3:#3b2a00;
   --good:#23794A; --good-bg:#E2F2E8; --warn:#9A6100; --warn-bg:#FBEFD3; --crit:#B9382A; --crit-bg:#F9E2DE;
   --f-sans:"Plus Jakarta Sans",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
   --f-mono:"JetBrains Mono",ui-monospace,Menlo,Consolas,monospace;
@@ -32,6 +33,7 @@
   --s-stock:#199e70; --s-store:#d95926; --s-cust:#3987e5;
   --bu-hci:#3987e5; --bu-ahi:#e66767; --bu-tgi:#7cc4f6; --bu-fbi:#9a85ea; --bu-kwi:#f29a45; --bu-x:#6d7a82;
   --p1:#2a4f80; --p2:#2f6bb8; --p3:#3987e5; --p4:#6da7ec; --p5:#b7d3f6;
+  --lg1:#6da7ec; --lg2:#2f6bb8; --lg3:#E8A91F; --on1:#0b1d33; --on2:#fff; --on3:#2b1f00;
   --good:#62C48D; --good-bg:#15302A; --warn:#E5B24F; --warn-bg:#33291A; --crit:#F07D6B; --crit-bg:#3B201C;
   --shadow:0 1px 2px rgba(0,0,0,.3),0 10px 30px -16px rgba(0,0,0,.7); --card-border:#1E2830; color-scheme:dark}}
 :root[data-theme="dark"]{
@@ -40,6 +42,7 @@
   --s-stock:#199e70; --s-store:#d95926; --s-cust:#3987e5;
   --bu-hci:#3987e5; --bu-ahi:#e66767; --bu-tgi:#7cc4f6; --bu-fbi:#9a85ea; --bu-kwi:#f29a45; --bu-x:#6d7a82;
   --p1:#2a4f80; --p2:#2f6bb8; --p3:#3987e5; --p4:#6da7ec; --p5:#b7d3f6;
+  --lg1:#6da7ec; --lg2:#2f6bb8; --lg3:#E8A91F; --on1:#0b1d33; --on2:#fff; --on3:#2b1f00;
   --good:#62C48D; --good-bg:#15302A; --warn:#E5B24F; --warn-bg:#33291A; --crit:#F07D6B; --crit-bg:#3B201C;
   --shadow:0 1px 2px rgba(0,0,0,.3),0 10px 30px -16px rgba(0,0,0,.7); --card-border:#1E2830; color-scheme:dark}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
@@ -195,6 +198,45 @@ main>*,.ins-wrap{min-width:0}
 .type:disabled{opacity:.45}
 .pick{border:1.5px dashed var(--line);border-radius:16px;padding:18px 14px;text-align:center;color:var(--ink-3);font-size:13px}
 .lcd{animation:rise .45s var(--ease) both}
+.lt-head{display:grid;gap:14px;margin-bottom:16px}
+.lt-big{font-size:48px;font-weight:800;letter-spacing:-.04em;line-height:1;font-variant-numeric:tabular-nums}
+.lt-big .u{font-size:18px;font-weight:700;letter-spacing:0;margin-left:6px;color:var(--ink-2)}
+.lt-sub{font-size:12.5px;color:var(--ink-3);margin-top:6px}
+.lt-chips{display:grid;grid-template-columns:repeat(auto-fit,minmax(96px,1fr));gap:8px}
+.lt-chip{background:var(--surface-2);border-radius:14px;padding:9px 11px;font-size:11.5px;color:var(--ink-3);display:grid;line-height:1.3;align-content:start}
+.lt-chip b{font-size:15px;color:var(--ink);font-weight:800}
+.lt-chip.good b{color:var(--good)} .lt-chip.bad b{color:var(--crit)}
+.jr{background:var(--surface-2);border-radius:18px;padding:12px 12px 14px;margin-bottom:6px}
+.jr-ends{display:flex;justify-content:space-between;font-size:11.5px;font-weight:700;color:var(--ink-2);margin-bottom:10px}
+.jr-ends span{display:inline-flex;align-items:center;gap:5px}
+.jr-ends svg{width:14px;height:14px}
+.jr-track{display:flex;gap:4px}
+.jr-leg{min-width:0;display:grid;gap:4px;align-content:start;animation:rise .6s var(--ease) both}
+.jr-bar{height:34px;border-radius:10px;background:var(--c);display:grid;place-items:center;color:var(--o);font-size:13px;font-weight:800;white-space:nowrap;box-shadow:inset 0 -2px 0 rgba(0,0,0,.08)}
+.jr-n{font-size:12px;font-weight:700;line-height:1.2;overflow-wrap:anywhere}
+.jr-one{height:34px;border-radius:10px;background:var(--lg2);color:var(--on2);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;transform-origin:left;animation:grow .9s var(--ease) both}
+.jr-one i{display:none}
+.jr-note{display:flex;gap:8px;align-items:flex-start;margin-top:10px;font-size:11.5px;line-height:1.4;color:var(--ink-3)}
+.jr-note svg{width:15px;height:15px;flex:none;margin-top:1px}
+.jr-d{font-size:10.5px;color:var(--ink-3);line-height:1.25}
+.lt-sec{font-size:14px;font-weight:700;margin:18px 0 10px;display:flex;align-items:baseline;gap:8px}
+.lt-sec span{font-size:12px;font-weight:500;color:var(--ink-3)}
+.orgs{display:grid;gap:12px}
+.org{display:grid;gap:6px;min-width:0}
+.org-top,.slow-top{display:flex;align-items:baseline;gap:8px;min-width:0}
+.org-n{font-weight:700;font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.org-c{font-size:12px;color:var(--ink-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.org-t{margin-left:auto;font-weight:800;font-size:14px;white-space:nowrap;font-variant-numeric:tabular-nums}
+.dchip{font-size:11px;font-weight:800;padding:1px 7px;border-radius:999px;background:var(--sunk);color:var(--ink-3);white-space:nowrap}
+.dchip.bad{background:var(--crit-bg);color:var(--crit)} .dchip.good{background:var(--good-bg);color:var(--good)}
+.seg3{display:flex;gap:3px;height:22px;transform-origin:left;animation:grow .9s var(--ease) both}
+.seg3 span{background:var(--c);border-radius:7px;display:grid;place-items:center;font-size:11px;font-weight:800;color:var(--o);min-width:18px}
+.slow{display:grid;gap:6px;padding:11px 2px;border:0;border-bottom:1px solid var(--line);background:none;width:100%;text-align:left}
+.slow:last-child{border-bottom:0}
+.slow-top .mono{white-space:nowrap;flex:none}
+.hic{width:30px;height:30px;border-radius:10px;background:var(--sunk);display:grid;place-items:center;color:var(--ink-2);flex:none}
+.hic svg{width:16px;height:16px}
+body::before{content:"";position:fixed;left:0;right:0;top:0;height:var(--sat);background:var(--bg);z-index:35}
 .hb.click{cursor:pointer;border-radius:12px;margin:-6px -8px;padding:6px 8px}
 .hb.click:hover{background:var(--surface-2)}
 
@@ -788,14 +830,14 @@ function pageHome(){
   </section>
   <div style="--i:2">${insights('Ringkasan pintar',ins)}</div>
   <div class="grid2" style="--i:3">
-    <section class="card"><div class="ch"><h2>Jadwal bongkar</h2><span class="hint">${f0(teus)} TEUs</span></div><div class="cb">
+    <section class="card"><div class="ch"><span class="hic">${I.cal}</span><h2>Jadwal bongkar</h2><span class="hint">${f0(teus)} TEUs</span></div><div class="cb">
       ${byD.length?`${byD.length>1?`<div class="days">${byD.map(g=>{const d=pd(g.d);return `<button class="dayc press" data-day="${g.d}" aria-pressed="${g.d===S.dayPick}"><span class="dn">${g.d===TODAY?'Hari ini':HARI[d.getDay()]}</span><span class="dd">${d.getDate()}</span><span class="dc">${f0(teu(g.cs))} TEUs</span></button>`}).join('')}</div>`:''}
       <div class="list">${dg?dg.cs.map(c=>{const has=c.lc&&LCSET.has(c.lc);const t=has?LCTOT[LCI[c.lc]]:null;return `<button class="row press" data-cont="${D.cont.indexOf(c)}"><span class="a"><span class="mono">${esc(c.k||'—')}</span>${buTag(c.bu)}${has?'':tag('belum di LC','crit')}</span><span class="b">${c.j||'--:--'} · ${esc(c.lc||'tanpa LC')} · ${f0(c.te)} TEU</span><span class="v">${t?f1(t[0]+t[1]+t[2]):'–'}<small>CBM</small></span></button>`}).join(''):''}</div>`:emptyState('Tidak ada jadwal',`Tidak ada kontainer dijadwalkan bongkar ${whenWord()}.`)}
     </div></section>
-    <section class="card"><div class="ch"><h2>Perlu dicek</h2></div><div class="cb" style="padding-top:4px">${al.join('')}</div></section>
+    <section class="card"><div class="ch"><span class="hic">${I.warn}</span><h2>Perlu dicek</h2></div><div class="cb" style="padding-top:4px">${al.join('')}</div></section>
   </div>
-  ${buckets.length?`<section class="card" style="--i:4"><div class="ch"><h2>CBM per ${buckets[0].mode==='w'?'minggu':buckets[0].mode==='m'?'bulan':'hari'}</h2><span class="hint">ketuk batang untuk detail</span></div><div class="cb">${all>0?`<div class="legend">${SER.map(s=>`<span><i class="dot" style="background:${s.color}"></i>${s.name}</span>`).join('')}</div>${stackChart('cHome',buckets,SER)}`:emptyState('Belum ada CBM','Tidak ada LC terjadwal yang cocok dengan MASTER_LC di periode ini.')}</div></section>`:''}
-  <section class="card" style="--i:5"><div class="ch"><h2>Per BU</h2><span class="hint">CBM · TEUs</span></div><div class="cb">${hbars(buRows.map(r=>({l:buLabel(r.b),s:`${f0(r.te)} TEUs`,vt:r.v?`${f1(r.v)}<small>CBM</small>`:'–',pct:pc(r.v,all),v:r.v,color:buCol(r.b)})))}</div></section>`;
+  ${buckets.length?`<section class="card" style="--i:4"><div class="ch"><span class="hic">${I.trend}</span><h2>CBM per ${buckets[0].mode==='w'?'minggu':buckets[0].mode==='m'?'bulan':'hari'}</h2><span class="hint">ketuk batang untuk detail</span></div><div class="cb">${all>0?`<div class="legend">${SER.map(s=>`<span><i class="dot" style="background:${s.color}"></i>${s.name}</span>`).join('')}</div>${stackChart('cHome',buckets,SER)}`:emptyState('Belum ada CBM','Tidak ada LC terjadwal yang cocok dengan MASTER_LC di periode ini.')}</div></section>`:''}
+  <section class="card" style="--i:5"><div class="ch"><span class="hic">${I.box}</span><h2>Per BU</h2><span class="hint">CBM · TEUs</span></div><div class="cb">${hbars(buRows.map(r=>({l:buLabel(r.b),s:`${f0(r.te)} TEUs`,vt:r.v?`${f1(r.v)}<small>CBM</small>`:'–',pct:pc(r.v,all),v:r.v,color:buCol(r.b)})))}</div></section>`;
 }
 
 // ======================= STORING / OUTBOUND =======================
@@ -826,10 +868,10 @@ function pageStock(){
   <div style="--i:1">${tiles([{k:'CBM storing',dot:'var(--s-stock)',v:cnt(cbm,1),d:`plan ${f1(X.cont.reduce((a,c)=>a+c.ps,0))}`},{k:'Kontainer',v:cnt(teS),u:'TEUs',d:`${nLC} LC`},{k:'Baris SKU',v:cnt(sumN(R)),d:`${new Set(R.map(r=>r[3])).size} dept`},{k:'Qty',v:cnt(qty),u:'pcs'}])}</div>
   <div style="--i:2">${insights('Ringkasan pintar',ins)}</div>
   ${cbm>0?`<div class="grid2" style="--i:3">
-    <section class="card"><div class="ch"><h2>Per dept</h2><span class="hint">${dep.length} dept</span><div class="right" style="flex:1 1 160px;max-width:220px">${searchBox('dept','Cari dept')}</div></div><div class="cb">${dep.length?hbars(dep.slice(0,nd).map(d=>({l:`<span class="mono">${esc(D.depts[d.k])}</span>`,s:`${d.lc.size} LC · ${f0(d.sku)} SKU`,vt:`${f1(d.cbm)}<small>CBM</small>`,pct:pc(d.cbm,cbm),v:d.cbm,color:'var(--s-stock)'}))):emptyState('Dept tidak ditemukan','Coba kata kunci lain.',false,I.search)}${moreBtn('dept',dep.length,nd)}</div></section>
-    <section class="card"><div class="ch"><h2>Per BU</h2></div><div class="cb">${hbars(byBU.map(x=>({...x,vt:x.v?`${f1(x.v)}<small>CBM</small>`:'–'})))}</div></section>
+    <section class="card"><div class="ch"><span class="hic">${I.stock}</span><h2>Per dept</h2><span class="hint">${dep.length} dept</span><div class="right" style="flex:1 1 160px;max-width:220px">${searchBox('dept','Cari dept')}</div></div><div class="cb">${dep.length?hbars(dep.slice(0,nd).map(d=>({l:`<span class="mono">${esc(D.depts[d.k])}</span>`,s:`${d.lc.size} LC · ${f0(d.sku)} SKU`,vt:`${f1(d.cbm)}<small>CBM</small>`,pct:pc(d.cbm,cbm),v:d.cbm,color:'var(--s-stock)'}))):emptyState('Dept tidak ditemukan','Coba kata kunci lain.',false,I.search)}${moreBtn('dept',dep.length,nd)}</div></section>
+    <section class="card"><div class="ch"><span class="hic">${I.box}</span><h2>Per BU</h2></div><div class="cb">${hbars(byBU.map(x=>({...x,vt:x.v?`${f1(x.v)}<small>CBM</small>`:'–'})))}</div></section>
   </div>`:''}
-  <section class="card" style="--i:4"><div class="ch"><h2>Daftar No LC</h2><span class="hint">${lcs.length} LC</span><div class="right" style="flex:1 1 180px;max-width:240px">${searchBox('lcS','Cari LC / kontainer')}</div></div><div class="cb" style="padding-top:4px">${lcs.length?lcRows(lcs,'S','lcS'):emptyState(S.q.lcS?'Tidak ditemukan':'Tidak ada storing',S.q.lcS?'Tidak ada LC yang cocok.':`Tidak ada LC ke storing ${whenWord()}.`,!S.q.lcS)}</div></section>`;
+  <section class="card" style="--i:4"><div class="ch"><span class="hic">${I.doc}</span><h2>Daftar No LC</h2><span class="hint">${lcs.length} LC</span><div class="right" style="flex:1 1 180px;max-width:240px">${searchBox('lcS','Cari LC / kontainer')}</div></div><div class="cb" style="padding-top:4px">${lcs.length?lcRows(lcs,'S','lcS'):emptyState(S.q.lcS?'Tidak ditemukan':'Tidak ada storing',S.q.lcS?'Tidak ada LC yang cocok.':`Tidak ada LC ke storing ${whenWord()}.`,!S.q.lcS)}</div></section>`;
 }
 function pageOut(){
   const [from,to]=range(),X=slice(from,to);const RA=X.rows.filter(r=>r[1]>0),RS=RA.filter(r=>r[1]===1);
@@ -849,10 +891,10 @@ function pageOut(){
   <div style="--i:1">${tiles([{k:'CBM outbound',v:cnt(all,1),d:`plan ${f1(X.cont.reduce((a,c)=>a+c.pt+c.pc,0))}`},{k:'ke Store',dot:'var(--s-store)',v:cnt(st,1),d:`${pc(st,all)}% · ${dest.length} store`},{k:'ke Customer',dot:'var(--s-cust)',v:cnt(cu,1),d:`${pc(cu,all)}%`},{k:'Kontainer',v:cnt(teO),u:'TEUs',d:`${new Set(RA.map(r=>r[0])).size} LC`}])}</div>
   <div style="--i:2">${insights('Ringkasan pintar',ins)}</div>
   ${all>0?`<div class="grid2" style="--i:3">
-    <section class="card"><div class="ch"><h2>Per store</h2><span class="hint">${dest.length} store</span></div><div class="cb">${dest.length?hbars(dest.slice(0,nd).map(d=>({l:`<span class="mono">${esc(d.c)}</span> <span style="font-weight:500;color:var(--ink-3)">${esc(nameOf(d.c))}</span>`,s:`${d.lc.size} LC`,vt:`${f1(d.cbm)}<small>CBM</small>`,pct:pc(d.cbm,st),v:d.cbm,color:'var(--s-store)'}))):emptyState('Tidak ada store','Semua outbound di periode ini adalah pesanan customer.',false,I.out)}${moreBtn('dest',dest.length,nd)}</div></section>
-    <section class="card"><div class="ch"><h2>Per BU</h2><span class="hint">store + customer</span></div><div class="cb">${hbars(byBU.map(x=>({...x,vt:x.v?`${f1(x.v)}<small>CBM</small>`:'–'})))}</div></section>
+    <section class="card"><div class="ch"><span class="hic">${I.out}</span><h2>Per store</h2><span class="hint">${dest.length} store</span></div><div class="cb">${dest.length?hbars(dest.slice(0,nd).map(d=>({l:`<span class="mono">${esc(d.c)}</span> <span style="font-weight:500;color:var(--ink-3)">${esc(nameOf(d.c))}</span>`,s:`${d.lc.size} LC`,vt:`${f1(d.cbm)}<small>CBM</small>`,pct:pc(d.cbm,st),v:d.cbm,color:'var(--s-store)'}))):emptyState('Tidak ada store','Semua outbound di periode ini adalah pesanan customer.',false,I.out)}${moreBtn('dest',dest.length,nd)}</div></section>
+    <section class="card"><div class="ch"><span class="hic">${I.box}</span><h2>Per BU</h2><span class="hint">store + customer</span></div><div class="cb">${hbars(byBU.map(x=>({...x,vt:x.v?`${f1(x.v)}<small>CBM</small>`:'–'})))}</div></section>
   </div>`:''}
-  <section class="card" style="--i:4"><div class="ch"><h2>Daftar No LC</h2><span class="hint">${lcs.length} LC</span><div class="right" style="flex:1 1 180px;max-width:240px">${searchBox('lcO','Cari LC / kontainer')}</div></div><div class="cb" style="padding-top:4px">${lcs.length?lcRows(lcs,'O','lcO'):emptyState(S.q.lcO?'Tidak ditemukan':'Tidak ada outbound',S.q.lcO?'Tidak ada LC yang cocok.':`Tidak ada LC ke store atau customer ${whenWord()}.`,!S.q.lcO)}</div></section>`;
+  <section class="card" style="--i:4"><div class="ch"><span class="hic">${I.doc}</span><h2>Daftar No LC</h2><span class="hint">${lcs.length} LC</span><div class="right" style="flex:1 1 180px;max-width:240px">${searchBox('lcO','Cari LC / kontainer')}</div></div><div class="cb" style="padding-top:4px">${lcs.length?lcRows(lcs,'O','lcO'):emptyState(S.q.lcO?'Tidak ditemukan':'Tidak ada outbound',S.q.lcO?'Tidak ada LC yang cocok.':`Tidak ada LC ke store atau customer ${whenWord()}.`,!S.q.lcO)}</div></section>`;
 }
 
 // ======================= MONITORING =======================
@@ -862,12 +904,16 @@ function pageMon(){
   ${S.monTab==='kont'?monKont():monLpp()}`;
 }
 const rdcCbm=si=>{const t=D.lcAll[si];return t?t[0]+t[1]+t[2]:null};
-const LEG_N=['Tunggu kapal','Berlayar','Sandar → bongkar'],LEG_C=['var(--p1)','var(--p3)','var(--mark)'];
+const LEG_N=['Tunggu kapal','Berlayar','Di pelabuhan'],LEG_C=[1,2,3].map(i=>`var(--lg${i});--o:var(--on${i})`);
 const bkOf=r=>r.bk||r.acd||r.ata;
 const startOf=r=>r.ck||r.dd;
 const dd_=(a,b)=>a&&b?Math.max(0,diff(a,b)):null;
 // durasi per tahap sampai BONGKAR: [tunggu kapal (checkout→ATD), berlayar (ATD→ATA), sandar→bongkar (ATA→bongkar)], total (checkout→bongkar)
-function legs(r){const bk=r.bk;const st=startOf(r);return {poo:dd_(st,r.atd),sail:dd_(r.atd,r.ata),port:dd_(r.ata,bk),lead:dd_(st,bk)}}
+function legs(r){const bk=r.bk;const st=startOf(r);const or=(a,b)=>a!=null?a:(b!=null&&r.p===4?b:null);return {poo:or(dd_(st,r.atd),r.agPoo),sail:or(dd_(r.atd,r.ata),r.agOtw),port:or(dd_(r.ata,bk),r.agPod),lead:or(dd_(st,bk),r.lead)}}
+function journey(lg,ok,lead){const st=['Checkout','Berangkat','Sandar','Bongkar'];const tot=lg.reduce((a,b)=>a+(b||0),0)||1;
+  if(!ok)return `<div class="jr"><div class="jr-ends"><span>${I.box} Checkout di asal</span><span>Bongkar di DC ${I.done}</span></div><div class="jr-one"><b>${f0(lead)} hari</b><i></i></div><div class="jr-note">${I.info||''}<span>Rincian per tahap (tunggu kapal, berlayar, di pelabuhan) tampil otomatis setelah tanggal <b>ATD</b> dan <b>ATA</b> terisi di sheet kontainer.</span></div></div>`;
+  return `<div class="jr"><div class="jr-ends"><span>${I.box} ${st[0]} di asal</span><span>Bongkar di DC ${I.done}</span></div><div class="jr-track">${lg.map((v,i)=>`<div class="jr-leg" style="flex:${Math.max(v||0,tot*.3)};--c:${LEG_C[i]};animation-delay:${i*120}ms"><div class="jr-bar"><b>${v!=null?f0(v):'–'} hari</b></div><div class="jr-n">${LEG_N[i]}</div><div class="jr-d">${st[i]} → ${st[i+1]}</div></div>`).join('')}</div></div>`}
+function seg3(lg,max,lead){const tot=lg.reduce((a,b)=>a+(b||0),0);if(!tot&&lead!=null)return `<div class="seg3" style="width:${Math.max(30,lead/max*100)}%"><span style="flex:1;--c:var(--lg2);--o:var(--on2)">${f0(lead)} hari</span></div>`;return `<div class="seg3" style="width:${Math.max(30,tot/max*100)}%">${lg.map((v,i)=>v>0?`<span style="flex:${v};--c:${LEG_C[i]}" title="${LEG_N[i]}: ${v} hari">${f0(v)}</span>`:'').join('')}</div>`}
 const pctl=(a,p)=>{if(!a.length)return 0;const s=a.slice().sort((x,y)=>x-y);return s[Math.min(s.length-1,Math.floor(p*(s.length-1)+.5))]};
 let BASE=null;
 function baseline(){ // median 60 hari terakhir, dipakai untuk perkiraan tanggal bongkar
@@ -896,6 +942,7 @@ function monKont(){
   const L=done.map(r=>({r,...legs(r)})).filter(x=>x.lead!=null);
   const leadMed=median(L.map(x=>x.lead)),leadP90=pctl(L.map(x=>x.lead),.9);
   const legMed=['poo','sail','port'].map(k=>median(L.map(x=>x[k]).filter(v=>v!=null)));
+  const legN=['poo','sail','port'].map(k=>L.filter(x=>x[k]!=null).length);const hasLegs=legN.filter(n=>n>=3).length>=2;
   const legSum=legMed.reduce((a,b)=>a+b,0)||1;const bott=legMed.indexOf(Math.max(...legMed));
   const pr=(from>'1000'&&to<'9000')?[addD(from,-days(from,to)),addD(from,-1)]:null;
   const prevL=pr?(D.rdc||[]).filter(r=>buOK(r.bu)&&r.p===4&&r.bk&&r.bk>=pr[0]&&r.bk<=pr[1]).map(legs).filter(x=>x.lead!=null).map(x=>x.lead):[];
@@ -910,8 +957,8 @@ function monKont(){
   if(fc.length){const pl=fc.filter(x=>x.e.src==='plan'),es=fc.filter(x=>x.e.src==='est');const pk=fcB.slice().sort((a,b)=>(b.vals[0]+b.vals[1])-(a.vals[0]+a.vals[1]))[0];
     ins.push({c:es.length?'w':'',h:'Perkiraan 7 hari',t:`±<b>${f0(teu(fc.map(x=>x.r)))} TEUs</b> akan dibongkar dalam 7 hari: ${f0(teu(pl.map(x=>x.r)))} sudah dijadwalkan, <b>${f0(teu(es.map(x=>x.r)))} TEUs</b> perkiraan belum ada di MASTER_PLAN. Puncak ${pk.key===TODAY?'hari ini':dday(pk.key)} (${f0(pk.vals[0]+pk.vals[1])} TEUs).`})}
   if(L.length){ins.push({c:'h',h:'Lead time sampai bongkar',t:`Median <b>${f0(leadMed)} hari</b> dari checkout sampai dibongkar (${L.length} kontainer); 90% selesai ≤ ${f0(leadP90)} hari.${prevL.length>=3?` ${median(prevL)>leadMed?'Lebih cepat':median(prevL)<leadMed?'Lebih lambat':'Sama dengan'} ${median(prevL)!==leadMed?f1(Math.abs(median(prevL)-leadMed))+' hari dari':''} periode sebelumnya.`:''}`});
-    ins.push({c:'w',h:'Titik terlama',t:`Tahap <b>${LEG_N[bott].toLowerCase()}</b> memakan ${pc(legMed[bott],legSum)}% waktu (median ${f0(legMed[bott])} hari). ${bott===2?'Percepat jadwal bongkar setelah kontainer sandar.':bott===0?'Kontainer lama menunggu kapal di asal.':'Waktu pelayaran dominan; pantau jadwal kapal.'}`});
-    if(orgs.length>1){const a=orgs[0],z=orgs[orgs.length-1];if(a.med-z.med>=1)ins.push({h:'Beda asal',t:`Dari <b>${esc(a.k)}</b> ${f1(a.med-z.med)} hari lebih lama dibanding ${esc(z.k)} (median ${f0(a.med)} vs ${f0(z.med)} hari), terutama di tahap ${LEG_N[a.legs.map((v,i)=>v-(z.legs[i]||0)).reduce((bi,v,i,arr)=>v>arr[bi]?i:bi,0)].toLowerCase()}.`})}
+    if(hasLegs)ins.push({c:'w',h:'Titik terlama',t:`Tahap <b>${LEG_N[bott].toLowerCase()}</b> (${['checkout → berangkat','berangkat → sandar','sandar → bongkar'][bott]}) memakan ${pc(legMed[bott],legSum)}% waktu (median ${f0(legMed[bott])} hari). ${bott===2?'Percepat jadwal bongkar setelah kontainer sandar.':bott===0?'Kontainer lama menunggu kapal di asal.':'Waktu pelayaran dominan; pantau jadwal kapal.'}`});
+    if(orgs.length>1){const a=orgs[0],z=orgs[orgs.length-1];if(a.med-z.med>=1)ins.push({h:'Beda asal',t:`Dari <b>${esc(a.k)}</b> ${f1(a.med-z.med)} hari lebih lama dibanding ${esc(z.k)} (median ${f0(a.med)} vs ${f0(z.med)} hari)${hasLegs?`, terutama di tahap ${LEG_N[a.legs.map((v,i)=>v-(z.legs[i]||0)).reduce((bi,v,i,arr)=>v>arr[bi]?i:bi,0)].toLowerCase()}`:''}.`})}
     if(slow.length)ins.push({c:'w',h:'Paling lambat',t:`${slow.length} kontainer di atas ${f0(leadP90)} hari, terlama <span class="mono">${esc(slow[0].r.k)}</span> ${slow[0].lead} hari (${esc(slow[0].r.org)}).`})}
   const yard=grp[2];if(yard.length){const ys=yard.filter(r=>!CONT_BY_LC[r.si]);const old=yard.filter(r=>(r.ag||0)>3);const mx=Math.max(0,...yard.map(r=>r.ag||0));
     ins.push({c:ys.length||old.length?'w':'',h:'Di Yard',t:`${f0(teu(yard))} TEUs di pelabuhan${ys.length?`, <b>${f0(teu(ys))} TEUs belum dijadwalkan bongkar</b>`:''}. Aging terlama ${mx} hari${old.length?` (${f0(teu(old))} TEUs > 3 hari)`:''}.`})}
@@ -924,25 +971,24 @@ function monKont(){
   const q=(S.q.rdc||'').toUpperCase().replace(/\s+/g,'');const fl=q?list.filter(r=>(r.k+r.si).toUpperCase().replace(/\s+/g,'').includes(q)):list;
   const sorted=fl.slice().sort((a,b)=>stage===2?(b.ag||0)-(a.ag||0):stage===1?(a.eta||'9').localeCompare(b.eta||'9'):stage===4?(bkOf(b)||'').localeCompare(bkOf(a)||''):(startOf(a)||'').localeCompare(startOf(b)||''));
   const n=lim('rdc',10);const tot=grp.reduce((a,x)=>a+teu(x),0)||1;
-  const legBar=(lg,max)=>`<div class="track">${lg.map((v,i)=>v>0?`<span style="width:${v/max*100}%;background:${LEG_C[i]}"></span>`:'').join('')}</div>`;
-  const maxOrg=Math.max(1,...orgs.map(o=>o.legs.reduce((a,b)=>a+b,0)));
+  const maxOrg=Math.max(1,...orgs.map(o=>hasLegs?o.legs.reduce((a,b)=>a+b,0):o.med));
   return `
-  <section class="card pad" style="--i:2"><div style="display:flex;align-items:baseline;gap:8px;margin-bottom:12px;flex-wrap:wrap"><h2 style="margin:0;font-size:15.5px;font-weight:700">Posisi kontainer</h2><span style="font-size:12px;color:var(--ink-3)">dalam TEUs · Delivered = ${esc(rlabel())}</span></div>
+  <section class="card pad" style="--i:2"><div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap"><span class="hic">${I.ship}</span><h2 style="margin:0;font-size:15.5px;font-weight:700">Posisi kontainer</h2><span style="font-size:12px;color:var(--ink-3)">dalam TEUs · Delivered = ${esc(rlabel())}</span></div>
     <div class="pipe">${STAGES.map(([l,x],i)=>`<button class="stage press" data-stage="${i}" aria-pressed="${stage===i}"><span class="sd" style="background:${STAGE_COL[i]}">${STAGE_IC[i]}</span><span class="n">${cnt(teu(grp[i]))}</span><span class="l">${l}</span><span class="x">${x}</span></button>`).join('')}</div>
     <div class="flow">${grp.map((x,i)=>teu(x)?`<span style="width:${teu(x)/tot*100}%;background:${STAGE_COL[i]};animation-delay:${i*90}ms"></span>`:'').join('')}</div>
   </section>
   <div style="--i:3">${insights('Ringkasan pintar',ins)}</div>
   <div class="grid2" style="--i:4">
-    <section class="card"><div class="ch"><h2>Lead time sampai bongkar</h2><span class="hint">checkout → dibongkar · ${esc(rlabel())}</span></div><div class="cb">
-      ${L.length?`<div style="display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:12px"><span style="font-size:40px;font-weight:800;letter-spacing:-.03em;line-height:1">${cnt(leadMed)}</span><span style="font-weight:700">hari median</span><span style="color:var(--ink-3);font-size:12.5px">P90 ${f0(leadP90)} hari · ${L.length} kontainer${prevL.length>=3?` · periode lalu ${f0(median(prevL))} hari`:''}</span></div>
-      <div class="legend">${LEG_N.map((n,i)=>`<span><i class="dot" style="background:${LEG_C[i]}"></i>${n} <b style="color:var(--ink)">${f0(legMed[i])}</b> hr</span>`).join('')}</div>
-      <div style="height:12px;border-radius:999px;overflow:hidden;display:flex;gap:2px;margin-bottom:18px">${legMed.map((v,i)=>v>0?`<span style="width:${v/legSum*100}%;background:${LEG_C[i]};transform-origin:left;animation:grow .9s ${i*.12}s var(--ease) both"></span>`:'').join('')}</div>
-      <h2 style="margin:0 0 10px;font-size:14px;font-weight:700">Per asal kiriman</h2>
-      <div class="hbars">${orgs.map(o=>`<div class="hb"><div class="top"><span class="l">${esc(o.k)}</span><span class="s">${o.a.length} kont</span><span class="v">${f0(o.med)}<small>hari</small></span></div>${legBar(o.legs,maxOrg)}</div>`).join('')}</div>
-      ${slow.length?`<h2 style="margin:18px 0 6px;font-size:14px;font-weight:700">Paling lambat</h2><div class="list">${slow.map(x=>`<button class="row press" data-rdc="${RDC_BY_SI[x.r.si]}"><span class="a"><span class="mono">${esc(x.r.k)}</span>${buTag(x.r.bu)}</span><span class="b">${esc(x.r.org)} · ${x.poo??'–'} + ${x.sail??'–'} + ${x.port??'–'} hari</span><span class="v">${x.lead}<small>hari</small></span></button>`).join('')}</div>`:''}
+    <section class="card"><div class="ch"><span class="hic">${I.wait}</span><h2>Lead time sampai bongkar</h2><span class="hint">${esc(rlabel())}</span></div><div class="cb">
+      ${L.length?`<div class="lt-head"><div><div class="lt-big">${cnt(leadMed)}<span class="u">hari</span></div><div class="lt-sub">rata-rata (median) dari checkout di asal sampai dibongkar di DC</div></div>
+        <div class="lt-chips"><span class="lt-chip"><b>≤ ${f0(leadP90)} hari</b>untuk 9 dari 10 kontainer</span><span class="lt-chip"><b>${L.length}</b>kontainer dihitung</span>${prevL.length>=3?`<span class="lt-chip ${median(prevL)>leadMed?'good':median(prevL)<leadMed?'bad':''}"><b>${median(prevL)===leadMed?'Sama':(median(prevL)>leadMed?'−':'+')+f1(Math.abs(median(prevL)-leadMed))+' hari'}</b>dibanding periode lalu</span>`:''}</div></div>
+      ${journey(legMed,hasLegs,leadMed)}
+      <div class="lt-sec">Per asal kiriman <span>urut dari paling lama</span></div>
+      <div class="orgs">${orgs.map(o=>{const d=o.med-leadMed;return `<div class="org"><div class="org-top"><span class="org-n">${esc(o.k)}</span><span class="org-c">${o.a.length} kontainer</span><span class="org-t">${f0(o.med)} hari</span>${Math.abs(d)>=1?`<span class="dchip ${d>0?'bad':'good'}">${d>0?'+':'−'}${f0(Math.abs(d))}</span>`:'<span class="dchip">=</span>'}</div>${seg3(hasLegs?o.legs:[0,0,0],maxOrg,o.med)}</div>`}).join('')}</div>
+      ${slow.length?`<div class="lt-sec">Paling lambat <span>di atas ${f0(leadP90)} hari</span></div><div class="list">${slow.map(x=>`<button class="slow press" data-rdc="${RDC_BY_SI[x.r.si]}"><div class="slow-top"><span class="mono">${esc(x.r.k)}</span>${buTag(x.r.bu)}<span class="org-c">${esc(x.r.org)}</span><span class="org-t">${x.lead} hari</span></div>${seg3(hasLegs?[x.poo,x.sail,x.port]:[0,0,0],Math.max(...slow.map(z=>z.lead)),x.lead)}</button>`).join('')}</div>`:''}
       `:emptyState('Belum ada data',`Belum ada kontainer yang dibongkar ${esc(rlabel())} dengan tanggal lengkap.`,true,I.wait)}
     </div></section>
-    <section class="card"><div class="ch"><h2>Perkiraan bongkar</h2><span class="hint">7 hari ke depan · TEUs</span></div><div class="cb">
+    <section class="card"><div class="ch"><span class="hic">${I.cal}</span><h2>Perkiraan bongkar</h2><span class="hint">7 hari ke depan · TEUs</span></div><div class="cb">
       ${fc.length?`<div class="legend"><span><i class="dot" style="background:var(--p3)"></i>Sudah dijadwalkan</span><span><i class="dot" style="background:var(--mark)"></i>Perkiraan</span></div>${stackChart('cFc',fcB,[{name:'Dijadwalkan',color:'var(--p3)'},{name:'Perkiraan',color:'var(--mark)'}],{unit:'TEUs',fmt:f0})}
       <p class="foot" style="padding:8px 0 0">Perkiraan = ATA/ETA + median sandar→bongkar 60 hari terakhir (${f0(baseline().port)} hari).</p>`:emptyState('Belum ada perkiraan','Tidak ada kontainer aktif yang diperkirakan dibongkar 7 hari ke depan.',false,I.cal)}
     </div></section>
@@ -954,8 +1000,8 @@ function monKont(){
         <div class="m"><span class="mono">${esc(r.si)}</span>${buTag(r.bu||'-')}<span>${esc(r.org)}</span>${stage===4?`<span>dibongkar ${dshort(bkOf(r))}</span>`:e?(e.src==='plan'?`<span style="color:var(--good);font-weight:700">bongkar ${dshort(e.d)} ${e.j||''}</span>`:`<span style="color:var(--warn);font-weight:700">perkiraan bongkar ±${dshort(e.d)} · belum dijadwalkan</span>`):''}</div>
         <div class="steps">${[0,1,2,3,4].map(i=>`<i class="${i<=r.p?'on':''}"></i>`).join('')}</div></button>`}).join('')}</div>${moreBtn('rdc',sorted.length,n)}`:emptyState(q?'Tidak ditemukan':'Kosong',q?'Tidak ada kontainer yang cocok.':stage===4?'Belum ada kontainer delivered di periode ini.':'Tidak ada kontainer di tahap ini.',stage===4&&!q,I.box)}</div></section>
   <div class="grid2" style="--i:6">
-    <section class="card"><div class="ch"><h2>Dibongkar per ${tr.length&&tr[0].mode==='m'?'bulan':tr.length&&tr[0].mode==='w'?'minggu':'hari'}</h2><span class="hint">${f0(teu(done))} TEUs</span></div><div class="cb">${done.length&&tr.length?`<div class="legend">${TS.filter((s,i)=>tr.some(b=>b.vals[i]>0)).map(s=>`<span><i class="dot" style="background:${s.color}"></i>${s.name}</span>`).join('')}</div>${stackChart('cRdc',tr,TS,{unit:'TEUs',fmt:f0})}`:emptyState('Belum ada data','Belum ada kontainer delivered di periode ini.')}</div></section>
-    <section class="card"><div class="ch"><h2>Jalur aktif per BU</h2><span class="hint">TEUs</span></div><div class="cb">${buAct.length?`<div class="legend">${STAGES.slice(0,4).map((s,i)=>`<span><i class="dot" style="background:${STAGE_COL[i]}"></i>${s[0]}</span>`).join('')}</div>${hbars(buAct.map(g=>({l:buLabel(g.k),vt:f0(g.p.reduce((a,b)=>a+b,0))+'<small>TEUs</small>',segs:g.p.map((v,i)=>[v,STAGE_COL[i]])})))}`:emptyState('Tidak ada','Semua kontainer sudah delivered.',false,I.ok)}</div></section>
+    <section class="card"><div class="ch"><span class="hic">${I.done}</span><h2>Dibongkar per ${tr.length&&tr[0].mode==='m'?'bulan':tr.length&&tr[0].mode==='w'?'minggu':'hari'}</h2><span class="hint">${f0(teu(done))} TEUs</span></div><div class="cb">${done.length&&tr.length?`<div class="legend">${TS.filter((s,i)=>tr.some(b=>b.vals[i]>0)).map(s=>`<span><i class="dot" style="background:${s.color}"></i>${s.name}</span>`).join('')}</div>${stackChart('cRdc',tr,TS,{unit:'TEUs',fmt:f0})}`:emptyState('Belum ada data','Belum ada kontainer delivered di periode ini.')}</div></section>
+    <section class="card"><div class="ch"><span class="hic">${I.ship}</span><h2>Jalur aktif per BU</h2><span class="hint">TEUs</span></div><div class="cb">${buAct.length?`<div class="legend">${STAGES.slice(0,4).map((s,i)=>`<span><i class="dot" style="background:${STAGE_COL[i]}"></i>${s[0]}</span>`).join('')}</div>${hbars(buAct.map(g=>({l:buLabel(g.k),vt:f0(g.p.reduce((a,b)=>a+b,0))+'<small>TEUs</small>',segs:g.p.map((v,i)=>[v,STAGE_COL[i]])})))}`:emptyState('Tidak ada','Semua kontainer sudah delivered.',false,I.ok)}</div></section>
   </div>`;
 }
 function monLpp(){
@@ -987,14 +1033,14 @@ function monLpp(){
   <div style="--i:2">${tiles([{k:'Dokumen',v:cnt(docs.size),d:pL?`${new Set(pL.map(x=>x.no)).size} periode lalu`:''},{k:'Item',v:cnt(L.length),d:`${new Set(L.map(x=>x.a)).size} artikel`},{k:'Qty selisih',v:cnt(qty),u:'pcs'},{k:'Pending',v:cnt(open.length),d:open.length?'<span style="color:var(--crit);font-weight:700">perlu tindak lanjut</span>':'<span style="color:var(--good);font-weight:700">semua DONE</span>'}])}</div>
   <div style="--i:3">${insights('Ringkasan pintar',ins)}</div>
   <div class="grid2" style="--i:4">
-    ${tb.length?`<section class="card"><div class="ch"><h2>Item per ${tb[0].mode==='m'?'bulan':tb[0].mode==='w'?'minggu':'hari'}</h2></div><div class="cb"><div class="legend">${TS.map(s=>`<span><i class="dot" style="background:${s.color}"></i>${s.name}</span>`).join('')}</div>${stackChart('cLpp',tb,TS,{unit:'item',fmt:f0})}</div></section>`:''}
-    <section class="card"><div class="ch"><h2>Per kategori</h2><span class="hint">ketuk untuk menyaring</span></div><div class="cb">${hbars(kat.map(k=>({l:KAT[k.k]||esc(k.k),s:`${f0(k.q)} pcs`,vt:`${k.n} item`,v:k.n,color:'var(--s-cust)',click:`data-lq="${esc(k.k)}"`})))}</div></section>
+    ${tb.length?`<section class="card"><div class="ch"><span class="hic">${I.trend}</span><h2>Item per ${tb[0].mode==='m'?'bulan':tb[0].mode==='w'?'minggu':'hari'}</h2></div><div class="cb"><div class="legend">${TS.map(s=>`<span><i class="dot" style="background:${s.color}"></i>${s.name}</span>`).join('')}</div>${stackChart('cLpp',tb,TS,{unit:'item',fmt:f0})}</div></section>`:''}
+    <section class="card"><div class="ch"><span class="hic">${I.doc}</span><h2>Per kategori</h2><span class="hint">ketuk untuk menyaring</span></div><div class="cb">${hbars(kat.map(k=>({l:KAT[k.k]||esc(k.k),s:`${f0(k.q)} pcs`,vt:`${k.n} item`,v:k.n,color:'var(--s-cust)',click:`data-lq="${esc(k.k)}"`})))}</div></section>
   </div>
   <div class="grid2" style="--i:5">
-    <section class="card"><div class="ch"><h2>Asal kiriman</h2></div><div class="cb">${hbars(site.map(s=>({l:esc(s.k),vt:`${s.n} item`,v:s.n,color:'var(--ink-3)'})))}</div></section>
-    <section class="card"><div class="ch"><h2>Dept terbanyak</h2></div><div class="cb">${hbars(dep.map(s=>({l:`<span class="mono">${esc(s.k)}</span>`,s:`${f0(s.q)} pcs`,vt:`${s.n} item`,v:s.n,color:'var(--ink-3)'})))}</div></section>
+    <section class="card"><div class="ch"><span class="hic">${I.truck}</span><h2>Asal kiriman</h2></div><div class="cb">${hbars(site.map(s=>({l:esc(s.k),vt:`${s.n} item`,v:s.n,color:'var(--ink-3)'})))}</div></section>
+    <section class="card"><div class="ch"><span class="hic">${I.stock}</span><h2>Dept terbanyak</h2></div><div class="cb">${hbars(dep.map(s=>({l:`<span class="mono">${esc(s.k)}</span>`,s:`${f0(s.q)} pcs`,vt:`${s.n} item`,v:s.n,color:'var(--ink-3)'})))}</div></section>
   </div>
-  <section class="card" style="--i:6"><div class="ch"><h2>Dokumen</h2><span class="hint">${docList.length} dokumen · pending di atas</span><div class="right" style="flex:1 1 180px;max-width:240px">${searchBox('lpp','Cari no, artikel, kategori')}</div></div>
+  <section class="card" style="--i:6"><div class="ch"><span class="hic">${I.doc}</span><h2>Dokumen</h2><span class="hint">${docList.length} dokumen · pending di atas</span><div class="right" style="flex:1 1 180px;max-width:240px">${searchBox('lpp','Cari no, artikel, kategori')}</div></div>
     <div class="cb" style="padding-top:4px">${docList.length?`<div class="list">${docList.slice(0,n).map(d=>`<button class="row press" data-lpp="${esc(d.k)}"><span class="a"><span class="mono" style="font-size:12.5px">${esc(d.k)}</span>${buTag(d.bu)}${d.open?tag('Pending','crit'):''}</span><span class="b">${dshort(d.d)} · ${esc(d.si)} · ${d.kat.map(k=>KAT[k]||k).join(', ')}</span><span class="v">${f0(d.q)}<small>${d.items.length} item</small></span></button>`).join('')}</div>${moreBtn('lpp',docList.length,n)}`:emptyState('Tidak ditemukan','Tidak ada dokumen yang cocok.',false,I.search)}</div></section>`;
 }
 
@@ -1009,23 +1055,23 @@ function pageSet(){
     <div class="notes" style="color:inherit;opacity:.85">${notesHtml(u.notes,6)}</div>
     <div class="prog" id="updProg" hidden><i id="updBar"></i></div><p id="updStatus" style="margin:0;font-size:12.5px"></p>
     <button class="btn block press" id="updGo">${u.live&&liveCompatible(u)?'Perbarui sekarang':'Unduh & pasang'}</button></section>`:''}
-  <section class="card" style="--i:2"><div class="ch"><h2>Tampilan</h2></div><div class="cb">
+  <section class="card" style="--i:2"><div class="ch"><span class="hic">${I.sun}</span><h2>Tampilan</h2></div><div class="cb">
     <div style="margin-bottom:12px">${seg('theme',[['auto','Otomatis'],['light','Terang'],['dark','Malam']],S.theme)}</div>
     <div class="set-group">
       <button class="set-row press" data-toggle="calm"><span class="ic">${I.motion}</span><span><div class="t">Kurangi animasi</div><div class="x">Matikan animasi masuk, angka berjalan, dan transisi</div></span><span class="end">${S.calm?tag('Aktif','good'):tag('Mati')}</span></button>
     </div></div></section>
-  <section class="card" style="--i:3"><div class="ch"><h2>Pembaruan</h2></div><div class="cb"><div class="set-group">
+  <section class="card" style="--i:3"><div class="ch"><span class="hic">${I.dl}</span><h2>Pembaruan</h2></div><div class="cb"><div class="set-group">
     <button class="set-row press" id="updCheck"><span class="ic">${I.dl}${u?'<i class="badge"></i>':''}</span><span><div class="t">Periksa pembaruan</div><div class="x">Versi terpasang ${esc(v)}${S.updChecked?` · dicek ${esc(S.updChecked)}`:''}</div></span><span class="end">${u?tag('Baru','crit'):''}${I.chev}</span></button>
     <button class="set-row press" id="whatsNew"><span class="ic">${I.star}</span><span><div class="t">Yang baru di versi ini</div><div class="x">Catatan rilis ${esc(v)}</div></span><span class="end">${I.chev}</span></button>
     <div class="set-row"><span class="ic">${I.info}</span><span><div class="t">Update kilat</div><div class="x">${liveOk?'Aktif: perubahan tampilan dipasang tanpa instal APK':'Tersedia di aplikasi Android'}</div></span><span class="end">${liveOk?tag('Aktif','good'):tag('–')}</span></div>
   </div></div></section>
-  <section class="card" style="--i:4"><div class="ch"><h2>Data</h2><span class="hint">${at?`diperbarui ${at[0]===TODAY?'hari ini':dshort(at[0])} ${at[1]}`:''}</span></div><div class="cb"><div class="set-group">
+  <section class="card" style="--i:4"><div class="ch"><span class="hic">${I.db}</span><h2>Data</h2><span class="hint">${at?`diperbarui ${at[0]===TODAY?'hari ini':dshort(at[0])} ${at[1]}`:''}</span></div><div class="cb"><div class="set-group">
     <div class="set-row"><span class="ic">${I.db}</span><span><div class="t">Spreadsheet IMM</div><div class="x">${f0(nCont)} baris plan · ${f0(nLc)} LC · ${f0(nLp)} item LPPBDO</div></span><span class="end">${STATUS.state==='error'?tag('Gagal','crit'):tag('OK','good')}</span></div>
     <div class="set-row"><span class="ic">${I.ship}</span><span><div class="t">Monitoring kontainer</div><div class="x">${D&&D.rdcErr?esc(D.rdcErr):`${f0(nRdc)} kontainer BU Makassar`}</div></span><span class="end">${D&&D.rdcErr?tag('Gagal','crit'):tag('OK','good')}</span></div>
     <button class="set-row press" data-reload><span class="ic">${I.dl}</span><span><div class="t">Muat ulang data</div><div class="x">Ambil data terbaru dari kedua spreadsheet</div></span><span class="end">${I.chev}</span></button>
     <button class="set-row press" id="clearCache"><span class="ic">${I.trash}</span><span><div class="t">Hapus data tersimpan</div><div class="x">Data di HP dihapus lalu dimuat ulang dari spreadsheet</div></span><span class="end">${I.chev}</span></button>
   </div></div></section>
-  <section class="card" style="--i:5"><div class="ch"><h2>Tentang</h2></div><div class="cb">
+  <section class="card" style="--i:5"><div class="ch"><span class="hic">${I.info}</span><h2>Tentang</h2></div><div class="cb">
     <dl class="kv"><dt>Aplikasi</dt><dd>IMM – Inbound Mini Monitoring</dd><dt>Lokasi</dt><dd>DC Tallo Makassar</dd><dt>Versi</dt><dd>${esc(v)}</dd><dt>Perangkat</dt><dd>${NATIVE?'Android':'Browser'}</dd></dl>
     <div style="height:14px"></div>
     <div class="notes"><b>Aturan perhitungan</b><br>Patokan tanggal = tanggal bongkar di MASTER_PLAN; hanya LC yang ada di plan yang dihitung.<br>Storing = KODE SITE stock di LOGIC. Outbound = store di LOGIC + customer (KODE SITE 0).<br>Kontainer dihitung dalam TEUs (40' = 2, 20' = 1).<br>Monitoring kontainer = sheet RDC, hanya BU NAME Makassar.</div>
@@ -1151,7 +1197,7 @@ function openRdc(i){const r=D.rdc[i];if(!r)return;const pl=CONT_BY_LC[r.si]||[];
   if(r.p<4&&startOf(r))ag.push(['Sudah berjalan sejak checkout',Math.max(0,diff(startOf(r),TODAY)),B.lead]);
   sheet(sHead(esc(r.k||'—'),`<span class="mono">${esc(r.si)}</span>${buTag(r.bu||'-')}<span>${esc(r.org)}</span><span>${f0(r.te)} TEU · ${esc(r.ty)}</span>${r.kap?`<span>${esc(r.kap)}</span>`:''}`,tag(esc(r.pos||'-'),r.p===4?'good':r.p===2?'mark':'')),
   `<div><h4>Perjalanan</h4><div class="tl">${ms.map(([n,d])=>`<div class="st ${d?'done':''}"><i></i><span class="n">${n}</span><span class="d">${d?dday(d):'–'}</span></div>`).join('')}</div></div>
-   <div class="cmp"><div><div class="k">Aging yard</div><div class="v">${r.ag!=null?r.ag+' hr':'–'}</div><div class="p">${esc(r.agk||'')}</div></div><div><div class="k">TEUs</div><div class="v">${f0(r.te)}</div><div class="p">${esc(r.ty)}</div></div><div><div class="k">CBM (LC)</div><div class="v">${cb?f1(cb[0]+cb[1]+cb[2]):'–'}</div><div class="p">${cb?`storing ${f1(cb[0])}`:'belum di MASTER_LC'}</div></div></div>
+   <div class="cmp"><div><div class="k">Aging yard</div><div class="v">${r.ag!=null?r.ag+' hari':'–'}</div><div class="p">${esc(r.agk||'')}</div></div><div><div class="k">TEUs</div><div class="v">${f0(r.te)}</div><div class="p">${esc(r.ty)}</div></div><div><div class="k">CBM (LC)</div><div class="v">${cb?f1(cb[0]+cb[1]+cb[2]):'–'}</div><div class="p">${cb?`storing ${f1(cb[0])}`:'belum di MASTER_LC'}</div></div></div>
    ${ag.length?`<div><h4>Durasi</h4><dl class="kv">${ag.map(([k,v,m])=>`<dt>${k}</dt><dd>${f0(v)} hari${B.n&&m?` <span style="font-weight:500;color:${v>m+1?'var(--crit)':v<m-1?'var(--good)':'var(--ink-3)'}">(${v>m?'+':''}${f0(v-m)} vs median)</span>`:''}</dd>`).join('')}</dl></div>`:''}
    ${e?`<div><h4>Perkiraan bongkar</h4><p style="margin:0;color:var(--ink-2)">${e.src==='plan'?`Sudah dijadwalkan <b style="color:var(--ink)">${dlong(e.d)}</b>${e.j?' jam '+e.j:''}.`:`±<b style="color:var(--ink)">${dlong(e.d)}</b>, berdasarkan median 60 hari terakhir. Belum ada di MASTER_PLAN.`}</p></div>`:''}
    <div><h4>Jadwal bongkar</h4>${pl.length?pl.map(c=>`<button class="row press" data-lc="${esc(r.si)}" data-mode="all"><span class="a">${dlong(c.d)}</span><span class="b">${c.j} · ${esc(c.k)}</span><span class="v" style="color:var(--ink-3)">${I.chev}</span></button>`).join(''):`<p style="margin:0;color:var(--ink-2)">${r.p===4?'Sudah delivered.':'Belum ada di MASTER_PLAN. Jadwalkan bongkar setelah kontainer tiba di Yard.'}</p>`}</div>`)}
