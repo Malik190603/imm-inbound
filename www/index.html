@@ -1110,13 +1110,26 @@ function pageSet(){
 
 // ======================= ROLE PENGGUNA (ditanya sekali per HP) =======================
 // Jawaban dikirim ke Google Form (tanpa login, tanpa GAS); responsnya masuk ke tab ROLE di spreadsheet IMM lalu dibaca lewat gviz.
-const ROLE_FORM={post:'',role:'',dev:'',ver:'',sheet:'ROLE'};
+const ROLE_FORM={id:'1FAIpQLScJHETCkW09Dmajv8EhM04iHiqA1anjTw3W2V9Wz50M5P54-A',sheets:['ROLE','Form Responses 1','Jawaban Formulir 1','Form_Responses_1']};
+// Kode kolom form (entry.NNN) dibaca otomatis dari halaman form lalu disimpan, jadi tidak perlu link "diisi otomatis".
+async function formFields(){
+  const c=LS.get('imm.form');if(c&&c.id===ROLE_FORM.id&&c.role)return c;
+  const r=await fetch(`https://docs.google.com/forms/d/e/${ROLE_FORM.id}/viewform?hl=en`,{cache:'no-store'});const h=await r.text();
+  const f={id:ROLE_FORM.id,role:'',dev:'',ver:''};
+  const m=h.match(/FB_PUBLIC_LOAD_DATA_\s*=\s*([\s\S]*?);\s*<\/script>/);
+  if(m){try{const items=(JSON.parse(m[1])[1]||[])[1]||[];items.forEach(it=>{const t=String(it[1]||'').toLowerCase();const e=it[4]&&it[4][0]&&it[4][0][0];if(!e)return;
+    if(/role|peran/.test(t)&&!f.role)f.role='entry.'+e;else if(/perangkat|device|\bid\b/.test(t)&&!f.dev)f.dev='entry.'+e;else if(/versi|version/.test(t)&&!f.ver)f.ver='entry.'+e})}catch(e){}}
+  if(!f.role){const ids=[...h.matchAll(/name="(entry\.\d+)"/g)].map(x=>x[1]).filter((v,i,a)=>a.indexOf(v)===i);[f.role,f.dev,f.ver]=[ids[0]||'',ids[1]||'',ids[2]||'']}
+  if(!f.role)throw new Error('kolom form tidak ditemukan');LS.set('imm.form',f);return f;
+}
 const ROLES=[['Manager',I.star],['Assistant Manager',I.star],['Inbound',I.box],['Storing',I.stock],['Outbound',I.truck],['Inventory',I.db],['Planner',I.cal],['MHE',I.motion],['Ekspediter',I.ship]];
 function deviceId(){let d=LS.get('imm.dev');if(!d){d='d'+Date.now().toString(36)+Math.random().toString(36).slice(2,8);LS.set('imm.dev',d)}return d}
 async function sendRole(){
-  const r=LS.get('imm.role');if(!r||LS.get('imm.role.sent')===r.t||!ROLE_FORM.post||window.IMM_SNAPSHOT)return;
-  const b=new URLSearchParams();b.set(ROLE_FORM.role,r.role);if(ROLE_FORM.dev)b.set(ROLE_FORM.dev,deviceId());if(ROLE_FORM.ver)b.set(ROLE_FORM.ver,currentVersion());
-  try{await fetch(ROLE_FORM.post,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:b.toString()});LS.set('imm.role.sent',r.t);S.roles=null}catch(e){}
+  const r=LS.get('imm.role');if(!r||LS.get('imm.role.sent')===r.t||!ROLE_FORM.id||window.IMM_SNAPSHOT)return;
+  try{const f=await formFields();const b=new URLSearchParams();b.set(f.role,r.role);if(f.dev)b.set(f.dev,deviceId());if(f.ver)b.set(f.ver,currentVersion());
+    const res=await fetch(`https://docs.google.com/forms/d/e/${ROLE_FORM.id}/formResponse`,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:b.toString()});
+    if(res.type!=='opaque'&&!res.ok){if(res.status===400)LS.del('imm.form');return}
+    LS.set('imm.role.sent',r.t);S.roles=null;if(S.page==='set')loadRoles()}catch(e){}
 }
 function roleGate(onDone,canClose){
   if(document.getElementById('roleGate'))return;const cur=(LS.get('imm.role')||{}).role||'';let pick=cur;
@@ -1133,8 +1146,12 @@ function roleGate(onDone,canClose){
     if(e.target.closest('.rg-go')&&pick){LS.set('imm.role',{role:pick,t:Date.now()});buzz(12);close();sendRole();if(S.page==='set')render();toast('Terima kasih! Role: '+pick);onDone&&onDone()}});
 }
 async function loadRoles(){
-  if(!ROLE_FORM.post||S.rolesBusy||(S.roles&&Date.now()-S.roles.at<10*60e3))return;S.rolesBusy=true;
-  try{const rows=await gviz({doc:DOC_IMM,sheet:ROLE_FORM.sheet,tq:'select B,C',h:1});const by=new Map();let anon=0;
+  if(!ROLE_FORM.id||S.rolesBusy||(S.roles&&Date.now()-S.roles.at<10*60e3))return;S.rolesBusy=true;
+  const known=new Set(ROLES.map(x=>x[0]));
+  try{let rows=null,lastErr=null;
+    for(const sh of ROLE_FORM.sheets){try{const rs=await gviz({doc:DOC_IMM,sheet:sh,tq:'select B,C',h:1});if(rs.some(r=>known.has(cs(r[0])))){rows=rs;break}if(!rows)rows=[]}catch(e){lastErr=e}}
+    if(rows==null)throw lastErr||new Error('tab ROLE tidak ditemukan');
+    rows=rows.filter(r=>known.has(cs(r[0])));const by=new Map();let anon=0;
     rows.forEach(r=>{const role=cs(r[0]),dev=cs(r[1]);if(!role)return;if(dev)by.set(dev,role);else anon++,by.set('#'+anon,role)});
     const cnt={};by.forEach(v=>{cnt[v]=(cnt[v]||0)+1});S.roles={at:Date.now(),n:by.size,cnt}}
   catch(e){S.roles={at:Date.now()-9*60e3,err:e.message||String(e)}}
@@ -1143,7 +1160,7 @@ async function loadRoles(){
 function rolesBlock(){
   const me=(LS.get('imm.role')||{}).role;const R=S.roles;
   const mine=`<button class="set-row press" id="roleEdit"><span class="ic">${I.users}</span><span><div class="t">Role kamu</div><div class="x">${me?esc(me):'Belum dipilih'}</div></span><span class="end">${I.chev}</span></button>`;
-  if(!ROLE_FORM.post)return `<div class="set-group" style="margin-top:14px">${mine}</div>`;
+  if(!ROLE_FORM.id)return `<div class="set-group" style="margin-top:14px">${mine}</div>`;
   if(!R||R.err)return `<div class="set-group" style="margin-top:14px">${mine}</div><p class="foot" style="padding:8px 0 0">${R&&R.err?'Data role belum bisa dibaca: '+esc(R.err):'Memuat data role…'}</p>`;
   const list=ROLES.map(([r])=>({k:r,v:R.cnt[r]||0})).concat(Object.keys(R.cnt).filter(k=>!ROLES.some(x=>x[0]===k)).map(k=>({k,v:R.cnt[k]}))).filter(x=>x.v).sort((a,b)=>b.v-a.v);
   const mx=Math.max(1,...list.map(x=>x.v));
