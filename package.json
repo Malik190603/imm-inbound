@@ -4,7 +4,10 @@
   "private": true,
   "description": "IMM Inbound DC Tallo Makassar - aplikasi Android yang membaca data dari Google Sheets",
   "scripts": {
-    "sync": "cap sync android"
+    "sync": "cap sync android",
+    "check": "node scripts/check.mjs",
+    "version": "node scripts/version.mjs",
+    "notes": "node scripts/release-notes.mjs"
   },
   "dependencies": {
     "@capacitor/android": "^8.5.2",

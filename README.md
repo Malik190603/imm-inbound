@@ -34,5 +34,13 @@ Filter BU dan periode di bagian atas berlaku untuk semua halaman.
 - BU dibaca dari huruf depan kode: H/J = HCI, A = AHI, F = FBI, T = TGI, K = KWI.
 - LC yang ada di MASTER_LC tapi belum ada di MASTER_PLAN ditampilkan sebagai peringatan "LC belum dijadwalkan".
 
-## Build
-APK di-build otomatis oleh GitHub Actions (`.github/workflows/build-apk.yml`) setiap ada perubahan di branch `main`. Kode tampilan dan logika ada di `www/index.html`. Proyek Android dibuat dengan Capacitor.
+## Rilis ("gaspol")
+Alurnya sama dengan Active Coach:
+1. Perubahan di-commit dan di-push ke `main`.
+2. GitHub Actions (`.github/workflows/build-apk.yml`) menentukan versi, memeriksa kode, membangun APK rilis, memastikan tanda tangannya sama dengan versi sebelumnya, lalu menerbitkannya di **Releases**.
+3. **Versi:** `package.json` berisi versi dasar (mis. 1.0.0). Perbaikan kecil otomatis naik PATCH (1.0.3 → 1.0.4 …). Untuk fitur besar, naikkan MINOR di `package.json` (mis. 1.1.0).
+4. **Catatan rilis** diambil dari pesan commit. Pisahkan dengan baris `Untuk pengguna:` dan `Untuk developer:`.
+5. Pesan commit berisi `[beta]` → rilis beta (prerelease), tidak menjadi versi terbaru.
+6. Rilis dibatalkan bila pemeriksaan kode gagal, APK ditandatangani kunci lain, atau APK masih bisa di-debug.
+
+Kode tampilan dan logika ada di `www/index.html`. Proyek Android dibuat dengan Capacitor. Kunci tanda tangan ada di `android/app/imm-inbound.keystore`; jangan dihapus atau diganti, karena tanpa kunci yang sama APK baru tidak bisa dipasang menimpa versi lama. Karena kunci ini ada di repo, **repo harus tetap Private**.

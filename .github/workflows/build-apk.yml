@@ -1,5 +1,6 @@
-name: Build APK
+name: Build APK Android
 
+# "gaspol" = commit + push ke main → workflow ini membangun APK dan menerbitkannya di Releases.
 on:
   push:
     branches: [main]
@@ -8,48 +9,88 @@ on:
 permissions:
   contents: write
 
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
+concurrency:
+  group: apk-release
+  cancel-in-progress: false
 
-      - uses: actions/setup-node@v4
+jobs:
+  apk:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          fetch-depth: 2
+
+      - name: Nomor versi & saluran rilis
+        id: ver
+        # Versi semver dari package.json (+ PATCH otomatis). Pesan commit berisi [beta] → rilis beta (prerelease).
+        env:
+          MSG: ${{ github.event.head_commit.message }}
+        run: |
+          node scripts/version.mjs
+          beta=false; case "$MSG" in *"[beta]"*) beta=true;; esac
+          echo "beta=$beta" >> "$GITHUB_OUTPUT"; echo "Saluran: $([ $beta = true ] && echo beta || echo stabil)"
+
+      - uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: npm
 
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v5
         with:
           distribution: temurin
-          java-version: 21
+          java-version: '21'
 
-      - name: Install dependencies
+      - name: Pasang dependensi
         run: npm ci
 
-      - name: Copy web app into Android project
+      - name: Pemeriksaan kode sebelum rilis
+        # Sintaks skrip, konfigurasi, dan kunci rahasia. Gagal = tidak ada rilis.
+        run: npm run check
+
+      - name: Salin aplikasi web ke proyek Android
         run: npx cap sync android
 
-      - name: Build APK
+      - name: Build APK (rilis)
         working-directory: android
+        env:
+          VERSION_CODE: ${{ github.run_number }}
         run: |
           yes | "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null || true
           chmod +x gradlew
-          ./gradlew assembleDebug --no-daemon --stacktrace
+          ./gradlew assembleRelease --no-daemon --stacktrace
 
-      - name: Rename APK
-        run: cp android/app/build/outputs/apk/debug/app-debug.apk "IMM-Inbound-v1.0.${{ github.run_number }}.apk"
+      - name: Pastikan tanda tangan sama dengan versi sebelumnya
+        # Gagal (dan tidak rilis) bila APK tidak ditandatangani kunci tetap,
+        # supaya pengguna tidak pernah perlu uninstall untuk update.
+        run: |
+          EXPECTED=750b81fd4bf5b3f4d49cac60b720bdd2ad4c14e731f9dca6c37af866d60b1f3a
+          BT=$(ls -d "$ANDROID_HOME"/build-tools/*/ | sort -V | tail -1)
+          "${BT}apksigner" verify --print-certs android/app/build/outputs/apk/release/app-release.apk | tee certs.txt
+          GOT=$(grep -m1 -i "certificate SHA-256 digest" certs.txt | awk '{print $NF}' | tr 'A-F' 'a-f')
+          echo "SHA-256 APK: $GOT"
+          if [ "$GOT" != "$EXPECTED" ]; then echo "::error::APK ditandatangani kunci lain ($GOT). Rilis dibatalkan."; exit 1; fi
+          "${BT}aapt" dump badging android/app/build/outputs/apk/release/app-release.apk | grep -E "^package:|application-debuggable" | tee badging.txt
+          if grep -q "application-debuggable" badging.txt; then echo "::error::APK masih bisa di-debug. Rilis dibatalkan."; exit 1; fi
+
+      - name: Beri nama file
+        run: cp android/app/build/outputs/apk/release/app-release.apk "IMM-Inbound-v${{ steps.ver.outputs.version }}.apk"
 
       - uses: actions/upload-artifact@v4
         with:
-          name: IMM-Inbound-apk
+          name: IMM-Inbound-APK
           path: IMM-Inbound-*.apk
 
-      - name: Publish release
+      - name: Catatan rilis (dari pesan commit)
+        run: node scripts/release-notes.mjs
+
+      - name: Terbitkan di Releases
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: v1.0.${{ github.run_number }}
-          name: IMM Inbound v1.0.${{ github.run_number }}
-          body: APK siap diinstal. Unduh file .apk di bawah ini dari HP Android.
+          tag_name: v${{ steps.ver.outputs.version }}
+          name: IMM Inbound v${{ steps.ver.outputs.version }}${{ steps.ver.outputs.beta == 'true' && ' (beta)' || '' }}
+          body_path: release-notes.md
+          prerelease: ${{ steps.ver.outputs.beta == 'true' }}
+          make_latest: ${{ steps.ver.outputs.beta == 'true' && 'false' || 'true' }}
           files: IMM-Inbound-*.apk
-          make_latest: true
