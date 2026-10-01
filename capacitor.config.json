@@ -1,0 +1,12 @@
+{
+  "appId": "id.imm.inbound",
+  "appName": "IMM Inbound",
+  "webDir": "www",
+  "android": {
+    "allowMixedContent": false
+  },
+  "plugins": {
+    "CapacitorHttp": { "enabled": true },
+    "SystemBars": { "insetsHandling": "css", "style": "DEFAULT" }
+  }
+}

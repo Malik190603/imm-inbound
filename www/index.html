@@ -1,0 +1,867 @@
+<!doctype html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#14202A">
+<title>IMM Inbound Tallo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap">
+<style>
+/* Layout: app shell — sticky header + global filter rail, page content in a single column of panels; bottom tab bar on phones, top tabs on desktop. */
+:root{
+  --bg:#ECEFEE; --surface:#FAFBFA; --surface-2:#F2F4F3; --ink:#14202A; --ink-2:#47555F; --ink-3:#77838C; --line:#D3DADA; --line-2:#E3E8E8;
+  --accent:#14202A; --accent-ink:#FAFBFA; --mark:#F0B429;
+  --s-stock:#2a78d6; --s-store:#eb6834; --s-cust:#1baf7a; --s-one:#2a78d6;
+  --good:#2C7A4B; --good-bg:#E3F1E8; --warn:#9A6400; --warn-bg:#FBF0D6; --crit:#B83A2A; --crit-bg:#F8E3DF;
+  --f-display:"Barlow Condensed","Arial Narrow",system-ui,sans-serif;
+  --f-body:"IBM Plex Sans",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,"SFMono-Regular",Menlo,monospace;
+  --r:6px; --shadow:0 1px 0 rgba(20,32,42,.04),0 8px 24px -16px rgba(20,32,42,.25);
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0E1418; --surface:#161F25; --surface-2:#1C262D; --ink:#E7ECEE; --ink-2:#A8B4BB; --ink-3:#7A8890; --line:#2B3840; --line-2:#222E35;
+  --accent:#E7ECEE; --accent-ink:#0E1418; --mark:#E0A419;
+  --s-stock:#3987e5; --s-store:#d95926; --s-cust:#199e70; --s-one:#3987e5;
+  --good:#5FC089; --good-bg:#16302A; --warn:#E3B04B; --warn-bg:#33291A; --crit:#EE7A68; --crit-bg:#3A201C;
+  --shadow:0 1px 0 rgba(0,0,0,.2),0 8px 24px -16px rgba(0,0,0,.6); color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0E1418; --surface:#161F25; --surface-2:#1C262D; --ink:#E7ECEE; --ink-2:#A8B4BB; --ink-3:#7A8890; --line:#2B3840; --line-2:#222E35;
+  --accent:#E7ECEE; --accent-ink:#0E1418; --mark:#E0A419;
+  --s-stock:#3987e5; --s-store:#d95926; --s-cust:#199e70; --s-one:#3987e5;
+  --good:#5FC089; --good-bg:#16302A; --warn:#E3B04B; --warn-bg:#33291A; --crit:#EE7A68; --crit-bg:#3A201C;
+  --shadow:0 1px 0 rgba(0,0,0,.2),0 8px 24px -16px rgba(0,0,0,.6); color-scheme:dark}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html{padding-top:var(--safe-area-inset-top,env(safe-area-inset-top,0px));padding-bottom:var(--safe-area-inset-bottom,env(safe-area-inset-bottom,0px))}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:14px;line-height:1.45;-webkit-font-smoothing:antialiased}
+button,input,select{font:inherit;color:inherit}
+.num,.mono{font-family:var(--f-mono);font-variant-numeric:tabular-nums}
+.num{letter-spacing:-.01em}
+a{color:inherit}
+:focus-visible{outline:2px solid var(--mark);outline-offset:2px}
+
+/* header */
+.top{position:sticky;top:var(--safe-area-inset-top,env(safe-area-inset-top,0px));z-index:20;background:var(--bg);border-bottom:1px solid var(--line)}
+.top-in{max-width:1180px;margin:0 auto;padding:10px 16px 0;display:grid;gap:10px}
+.brand{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.logo{width:34px;height:34px;flex:none;border-radius:4px;background:var(--accent);display:grid;place-items:center}
+.logo svg{width:22px;height:22px}
+.brand h1{margin:0;font-family:var(--f-display);font-weight:700;font-size:22px;letter-spacing:.02em;text-transform:uppercase;line-height:1}
+.brand small{display:block;font-size:11.5px;color:var(--ink-3);letter-spacing:.02em}
+.snap{margin-left:auto;font-size:11.5px;color:var(--ink-3);display:flex;align-items:center;gap:6px}
+.snap i{width:7px;height:7px;border-radius:50%;background:var(--good);display:inline-block}
+.tabs{display:flex;gap:2px;overflow-x:auto;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tab{appearance:none;border:0;background:none;padding:9px 14px 10px;font-family:var(--f-display);font-size:16px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--ink-3);cursor:pointer;border-bottom:3px solid transparent;white-space:nowrap;display:flex;align-items:center;gap:7px}
+.tab svg{width:17px;height:17px}
+.tab .ts{display:none}
+.tab[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--mark)}
+.tab:hover{color:var(--ink)}
+
+/* filter rail */
+.filters{max-width:1180px;margin:0 auto;padding:10px 16px;display:flex;gap:10px 18px;flex-wrap:wrap;align-items:center}
+.flabel{font-size:10.5px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3);margin-right:2px}
+.fgroup{display:flex;align-items:center;gap:6px;flex-wrap:wrap;min-width:0}
+.chip{appearance:none;border:1px solid var(--line);background:var(--surface);border-radius:999px;padding:5px 11px;font-size:12.5px;font-weight:600;cursor:pointer;color:var(--ink-2);font-family:var(--f-mono);letter-spacing:.02em}
+.chip[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.chip:hover{border-color:var(--ink-3)}
+.period-btn{appearance:none;border:1px solid var(--line);background:var(--surface);border-radius:var(--r);padding:6px 10px 6px 12px;cursor:pointer;display:flex;align-items:center;gap:8px;font-weight:600;font-size:13px}
+.period-btn .rng{font-family:var(--f-mono);font-weight:500;font-size:12px;color:var(--ink-3)}
+.period-btn svg{width:14px;height:14px;color:var(--ink-3)}
+.pop{position:absolute;z-index:40;top:100%;left:0;margin-top:6px;background:var(--surface);border:1px solid var(--line);border-radius:8px;box-shadow:var(--shadow);padding:12px;width:min(340px,calc(100vw - 32px));display:grid;gap:12px}
+.pgrid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.popt{appearance:none;border:1px solid var(--line-2);background:var(--surface-2);border-radius:5px;padding:7px 9px;text-align:left;font-size:13px;cursor:pointer}
+.popt[aria-pressed="true"]{border-color:var(--ink);background:var(--surface);font-weight:600;box-shadow:inset 3px 0 0 var(--mark)}
+.prow{display:grid;gap:6px}
+.prow label{font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3)}
+.prow .two{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.prow input,.prow select{width:100%;border:1px solid var(--line);background:var(--surface-2);border-radius:5px;padding:7px 8px;font-size:13px;min-width:0}
+.btn{appearance:none;border:1px solid var(--ink);background:var(--accent);color:var(--accent-ink);border-radius:5px;padding:7px 12px;font-weight:600;font-size:13px;cursor:pointer}
+.btn.ghost{background:transparent;color:var(--ink);border-color:var(--line)}
+.btn.sm{padding:4px 9px;font-size:12px;white-space:nowrap}
+
+/* page */
+main{max-width:1180px;margin:0 auto;padding-block:18px 96px;padding-inline:16px;display:grid;gap:16px}
+.pagehead{display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap}
+.pagehead h2{margin:0;font-family:var(--f-display);font-weight:700;font-size:34px;line-height:.95;letter-spacing:.01em;text-transform:uppercase;text-wrap:balance}
+.pagehead p{margin:0;color:var(--ink-2);font-size:13px}
+.pagehead .sub{flex:1 1 260px;min-width:0}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);min-width:0}
+.ph{display:flex;align-items:baseline;gap:10px;padding:12px 14px 0;flex-wrap:wrap}
+.ph h3{margin:0;font-family:var(--f-display);font-size:18px;font-weight:600;letter-spacing:.04em;text-transform:uppercase}
+.ph .hint{font-size:12px;color:var(--ink-3)}
+.ph .right{margin-left:auto;display:flex;gap:6px;align-items:center}
+.pb{padding:12px 14px 14px}
+.grid2{display:grid;gap:16px;grid-template-columns:minmax(0,1.35fr) minmax(0,1fr)}
+.grid2e{display:grid;gap:16px;grid-template-columns:repeat(2,minmax(0,1fr))}
+@media (max-width:860px){.grid2,.grid2e{grid-template-columns:minmax(0,1fr)}}
+
+/* KPI strip */
+.kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));background:var(--surface);border:1px solid var(--line);border-radius:var(--r)}
+.kpi{padding:12px 14px 13px;border-left:1px solid var(--line-2);min-width:0}
+.kpi:first-child{border-left:0}
+.kpi .k{font-size:10.5px;font-weight:600;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-3);display:flex;align-items:center;gap:6px}
+.kpi .k i{width:8px;height:8px;border-radius:2px;display:inline-block}
+.kpi .v{font-family:var(--f-display);font-weight:600;font-size:34px;line-height:1.05;letter-spacing:.01em;font-variant-numeric:tabular-nums;margin-top:4px}
+.kpi .v small{font-size:15px;color:var(--ink-3);font-weight:500;margin-left:3px;letter-spacing:.04em}
+.kpi .d{font-size:12px;color:var(--ink-3);margin-top:2px}
+.delta{font-family:var(--f-mono);font-size:11.5px;font-weight:500}
+.delta{color:var(--ink-2)}
+@media (max-width:720px){.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}.kpi:nth-child(3){border-left:0}.kpi:nth-child(n+3){border-top:1px solid var(--line-2)}}
+
+/* insight */
+.brief{display:grid;grid-template-columns:auto minmax(0,1fr);gap:0;background:var(--surface);border:1px solid var(--line);border-radius:var(--r);overflow:hidden}
+.brief .tagcol{background:var(--accent);color:var(--accent-ink);padding:12px 10px;writing-mode:vertical-rl;transform:rotate(180deg);font-family:var(--f-display);font-weight:700;letter-spacing:.14em;text-transform:uppercase;font-size:13px;text-align:center}
+.brief ul{list-style:none;margin:0;padding:12px 16px;display:grid;gap:8px}
+.brief li{display:grid;grid-template-columns:14px minmax(0,1fr);gap:8px;align-items:start;font-size:13.5px;line-height:1.5;color:var(--ink)}
+.brief li::before{content:"";width:6px;height:6px;margin-top:7px;background:var(--ink-3);border-radius:1px}
+.brief li.w::before{background:var(--warn)} .brief li.c::before{background:var(--crit)} .brief li.g::before{background:var(--good)} .brief li.h::before{background:var(--mark)}
+.brief b{font-weight:600}
+.brief .num{font-size:12.5px}
+.brief li .lead{font-weight:600}
+@media (max-width:560px){.brief{grid-template-columns:minmax(0,1fr)}.brief .tagcol{writing-mode:horizontal-tb;transform:none;text-align:left;padding:7px 14px}}
+
+/* tables */
+.tw{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{font-size:10.5px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3);text-align:left;padding:7px 10px;border-bottom:1px solid var(--line);white-space:nowrap;position:sticky;top:0;background:var(--surface)}
+td{padding:8px 10px;border-bottom:1px solid var(--line-2);vertical-align:middle}
+td.r,th.r{text-align:right}
+tr.click{cursor:pointer}
+tr.click:hover td{background:var(--surface-2)}
+tbody tr:last-child td{border-bottom:0}
+tfoot td{border-top:1px solid var(--line);border-bottom:0;font-weight:600}
+.code{font-family:var(--f-mono);font-size:12.5px;font-weight:500;letter-spacing:.01em}
+.muted{color:var(--ink-3)}
+.small{font-size:12px}
+.nm{max-width:220px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.share{display:flex;align-items:center;gap:8px;min-width:96px}
+.share .bar{flex:1;height:8px;background:var(--line-2);border-radius:0 4px 4px 0;overflow:hidden;min-width:50px}
+.share .bar span{display:block;height:100%;border-radius:0 4px 4px 0}
+.share .p{font-family:var(--f-mono);font-size:11.5px;color:var(--ink-2);width:40px;text-align:right}
+.tblscroll{max-height:440px;overflow:auto}
+
+/* badges */
+.badge{display:inline-flex;align-items:center;gap:5px;padding:2px 7px;border-radius:3px;font-size:11px;font-weight:600;letter-spacing:.03em;white-space:nowrap}
+.badge svg{width:11px;height:11px}
+.b-warn{background:var(--warn-bg);color:var(--warn)} .b-crit{background:var(--crit-bg);color:var(--crit)} .b-good{background:var(--good-bg);color:var(--good)}
+.b-n{background:var(--surface-2);color:var(--ink-2);border:1px solid var(--line-2)}
+.bu{font-family:var(--f-mono);font-size:11px;font-weight:600;padding:1px 6px;border-radius:3px;border:1px solid var(--line);color:var(--ink-2)}
+.dot{width:9px;height:9px;border-radius:2px;display:inline-block;flex:none}
+
+/* alerts */
+.alerts{display:grid;gap:0}
+.al{display:grid;grid-template-columns:22px minmax(0,1fr) auto;gap:10px;align-items:start;padding:10px 0;border-bottom:1px solid var(--line-2)}
+.al:last-child{border-bottom:0}
+.al .ic{width:22px;height:22px;border-radius:4px;display:grid;place-items:center}
+.al .ic svg{width:13px;height:13px}
+.al.c .ic{background:var(--crit-bg);color:var(--crit)} .al.w .ic{background:var(--warn-bg);color:var(--warn)} .al.g .ic{background:var(--good-bg);color:var(--good)}
+.al .t{font-weight:600;font-size:13.5px}
+.al .x{font-size:12.5px;color:var(--ink-2);margin-top:2px}
+.al .x .code{font-size:11.5px}
+.linkbtn{appearance:none;border:0;background:none;padding:0;color:var(--ink);font-weight:600;font-size:12.5px;text-decoration:underline;text-underline-offset:3px;text-decoration-color:var(--mark);text-decoration-thickness:2px;cursor:pointer;white-space:nowrap}
+
+/* chart */
+.chart{position:relative}
+.chart svg{display:block;width:100%;height:auto;overflow:visible}
+.chart .ax{font-family:var(--f-mono);font-size:10.5px;fill:var(--ink-3)}
+.chart .grid{stroke:var(--line-2);stroke-width:1}
+.chart .base{stroke:var(--line);stroke-width:1}
+.chart .hit{fill:transparent;cursor:pointer}
+.chart .hit:hover+g .hl,.chart g.on .hl{opacity:1}
+.tip{position:absolute;pointer-events:none;background:var(--ink);color:var(--surface);padding:8px 10px;border-radius:5px;font-size:12px;min-width:150px;box-shadow:var(--shadow);z-index:5;display:none}
+.tip b{display:block;font-weight:600;margin-bottom:3px}
+.tip .row{display:flex;justify-content:space-between;gap:12px;font-family:var(--f-mono);font-size:11.5px}
+.tip .row span:first-child{display:flex;align-items:center;gap:6px}
+.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--ink-2)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+
+/* hbar list */
+.hbars{display:grid;gap:9px}
+.hb{display:grid;grid-template-columns:92px minmax(0,1fr) 92px;gap:10px;align-items:center;font-size:13px}
+.hb .l{font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hb .tr{height:14px;background:var(--line-2);border-radius:0 4px 4px 0;display:flex;overflow:hidden;gap:2px}
+.hb .tr span{display:block;height:100%}
+.hb .tr span:last-child{border-radius:0 4px 4px 0}
+.hb .v{text-align:right;font-family:var(--f-mono);font-size:12.5px}
+.hb.wide{grid-template-columns:150px minmax(0,1fr) 92px}
+@media (max-width:520px){.hb.wide{grid-template-columns:110px minmax(0,1fr) 76px}.hb{grid-template-columns:70px minmax(0,1fr) 76px}}
+
+/* schedule */
+.sched{display:grid;gap:0}
+.day{display:grid;grid-template-columns:68px minmax(0,1fr);gap:12px;padding:10px 0;border-bottom:1px solid var(--line-2)}
+.day:last-child{border-bottom:0}
+.day .dl{font-family:var(--f-display);text-transform:uppercase;line-height:1}
+.day .dl .dn{font-size:12px;letter-spacing:.08em;color:var(--ink-3);font-weight:600}
+.day .dl .dd{font-size:28px;font-weight:700}
+.day .dl .dm{font-size:12px;color:var(--ink-3);font-weight:600;letter-spacing:.06em}
+.boxes{display:flex;flex-wrap:wrap;gap:6px;min-width:0}
+.box{appearance:none;text-align:left;border:1px solid var(--line);background:var(--surface-2);border-radius:4px;padding:6px 8px 6px 10px;cursor:pointer;display:grid;gap:1px;position:relative;min-width:132px}
+.box::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;border-radius:4px 0 0 4px;background:var(--ink-3)}
+.box.f40::before{background:var(--ink)}
+.box.miss{border-style:dashed}
+.box .kk{font-family:var(--f-mono);font-size:12px;font-weight:600}
+.box .mm{font-size:11px;color:var(--ink-3);display:flex;gap:6px;flex-wrap:wrap}
+.box:hover{border-color:var(--ink-3)}
+.dsum{font-family:var(--f-mono);font-size:11.5px;color:var(--ink-3);margin-top:6px}
+
+/* search */
+.search{border:1px solid var(--line);background:var(--surface-2);border-radius:5px;padding:5px 9px;font-size:12.5px;width:180px;max-width:100%}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:5px;overflow:hidden}
+.seg button{appearance:none;border:0;background:var(--surface);padding:5px 10px;font-size:12px;font-weight:600;cursor:pointer;color:var(--ink-2);border-left:1px solid var(--line)}
+.seg button:first-child{border-left:0}
+.seg button[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink)}
+
+/* empty */
+.empty{padding:26px 16px;text-align:center;color:var(--ink-2);display:grid;gap:10px;justify-items:center}
+.empty .e1{font-family:var(--f-display);font-size:18px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--ink)}
+.empty .acts{display:flex;gap:6px;flex-wrap:wrap;justify-content:center}
+
+/* drawer */
+.scrim{position:fixed;inset:0;background:rgba(10,16,20,.42);z-index:50}
+.drawer{position:fixed;z-index:51;top:0;right:0;bottom:0;width:min(640px,100vw);background:var(--surface);border-left:1px solid var(--line);display:flex;flex-direction:column;box-shadow:var(--shadow)}
+.dh{padding:calc(var(--safe-area-inset-top,env(safe-area-inset-top,0px)) + 14px) 16px 12px;border-bottom:1px solid var(--line);display:grid;gap:8px}
+.dh .row1{display:flex;align-items:center;gap:10px}
+.dh h3{margin:0;font-family:var(--f-mono);font-size:20px;font-weight:600;letter-spacing:.02em}
+.dh .x{margin-left:auto;appearance:none;border:1px solid var(--line);background:var(--surface-2);width:32px;height:32px;border-radius:5px;cursor:pointer;display:grid;place-items:center}
+.dh .x svg{width:16px;height:16px}
+.meta{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12.5px;color:var(--ink-2)}
+.meta b{color:var(--ink);font-weight:600}
+.db{overflow:auto;padding:14px 16px calc(var(--safe-area-inset-bottom,env(safe-area-inset-bottom,0px)) + 20px);display:grid;gap:16px;align-content:start}
+.db>*{min-width:0}
+.db h4{margin:0 0 8px;font-family:var(--f-display);font-size:16px;font-weight:600;letter-spacing:.05em;text-transform:uppercase}
+.cmp{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border:1px solid var(--line);border-radius:5px}
+.cmp>div{padding:9px 10px;border-left:1px solid var(--line-2);min-width:0}
+.cmp>div:first-child{border-left:0}
+.cmp .k{font-size:10.5px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3);display:flex;gap:6px;align-items:center}
+.cmp .v{font-family:var(--f-display);font-size:24px;font-weight:600}
+.cmp .p{font-family:var(--f-mono);font-size:11.5px;color:var(--ink-3)}
+@media (max-width:640px){
+  .drawer{top:auto;height:88vh;width:100vw;border-left:0;border-top:1px solid var(--line);border-radius:12px 12px 0 0}
+  .dh{padding-top:14px}
+}
+
+/* mobile tab bar */
+@media (max-width:720px){
+  .top{position:static}
+  .top .tabs{position:fixed;left:0;right:0;bottom:0;z-index:30;background:var(--surface);border-top:1px solid var(--line);padding:0 4px var(--safe-area-inset-bottom,env(safe-area-inset-bottom,0px));justify-content:space-around;gap:0}
+  .tab{flex:1;flex-direction:column;gap:2px;font-size:12px;padding:8px 2px 7px;border-bottom:0;border-top:3px solid transparent;justify-content:center}
+  .tab[aria-selected="true"]{border-top-color:var(--mark)}
+  .tab svg{width:19px;height:19px}
+  .tab .tl{display:none} .tab .ts{display:inline}
+  .brand h1{font-size:19px}
+  .pagehead h2{font-size:28px}
+  .kpi .v{font-size:28px}
+  .snap{width:100%;margin-left:46px;margin-top:-6px}
+}
+.foot{font-size:11.5px;color:var(--ink-3);display:flex;gap:6px 16px;flex-wrap:wrap}
+@media (prefers-reduced-motion:no-preference){.drawer{animation:slin .18s ease-out}@keyframes slin{from{transform:translateX(24px);opacity:.6}}}
+</style>
+
+</head>
+<body>
+<header class="top">
+  <div class="top-in">
+    <div class="brand">
+      <div class="logo" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="var(--accent-ink)" stroke-width="1.8"><rect x="2.5" y="6" width="19" height="12" rx="1"/><path d="M6.5 6v12M10.5 6v12M14.5 6v12M18.5 6v12" stroke-width="1.2"/></svg></div>
+      <div><h1>IMM Inbound</h1><small>DC Tallo Makassar · HCI · AHI · FBI · TGI · KWI</small></div>
+      <div class="snap" id="snap"><i></i><span></span><button class="btn ghost sm" id="refresh" aria-label="Muat ulang data dari spreadsheet">Muat ulang</button></div>
+    </div>
+    <nav class="tabs" role="tablist" id="tabs"></nav>
+  </div>
+  <div class="filters" id="filters">
+    <div class="fgroup"><span class="flabel">BU</span><div class="fgroup" id="buchips"></div></div>
+    <div class="fgroup" style="position:relative"><span class="flabel">Periode</span>
+      <button class="period-btn" id="pbtn" aria-haspopup="dialog" aria-expanded="false"><span id="plabel"></span><span class="rng" id="prange"></span><svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M4 6l4 4 4-4"/></svg></button>
+      <div class="pop" id="pop" hidden role="dialog" aria-label="Pilih periode"></div>
+    </div>
+  </div>
+</header>
+<main id="main"></main>
+<div id="drawerHost"></div>
+<div class="tip" id="tip"></div>
+
+<script>
+// ===== Data layer: reads live from Google Sheets (gviz) and builds the in-memory model =====
+const SHEET_ID='1Dxejz_FVQqE6t3xg6dWsLwlJoB7qBFOyZKRqvsfonQs';
+const CACHE_KEY='imm.data.v1';
+let D=null;
+let LCSET=new Set(), LCI={}, CONT_BY_LC={}, LCTOT={};
+const STATUS={state:'loading',msg:'',at:null};
+
+const QUERIES={
+  logic:['LOGIC','select A,B,D,E',0],
+  plan:['MASTER_PLAN','select D,E,G,H,I,M,R,W,Z,AA,AB,AC where D is not null',0],
+  lc:['MASTER_LC','select A,F,E,S,P,count(T),sum(T),sum(Z) where A is not null group by A,F,E,S,P',1],
+  names:['MASTER_LC',"select F,G,count(T) where F is not null and F <> '0' group by F,G",1],
+  lph:['LPPBDO_HCI','select A,D,E,F,H,L,M,O,P,Q,R,S,T,W,AA,B,C where E is not null',1],
+  lpa:['LPPBDO_AHI','select A,D,E,F,H,L,M,O,P,Q,R,S,T,W,AA,B,C where E is not null',1],
+  ven:['VENDOR','select B,G,H,I,J,K,L,M,N,O,P where J is not null',1]
+};
+function gvizUrl(sheet,tq,headers){return `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&headers=${headers}&sheet=${encodeURIComponent(sheet)}&tq=${encodeURIComponent(tq)}`}
+async function gviz(sheet,tq,headers){
+  let res;
+  try{res=await fetch(gvizUrl(sheet,tq,headers),{cache:'no-store'})}
+  catch(e){throw new Error('Tidak bisa terhubung ke Google Sheets. Cek koneksi internet.')}
+  if(!res.ok)throw new Error(`Sheet ${sheet} gagal dibaca (HTTP ${res.status}). Pastikan spreadsheet dibagikan "Siapa saja yang memiliki link".`);
+  const txt=await res.text();
+  if(!txt.includes('setResponse'))throw new Error(`Sheet ${sheet} tidak bisa dibaca. Pastikan spreadsheet dibagikan "Siapa saja yang memiliki link" sebagai Pelihat.`);
+  const j=JSON.parse(txt.slice(txt.indexOf('{'),txt.lastIndexOf('}')+1));
+  if(j.status==='error')throw new Error(`Sheet ${sheet}: ${(j.errors||[]).map(e=>e.detailed_message||e.message).join('; ')}. Cek nama sheet dan kolomnya.`);
+  return (j.table.rows||[]).map(r=>r.c||[]);
+}
+// cell helpers
+const cv=c=>c?c.v:null;
+const cs=c=>{if(!c||c.v==null)return '';if(typeof c.v==='number')return String(c.f!=null?c.f:c.v).replace(/,/g,'').trim();return String(c.v).trim()};
+const cn=c=>{if(!c||c.v==null)return 0;if(typeof c.v==='number')return c.v;const n=parseFloat(String(c.v).replace(',','.'));return isNaN(n)?0:n};
+const cdate=c=>{const m=/Date\((\d+),(\d+),(\d+)/.exec(String(cv(c)||''));return m?`${m[1]}-${String(+m[2]+1).padStart(2,'0')}-${String(+m[3]).padStart(2,'0')}`:''};
+const ctime=c=>{const m=/Date\(\d+,\d+,\d+,(\d+),(\d+)/.exec(String(cv(c)||''));if(m)return `${m[1].padStart(2,'0')}:${m[2].padStart(2,'0')}`;const f=c&&c.f?String(c.f):'';const t=/(\d{1,2})[:.](\d{2})/.exec(f);return t?`${t[1].padStart(2,'0')}:${t[2]}`:''};
+const normLC=x=>String(x??'').replace(/\s+/g,'').toUpperCase();
+const BLN_ID={januari:1,februari:2,maret:3,april:4,mei:5,juni:6,juli:7,agustus:8,september:9,oktober:10,november:11,desember:12};
+const BUS_ALL=['HCI','AHI','FBI','TGI','KWI'];
+function buOfCode(code,fallback){const p=(code||'')[0];return p==='H'||p==='J'?'HCI':p==='A'?'AHI':p==='F'?'FBI':p==='T'?'TGI':p==='K'?'KWI':(BUS_ALL.includes(fallback)?fallback:'HCI')}
+
+function buildModel(R){
+  const stock=new Set(),store=new Set();
+  R.logic.forEach(r=>{const a=cs(r[0]).toUpperCase(),d=cs(r[2]).toUpperCase();if(a&&a!=='STOCK')stock.add(a);if(d&&d!=='STORE')store.add(d)});
+  // MASTER_PLAN
+  const cont=[];
+  R.plan.forEach(r=>{const d=cdate(r[0]);if(!d)return;const lc=normLC(cs(r[3]));
+    cont.push({d,j:ctime(r[1]),k:cs(r[2]),lc:(lc&&lc!=='0'&&lc!=='-')?lc:'',bu:cs(r[4]).toUpperCase(),ps:cn(r[5]),pt:cn(r[6]),pc:cn(r[7]),exp:cs(r[8]),fl:cs(r[9]),fr:cs(r[10]),te:cn(r[11])})});
+  const first={};cont.slice().sort((a,b)=>(a.d+a.j).localeCompare(b.d+b.j)).forEach(c=>{if(c.lc&&!(c.lc in first))first[c.lc]=c.d});
+  // MASTER_LC (aggregated)
+  const codes=[],ci={},depts=[],di={},lcs=[],li={},raw={};
+  const idx=(arr,map,k)=>{if(!(k in map)){map[k]=arr.length;arr.push(k)}return map[k]};
+  const rows=[],unm={};
+  R.lc.forEach(r=>{const rl=cs(r[0]);const lc=normLC(rl);if(!lc)return;raw[lc]=raw[lc]||rl;
+    const ks=cs(r[1]).toUpperCase(),tp=cs(r[2]).toUpperCase(),dept=cs(r[3])||'-',site=cs(r[4]).toUpperCase();
+    const dest=stock.has(ks)?0:(!ks||ks==='0')?2:1;const code=dest===2?(tp||'-'):ks;const bu=buOfCode(code,site);
+    const n=cn(r[5]),qty=cn(r[6]),cbm=cn(r[7]);
+    if(first[lc]){rows.push([idx(lcs,li,lc),dest,idx(codes,ci,code),idx(depts,di,dept),n,qty,cbm,BUS_ALL.indexOf(bu)])}
+    else{const k=lc+'|'+bu;const u=unm[k]||(unm[k]=[lc,bu,0,0,0,0]);u[2+dest]+=cbm;u[5]+=n}
+  });
+  const un=Object.values(unm).map(u=>[u[0],u[1],+u[2].toFixed(3),+u[3].toFixed(3),+u[4].toFixed(3),u[5]]);
+  // names
+  const nm={};R.names.forEach(r=>{const c=cs(r[0]).toUpperCase();if(!c)return;const n=cs(r[1]).replace(/^\s*\(.*?\)\s*/,'').trim();if(!n)return;const k=cn(r[2]);(nm[c]=nm[c]||{})[n]=(nm[c][n]||0)+k});
+  const names={};Object.entries(nm).forEach(([c,o])=>{names[c]=Object.entries(o).sort((a,b)=>b[1]-a[1])[0][0]});
+  // LPPBDO
+  const lp=[];
+  [...R.lph,...R.lpa].forEach(r=>{const no=cs(r[2]);if(!no)return;
+    let d='';const t=cs(r[14]).split(/\s+/);
+    if(t.length>=3&&BLN_ID[t[1].toLowerCase()])d=`${t[2]}-${String(BLN_ID[t[1].toLowerCase()]).padStart(2,'0')}-${String(+t[0]).padStart(2,'0')}`;
+    if(!d){const y=(/\/(20\d\d)\//.exec(no)||[])[1]||String(new Date().getFullYear());const m=BLN_ID[cs(r[16]).toLowerCase()];const dd=cn(r[15]);if(m&&dd)d=`${y}-${String(m).padStart(2,'0')}-${String(dd).padStart(2,'0')}`}
+    if(!d)return;
+    let ex=cs(r[4]).replace(/`/g,'');if(!ex||/^H\d{6,}/.test(ex))ex='-';
+    let st=cs(r[10]);st=st?st.toLowerCase().replace(/\b\w/g,m=>m.toUpperCase()).replace(/\bCis\b/g,'CIS'):'-';
+    lp.push({d,bu:cs(r[1]).toUpperCase(),no,si:cs(r[3]),ex,k:cs(r[11]).toUpperCase(),st,up:cs(r[0]).toUpperCase(),dp:cs(r[13])||'-',a:cs(r[5]),ds:cs(r[6]),od:cn(r[7]),rc:cn(r[8]),q:cn(r[12]),rm:cs(r[9])})});
+  // VENDOR
+  const yn=c=>cs(c).toUpperCase()==='YA'?1:0;
+  const ven=[];R.ven.forEach(r=>{const d=cdate(r[0]);if(!d)return;ven.push([d,cs(r[3]),cs(r[1]).toUpperCase(),cn(r[2]),yn(r[6]),yn(r[5]),yn(r[7]),yn(r[8]),yn(r[9]),yn(r[10])])});
+  const now=new Date();
+  return {snap:`${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}T${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`,
+    stock:[...stock],cont,lcs,lcd:lcs.map(l=>first[l]),codes,names,depts,rows,un,lp,ven,raw};
+}
+function reindex(){
+  LCSET=new Set(D.lcs);LCI=Object.fromEntries(D.lcs.map((l,i)=>[l,i]));
+  CONT_BY_LC={};D.cont.forEach(c=>{if(c.lc)(CONT_BY_LC[c.lc]=CONT_BY_LC[c.lc]||[]).push(c)});
+  LCTOT={};D.rows.forEach(r=>{const t=LCTOT[r[0]]||(LCTOT[r[0]]=[0,0,0]);t[r[1]]+=r[6]});
+}
+let loading=null;
+async function loadData(){
+  if(loading)return loading;
+  STATUS.state=D?'refreshing':'loading';STATUS.msg='';renderStatus();
+  loading=(async()=>{
+    try{
+      const keys=Object.keys(QUERIES);
+      const res=await Promise.all(keys.map(k=>gviz(...QUERIES[k])));
+      const R=Object.fromEntries(keys.map((k,i)=>[k,res[i]]));
+      D=buildModel(R);reindex();
+      STATUS.state='ok';STATUS.at=D.snap;
+      try{localStorage.setItem(CACHE_KEY,JSON.stringify(D))}catch(e){}
+    }catch(e){STATUS.state='error';STATUS.msg=e.message||String(e)}
+    loading=null;render();
+  })();
+  return loading;
+}
+async function loadSkuDetail(lc){
+  const rawLc=(D.raw&&D.raw[lc])||lc;
+  const rows=await gviz('MASTER_LC',`select Q,R,S,F,E,T,Z where A = '${rawLc.replace(/'/g,'')}'`,1);
+  const stock=new Set(D.stock||[]);const m=new Map();
+  rows.forEach(r=>{const ks=cs(r[3]).toUpperCase(),tp=cs(r[4]).toUpperCase();const dest=stock.has(ks)?0:(!ks||ks==='0')?2:1;const code=dest===2?(tp||'-'):ks;
+    const sku=cs(r[0])||'-';const key=sku+'|'+dest+'|'+code;const g=m.get(key);
+    if(g){g.qty+=cn(r[5]);g.cbm+=cn(r[6])}else m.set(key,{sku,desc:cs(r[1]),dept:cs(r[2])||'-',dest,code,qty:cn(r[5]),cbm:cn(r[6])})});
+  return [...m.values()].sort((a,b)=>b.cbm-a.cbm);
+}
+
+const BUS=['HCI','AHI','FBI','TGI','KWI'];
+const DEST=['Storing','Store','Customer'];
+const KAT={'DAMAGE GOODS':'Barang rusak','GOODS WITHOUT OD':'Barang tanpa OD','OD WITHOUT GOODS':'OD tanpa barang','GOODS SHORTAGE':'Barang kurang','GOODS OVER':'Barang lebih','SPAREPARTS SHORTAGE':'Sparepart kurang','OTHERS':'Lainnya'};
+const HARI=['Min','Sen','Sel','Rab','Kam','Jum','Sab'], HARIL=['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
+const BLN=['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'], BLNL=['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+
+// ---------- formatting
+const nf0=new Intl.NumberFormat('id-ID',{maximumFractionDigits:0});
+const nf1=new Intl.NumberFormat('id-ID',{minimumFractionDigits:1,maximumFractionDigits:1});
+const nf2=new Intl.NumberFormat('id-ID',{minimumFractionDigits:2,maximumFractionDigits:2});
+const f0=v=>nf0.format(v), f1=v=>nf1.format(v), f2=v=>nf2.format(v);
+const pc=(a,b)=>b?Math.round(a/b*100):0;
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const iso=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+const pd=s=>{const [y,m,d]=s.split('-').map(Number);return new Date(y,m-1,d)};
+const addD=(s,n)=>{const d=pd(s);d.setDate(d.getDate()+n);return iso(d)};
+const dshort=s=>{const d=pd(s);return `${d.getDate()} ${BLN[d.getMonth()]}`};
+const dday=s=>{const d=pd(s);return `${HARI[d.getDay()]}, ${d.getDate()} ${BLN[d.getMonth()]}`};
+const dlong=s=>{const d=pd(s);return `${HARIL[d.getDay()]}, ${d.getDate()} ${BLNL[d.getMonth()]} ${d.getFullYear()}`};
+const days=(a,b)=>Math.round((pd(b)-pd(a))/864e5)+1;
+const lcDate=l=>{const m=/^(\d{2})(\d{2})(\d{2})/.exec(l);return m?`20${m[1]}-${m[2]}-${m[3]}`:''};
+const ICON={
+  dash:'<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="3" width="6" height="8" rx="1"/><rect x="11" y="3" width="6" height="5" rx="1"/><rect x="11" y="10" width="6" height="7" rx="1"/><rect x="3" y="13" width="6" height="4" rx="1"/></svg>',
+  stock:'<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M3 8l7-4 7 4v9H3z"/><path d="M7 17v-5h6v5"/></svg>',
+  out:'<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2.5 6h9v8h-9zM11.5 9h3.5l2.5 2.5V14h-6"/><circle cx="6" cy="15" r="1.5"/><circle cx="14.5" cy="15" r="1.5"/></svg>',
+  lpp:'<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M5 2.5h7l3 3v12H5z"/><path d="M8 9.5h4M8 12.5h4M10 6v0"/></svg>',
+  warn:'<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M8 2.5l6 11H2z"/><path d="M8 7v3M8 12v.2"/></svg>',
+  crit:'<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="8" cy="8" r="6"/><path d="M8 4.8v4M8 11v.2"/></svg>',
+  ok:'<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 8.5l3 3 7-7"/></svg>',
+  x:'<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3.5 3.5l9 9M12.5 3.5l-9 9"/></svg>'
+};
+
+// ---------- state
+const TODAY=iso(new Date());
+const S={page:'dash',bus:new Set(BUS),preset:'next7',month:TODAY.slice(0,7),from:TODAY,to:addD(TODAY,6),outMode:'all',deptQ:'',lcQ:'',lppQ:''};
+try{const t=localStorage.getItem('imm.tab');if(t)S.page=t}catch(e){}
+if(['dash','stock','out','lpp'].includes(location.hash.slice(1)))S.page=location.hash.slice(1);
+
+const PRESETS=[['today','Hari ini'],['tomorrow','Besok'],['next7','7 hari ke depan'],['thisweek','Minggu ini'],['lastweek','Minggu lalu'],['last30','30 hari terakhir'],['thismonth','Bulan ini'],['lastmonth','Bulan lalu'],['ytd','Tahun ini'],['all','Semua data']];
+function range(){
+  const t=TODAY, d=pd(t), dow=(d.getDay()+6)%7;
+  const mStart=(y,m)=>iso(new Date(y,m,1)), mEnd=(y,m)=>iso(new Date(y,m+1,0));
+  switch(S.preset){
+    case 'today':return [t,t];
+    case 'tomorrow':return [addD(t,1),addD(t,1)];
+    case 'next7':return [t,addD(t,6)];
+    case 'thisweek':return [addD(t,-dow),addD(t,6-dow)];
+    case 'lastweek':return [addD(t,-dow-7),addD(t,-dow-1)];
+    case 'last30':return [addD(t,-29),t];
+    case 'thismonth':return [mStart(d.getFullYear(),d.getMonth()),mEnd(d.getFullYear(),d.getMonth())];
+    case 'lastmonth':return [mStart(d.getFullYear(),d.getMonth()-1),mEnd(d.getFullYear(),d.getMonth()-1)];
+    case 'ytd':return [`${d.getFullYear()}-01-01`,t];
+    case 'month':{const [y,m]=S.month.split('-').map(Number);return [mStart(y,m-1),mEnd(y,m-1)]}
+    case 'range':return S.from<=S.to?[S.from,S.to]:[S.to,S.from];
+    default:return ['0000-01-01','9999-12-31'];
+  }
+}
+function plabel(){
+  if(S.preset==='month'){const [y,m]=S.month.split('-').map(Number);return `${BLNL[m-1]} ${y}`}
+  if(S.preset==='range')return 'Rentang tanggal';
+  return PRESETS.find(p=>p[0]===S.preset)[1];
+}
+function rlabel(){const [a,b]=range();if(S.preset==='all')return 'semua tanggal';return a===b?dshort(a):`${dshort(a)} – ${dshort(b)}`}
+
+// ---------- data slicing
+function slice(from,to){
+  const inR=d=>d>=from&&d<=to, B=S.bus;
+  const cont=D.cont.filter(c=>inR(c.d)&&B.has(c.bu));
+  const rows=D.rows.filter(r=>inR(D.lcd[r[0]])&&B.has(BUS[r[7]]));
+  const lp=D.lp.filter(x=>inR(x.d)&&B.has(x.bu));
+  const ven=D.ven.filter(v=>inR(v[0])&&B.has(v[2]));
+  return {from,to,cont,rows,lp,ven};
+}
+function prevRange(from,to){if(from<'1000'||to>'9000')return null;const n=days(from,to);return [addD(from,-n),addD(from,-1)]}
+function sumN(rows){return rows.reduce((a,r)=>a+r[4],0)}
+function sumRows(rows){const t=[0,0,0];rows.forEach(r=>t[r[1]]+=r[6]);return t}
+function groupBy(arr,key,init,add){const m=new Map();for(const x of arr){const k=key(x);let g=m.get(k);if(!g){g=init(k);m.set(k,g)}add(g,x)}return [...m.values()]}
+
+// ---------- shell
+const TABS=[['dash','Dashboard',ICON.dash,'Dashboard'],['stock','to Storing',ICON.stock,'Storing'],['out','to Outbound',ICON.out,'Outbound'],['lpp','LPPBDO',ICON.lpp,'LPPBDO']];
+function renderShell(){
+  document.getElementById('tabs').innerHTML=TABS.map(([k,l,ic,sh])=>`<button class="tab" role="tab" id="tab-${k}" aria-selected="${S.page===k}" data-tab="${k}">${ic}<span class="tl">${l}</span><span class="ts">${sh}</span></button>`).join('');
+  document.getElementById('buchips').innerHTML=`<button class="chip" data-bu="ALL" aria-pressed="${S.bus.size===BUS.length}">Semua</button>`+BUS.map(b=>`<button class="chip" data-bu="${b}" aria-pressed="${S.bus.size<BUS.length&&S.bus.has(b)}">${b}</button>`).join('');
+  document.getElementById('plabel').textContent=plabel();
+  document.getElementById('prange').textContent=rlabel();
+  renderStatus();
+}
+function renderStatus(){
+  const el=document.querySelector('#snap span'),dot=document.querySelector('#snap i'),btn=document.getElementById('refresh');if(!el)return;
+  const at=D?D.snap.split('T'):null;const when=at?(at[0]===TODAY?`hari ini ${at[1]}`:`${dshort(at[0])} ${at[1]}`):'';
+  if(STATUS.state==='loading'){el.textContent='Memuat data dari Google Sheets…';dot.style.background='var(--warn)'}
+  else if(STATUS.state==='refreshing'){el.textContent=`Memperbarui… (data ${when})`;dot.style.background='var(--warn)'}
+  else if(STATUS.state==='error'){el.textContent=D?`Gagal memperbarui, memakai data ${when}`:'Gagal memuat data';dot.style.background='var(--crit)'}
+  else{el.textContent=`Diperbarui ${when} · ${f0(D.cont.length)} kontainer`;dot.style.background='var(--good)'}
+  if(btn){btn.disabled=STATUS.state==='loading'||STATUS.state==='refreshing';btn.textContent=btn.disabled?'Memuat…':'Muat ulang'}
+}
+function renderPop(){
+  const months=[...new Set(D.cont.map(c=>c.d.slice(0,7)).concat(D.lp.map(x=>x.d.slice(0,7))))].sort().reverse();
+  const [a,b]=range();
+  document.getElementById('pop').innerHTML=`
+   <div class="pgrid">${PRESETS.map(([k,l])=>`<button class="popt" data-preset="${k}" aria-pressed="${S.preset===k}">${l}</button>`).join('')}</div>
+   <div class="prow"><label for="pmonth">Pilih bulan</label><select id="pmonth">${months.map(m=>{const [y,mm]=m.split('-').map(Number);return `<option value="${m}" ${S.preset==='month'&&S.month===m?'selected':''}>${BLNL[mm-1]} ${y}</option>`}).join('')}</select></div>
+   <div class="prow"><label>Rentang tanggal</label><div class="two"><input type="date" id="pfrom" value="${a<'1000'?TODAY:a}" aria-label="Dari tanggal"><input type="date" id="pto" value="${b>'9000'?TODAY:b}" aria-label="Sampai tanggal"></div>
+   <button class="btn" id="papply">Terapkan rentang</button></div>`;
+}
+function setPage(p){S.page=p;try{localStorage.setItem('imm.tab',p)}catch(e){}render();window.scrollTo({top:0})}
+function closePop(){const p=document.getElementById('pop');p.hidden=true;document.getElementById('pbtn').setAttribute('aria-expanded','false')}
+document.addEventListener('click',e=>{
+  if(e.target.closest('#refresh')||e.target.closest('[data-reload]')){loadData();return}
+  const t=e.target.closest('[data-tab]');if(t){setPage(t.dataset.tab);return}
+  const bu=e.target.closest('[data-bu]');if(bu){const v=bu.dataset.bu;
+    if(v==='ALL')S.bus=new Set(BUS);
+    else if(S.bus.size===BUS.length)S.bus=new Set([v]);
+    else{S.bus.has(v)?S.bus.delete(v):S.bus.add(v);if(!S.bus.size)S.bus=new Set(BUS)}
+    render();return}
+  if(e.target.closest('#pbtn')){const p=document.getElementById('pop');const open=p.hidden;renderPop();p.hidden=!open;document.getElementById('pbtn').setAttribute('aria-expanded',String(open));return}
+  const pr=e.target.closest('[data-preset]');if(pr){S.preset=pr.dataset.preset;closePop();render();return}
+  if(e.target.closest('#papply')){S.from=document.getElementById('pfrom').value||TODAY;S.to=document.getElementById('pto').value||TODAY;S.preset='range';closePop();render();return}
+  const go=e.target.closest('[data-go]');if(go){const [p,pre]=go.dataset.go.split(':');if(pre)S.preset=pre;setPage(p);return}
+  const qp=e.target.closest('[data-qp]');if(qp){S.preset=qp.dataset.qp;render();return}
+  const lc=e.target.closest('[data-lc]');if(lc){openLC(lc.dataset.lc,lc.dataset.mode||'all');return}
+  const ct=e.target.closest('[data-cont]');if(ct){openCont(+ct.dataset.cont);return}
+  const dr=e.target.closest('[data-drawer]');if(dr){({uns:openUnscheduled,miss:openMissing})[dr.dataset.drawer]();return}
+  const om=e.target.closest('[data-om]');if(om){S.outMode=om.dataset.om;render();return}
+  const lpd=e.target.closest('[data-lpp]');if(lpd){openLpp(lpd.dataset.lpp);return}
+  if(e.target.closest('[data-close]')||e.target.classList.contains('scrim')){closeDrawer();return}
+  if(!e.target.closest('#pop')&&!e.target.closest('#pbtn'))closePop();
+});
+document.addEventListener('change',e=>{if(e.target.id==='pmonth'){S.month=e.target.value;S.preset='month';closePop();render()}});
+document.addEventListener('input',e=>{const k=e.target.dataset.q;if(k){S[k]=e.target.value;const pos=e.target.selectionStart;render();const el=document.querySelector(`[data-q="${k}"]`);if(el){el.focus();try{el.setSelectionRange(pos,pos)}catch(_){}}}});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){closeDrawer();closePop()}});
+
+// ---------- components
+function kpis(items){return `<div class="kpis">${items.map(i=>`<div class="kpi"><div class="k">${i.dot?`<i style="background:${i.dot}"></i>`:''}${i.k}</div><div class="v">${i.v}${i.u?`<small>${i.u}</small>`:''}</div><div class="d">${i.d||'&nbsp;'}</div></div>`).join('')}</div>`}
+function delta(cur,prev,label){if(prev==null||!isFinite(prev))return '';if(!prev)return cur?`<span class="delta up">baru vs ${label}</span>`:'';const p=Math.round((cur-prev)/prev*100);if(p===0)return `<span class="delta">= ${label}</span>`;return `<span class="delta ${p>0?'up':'down'}">${p>0?'▲':'▼'} ${Math.abs(p)}%</span> <span class="muted">vs ${label}</span>`}
+function brief(title,items){if(!items.length)return '';return `<section class="brief" aria-label="${title}"><div class="tagcol">${title}</div><ul>${items.map(i=>`<li class="${i.c||''}"><span>${i.t}</span></li>`).join('')}</ul></section>`}
+function share(v,max,color){const w=max?Math.max(1.5,v/max*100):0;return `<div class="bar"><span style="width:${w}%;background:${color}"></span></div>`}
+function empty(title,msg,acts=true){return `<div class="empty"><div class="e1">${title}</div><div>${msg}</div>${acts?`<div class="acts">${[['next7','7 hari ke depan'],['last30','30 hari terakhir'],['lastmonth','Bulan lalu'],['all','Semua data']].filter(x=>x[0]!==S.preset).map(([k,l])=>`<button class="btn ghost sm" data-qp="${k}">${l}</button>`).join('')}</div>`:''}</div>`}
+const buTag=b=>`<span class="bu">${b}</span>`;
+const nameOf=c=>D.names[c]||'';
+
+// stacked bar chart (by day or week)
+function stackChart(id,buckets,series,o={}){const U=o.unit||'CBM',FM=o.fmt||f1;
+  // buckets: [{key,label,full,vals:[...]}], series:[{name,color}]
+  const W=720,H=230,L=44,R=8,T=12,B=28;
+  const max=Math.max(1,...buckets.map(b=>b.vals.reduce((a,c)=>a+c,0)));
+  const step=niceStep(max/4), top=Math.ceil(max/step)*step;
+  const n=buckets.length, bw=(W-L-R)/n, barW=Math.max(3,Math.min(34,bw*.62));
+  const y=v=>T+(H-T-B)*(1-v/top);
+  let g='';
+  for(let v=0;v<=top+1e-9;v+=step){g+=`<line class="${v===0?'base':'grid'}" x1="${L}" x2="${W-R}" y1="${y(v)}" y2="${y(v)}"/><text class="ax" x="${L-6}" y="${y(v)+3.5}" text-anchor="end">${f0(v)}</text>`}
+  const every=Math.ceil(n/10);
+  buckets.forEach((b,i)=>{
+    const cx=L+bw*i+bw/2;let acc=0;let segs='';
+    const nz=b.vals.map((v,j)=>[v,j]).filter(x=>x[0]>0);
+    nz.forEach(([v,j],k)=>{const y0=y(acc),y1=y(acc+v);const h=Math.max(0,y0-y1-(k<nz.length-1?2:0));const isTop=k===nz.length-1;
+      segs+=isTop&&h>4?`<path d="M${cx-barW/2},${y0} V${y0-h+4} q0,-4 4,-4 H${cx+barW/2-4} q4,0 4,4 V${y0}Z" fill="${series[j].color}"/>`:`<rect x="${cx-barW/2}" y="${y0-h}" width="${barW}" height="${h}" fill="${series[j].color}"/>`;acc+=v});
+    g+=`<rect class="hit" data-i="${i}" x="${L+bw*i}" y="${T}" width="${bw}" height="${H-T-B}"/><g pointer-events="none">${segs}</g>`;
+    if(i%every===0)g+=`<text class="ax" x="${cx}" y="${H-9}" text-anchor="middle">${b.label}</text>`;
+  });
+  setTimeout(()=>bindTip(id,buckets,series,U,FM),0);
+  return `<div class="chart" id="${id}"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Grafik ${U} per periode">${g}</svg></div>`;
+}
+function niceStep(x){const p=Math.pow(10,Math.floor(Math.log10(Math.max(x,1e-9))));const m=x/p;return (m<=1?1:m<=2?2:m<=2.5?2.5:m<=5?5:10)*p}
+function bindTip(id,buckets,series,U,FM){
+  const el=document.getElementById(id);if(!el)return;const tip=document.getElementById('tip');
+  el.querySelectorAll('.hit').forEach(h=>{
+    const show=e=>{const b=buckets[+h.dataset.i];const tot=b.vals.reduce((a,c)=>a+c,0);
+      tip.innerHTML=`<b>${b.full}</b>`+series.map((s,j)=>`<div class="row"><span><i class="dot" style="background:${s.color}"></i>${s.name}</span><span>${FM(b.vals[j])}</span></div>`).join('')+`<div class="row" style="margin-top:3px;border-top:1px solid rgba(127,127,127,.4);padding-top:3px"><span>Total ${U}</span><span>${FM(tot)}</span></div>${b.extra?`<div class="row"><span>${b.extra[0]}</span><span>${b.extra[1]}</span></div>`:''}`;
+      tip.style.display='block';const r=h.getBoundingClientRect();const tw=tip.offsetWidth;let x=r.left+r.width/2-tw/2+window.scrollX;x=Math.max(8,Math.min(x,window.innerWidth-tw-8));tip.style.left=x+'px';tip.style.top=(r.top+window.scrollY-tip.offsetHeight+30)+'px';
+      h.style.fill='rgba(127,127,127,.10)'};
+    const hide=()=>{tip.style.display='none';h.style.fill=''};
+    h.addEventListener('mouseenter',show);h.addEventListener('mouseleave',hide);h.addEventListener('click',show);
+  });
+}
+function bucketize(from,to,items,getDate,getVals,nS,extraFn){
+  // choose day buckets up to 45 days, else week (Mon)
+  let a=from,b=to;
+  if(a<'1000'||b>'9000'){const ds=items.map(getDate).sort();if(!ds.length)return [];a=ds[0];b=ds[ds.length-1]}
+  const span=days(a,b);const weekly=span>45;const map=new Map();
+  const keyOf=d=>{if(!weekly)return d;const x=pd(d);const dow=(x.getDay()+6)%7;return addD(d,-dow)};
+  for(let d=keyOf(a);d<=b;d=addD(d,weekly?7:1))map.set(d,{key:d,label:weekly?dshort(d):(span>10?String(pd(d).getDate()):dday(d).split(', ')[0]+' '+pd(d).getDate()),full:weekly?`Minggu ${dshort(d)} – ${dshort(addD(d,6))}`:dlong(d),vals:Array(nS).fill(0),n:0});
+  items.forEach(it=>{const k=keyOf(getDate(it));const b=map.get(k);if(!b)return;getVals(it).forEach((v,j)=>b.vals[j]+=v);b.n++});
+  const arr=[...map.values()];if(extraFn)arr.forEach(extraFn);return arr;
+}
+
+// ---------- DASHBOARD
+function pageDash(){
+  const [from,to]=range(), X=slice(from,to), pr=prevRange(from,to), P=pr?slice(pr[0],pr[1]):null;
+  const tot=sumRows(X.rows), all=tot[0]+tot[1]+tot[2], ptot=P?sumRows(P.rows):null, pall=P?ptot[0]+ptot[1]+ptot[2]:null;
+  const teus=X.cont.reduce((a,c)=>a+(c.te||0),0);
+  const withLC=X.cont.filter(c=>c.lc&&LCSET.has(c.lc));
+  const noLCdata=X.cont.filter(c=>c.lc&&!LCSET.has(c.lc));
+  const noLC=X.cont.filter(c=>!c.lc);
+  const badKont=X.cont.filter(c=>c.k&&/[\s-]/.test(c.k));
+  const mism=withLC.filter((c,i,arr)=>arr.findIndex(z=>z.lc===c.lc)===i).map(c=>{const t=LCTOT[LCI[c.lc]];const plan=c.ps+c.pt+c.pc;const lc=t[0]+t[1]+t[2];return {c,plan,lc,diff:lc-plan,t}}).filter(m=>Math.abs(m.diff)>=1);
+  const uns=D.un.filter(u=>S.bus.has(u[1]));const unsC=uns.reduce((a,u)=>a+u[2]+u[3]+u[4],0);
+  const prevLabel=P?`periode sebelumnya`:'';
+  // insights
+  const I=[];
+  if(X.cont.length){
+    I.push({c:'h',t:`<b>${f0(X.cont.length)} kontainer</b> (${f0(teus)} TEUs) dijadwalkan bongkar ${S.preset==='today'?'hari ini':S.preset==='tomorrow'?'besok':'pada '+esc(rlabel())}, membawa <b class="num">${f1(all)} CBM</b> menurut MASTER_LC.`});
+    if(all>0)I.push({t:`<b>${pc(tot[0],all)}% ke Storing</b> (${f1(tot[0])} CBM) dan <b>${pc(tot[1]+tot[2],all)}% ke Outbound</b> (${f1(tot[1]+tot[2])} CBM). Dari Outbound, ${pc(tot[2],tot[1]+tot[2])}% adalah pesanan customer.`});
+    const byDay=groupBy(X.cont,c=>c.d,d=>({d,n:0}),(g)=>g.n++);
+    const cbmDay={};X.rows.forEach(r=>{const d=D.lcd[r[0]];cbmDay[d]=(cbmDay[d]||0)+r[6]});
+    if(byDay.length>1){const pk=byDay.map(g=>({...g,cbm:cbmDay[g.d]||0})).sort((a,b)=>b.cbm-a.cbm||b.n-a.n)[0];I.push({t:`Hari terpadat: <b>${dday(pk.d)}</b> dengan ${pk.n} kontainer dan ${f1(pk.cbm)} CBM. Siapkan manpower dan lokasi storing lebih awal.`})}
+    const dep=groupBy(X.rows.filter(r=>r[1]===0),r=>r[3],k=>({k,v:0}),(g,r)=>g.v+=r[6]).sort((a,b)=>b.v-a.v);
+    if(dep.length)I.push({t:`Dept storing terbesar <b class="code">${esc(D.depts[dep[0].k])}</b> (${f1(dep[0].v)} CBM, ${pc(dep[0].v,tot[0])}% dari storing)${dep[1]?`, disusul <span class="code">${esc(D.depts[dep[1].k])}</span> (${f1(dep[1].v)} CBM)`:''}.`});
+    const dst=groupBy(X.rows.filter(r=>r[1]===1),r=>r[2],k=>({k,v:0}),(g,r)=>g.v+=r[6]).sort((a,b)=>b.v-a.v);
+    if(dst.length)I.push({t:`Store tujuan terbesar <b class="code">${esc(D.codes[dst[0].k])}</b> ${esc(nameOf(D.codes[dst[0].k]))} (${f1(dst[0].v)} CBM).`});
+    if(noLCdata.length||noLC.length)I.push({c:'w',t:`<b>${noLCdata.length+noLC.length} kontainer</b> belum bisa dihitung karena No LC-nya ${noLC.length?'kosong atau ':''}tidak ditemukan di MASTER_LC. Angka CBM di atas belum termasuk kontainer ini.`});
+    if(mism.length)I.push({c:'w',t:`${mism.length} LC punya selisih ≥ 1 CBM antara MASTER_PLAN dan MASTER_LC. Terbesar <span class="code">${esc(mism.sort((a,b)=>Math.abs(b.diff)-Math.abs(a.diff))[0].c.lc)}</span> (${mism[0].diff>0?'+':''}${f1(mism[0].diff)} CBM).`});
+  }
+  if(X.ven.length){const v=groupBy(X.ven,x=>x[1],k=>({k,n:0,late:0}),(g,x)=>{g.n++;g.late+=x[4]});const tl=X.ven.reduce((a,x)=>a+x[4],0);const worst=v.filter(x=>x.n>=3).sort((a,b)=>b.late/b.n-a.late/a.n)[0];
+    I.push({c:tl/X.ven.length>.15?'w':'g',t:`Ketepatan waktu ekspedisi ${100-pc(tl,X.ven.length)}% (${tl} dari ${X.ven.length} kontainer terlambat).${worst&&worst.late?` Paling sering terlambat: <b>${esc(worst.k)}</b> (${worst.late}/${worst.n}).`:''}`})}
+  if(X.lp.length){const docs=new Set(X.lp.map(x=>x.no)).size;const k=groupBy(X.lp,x=>x.k,k=>({k,n:0}),g=>g.n++).sort((a,b)=>b.n-a.n)[0];I.push({c:'w',t:`<b>${docs} dokumen LPPBDO</b> (${X.lp.length} item, ${f0(X.lp.reduce((a,x)=>a+x.q,0))} pcs). Kategori terbanyak: ${KAT[k.k]||k.k} (${pc(k.n,X.lp.length)}%).`})}
+  // chart
+  const buckets=bucketize(from,to,X.rows,r=>D.lcd[r[0]],r=>{const v=[0,0,0];v[r[1]]=r[6];return v},3,b=>{const n=X.cont.filter(c=>{const k=b.key;return c.d>=k&&c.d<=(b.full.startsWith('Minggu')?addD(k,6):k)}).length;b.extra=['Kontainer',n]});
+  const SER=[{name:'Storing',color:'var(--s-stock)'},{name:'Outbound · store',color:'var(--s-store)'},{name:'Outbound · customer',color:'var(--s-cust)'}];
+  // BU table
+  const buRows=BUS.filter(b=>S.bus.has(b)).map(b=>{const cs=X.cont.filter(c=>c.bu===b);const rs=X.rows.filter(r=>BUS[r[7]]===b);const t=sumRows(rs);return {b,n:cs.length,te:cs.reduce((a,c)=>a+c.te,0),plan:cs.reduce((a,c)=>a+c.ps+c.pt+c.pc,0),t}});
+  const buMax=Math.max(1,...buRows.map(r=>r.t[0]+r.t[1]+r.t[2]));
+  // schedule
+  const byD=groupBy(X.cont.slice().sort((a,b)=>(a.d+a.j).localeCompare(b.d+b.j)),c=>c.d,d=>({d,cs:[]}),(g,c)=>g.cs.push(c));
+  const showDays=byD.slice(0,14);
+  const alerts=[];
+  if(noLCdata.length)alerts.push(`<div class="al c"><div class="ic">${ICON.crit}</div><div><div class="t">${noLCdata.length} kontainer: No LC tidak ada di MASTER_LC</div><div class="x">${noLCdata.slice(0,4).map(c=>`<span class="code">${esc(c.lc)}</span> (${c.bu}, ${dshort(c.d)})`).join(', ')}${noLCdata.length>4?', …':''}</div></div><button class="linkbtn" data-drawer="miss">Lihat</button></div>`);
+  if(noLC.length)alerts.push(`<div class="al w"><div class="ic">${ICON.warn}</div><div><div class="t">${noLC.length} baris plan tanpa No LC</div><div class="x">${[...new Set(noLC.map(c=>c.bu))].join(', ')} · plan ${f1(noLC.reduce((a,c)=>a+c.ps+c.pt+c.pc,0))} CBM, tidak bisa dicocokkan ke MASTER_LC.</div></div><button class="linkbtn" data-drawer="miss">Lihat</button></div>`);
+  if(mism.length)alerts.push(`<div class="al w"><div class="ic">${ICON.warn}</div><div><div class="t">${mism.length} LC selisih plan vs MASTER_LC ≥ 1 CBM</div><div class="x">${mism.slice(0,3).map(m=>`<span class="code">${esc(m.c.lc)}</span> plan ${f1(m.plan)} · LC ${f1(m.lc)}`).join(' · ')}</div></div><button class="linkbtn" data-lc="${esc(mism[0].c.lc)}">Cek</button></div>`);
+  if(badKont.length)alerts.push(`<div class="al w"><div class="ic">${ICON.warn}</div><div><div class="t">${badKont.length} no. kontainer formatnya tidak seragam</div><div class="x">Ada spasi atau tanda hubung: ${badKont.slice(0,4).map(c=>`<span class="code">${esc(c.k)}</span>`).join(', ')}${badKont.length>4?', …':''}. Bisa membuat pencocokan gagal.</div></div><span></span></div>`);
+  alerts.push(`<div class="al ${uns.length?'w':'g'}"><div class="ic">${uns.length?ICON.warn:ICON.ok}</div><div><div class="t">${f0(uns.length)} LC di MASTER_LC belum ada di MASTER_PLAN</div><div class="x">${f1(unsC)} CBM belum punya jadwal bongkar, jadi belum masuk hitungan di halaman mana pun. Tidak terpengaruh filter tanggal.</div></div><button class="linkbtn" data-drawer="uns">Lihat</button></div>`);
+  if(!noLCdata.length&&!noLC.length&&!mism.length&&!badKont.length&&X.cont.length)alerts.unshift(`<div class="al g"><div class="ic">${ICON.ok}</div><div><div class="t">Semua kontainer di periode ini cocok dengan MASTER_LC</div></div><span></span></div>`);
+  // vendor table
+  const vt=groupBy(X.ven,x=>x[1],k=>({k,n:0,te:0,late:0,dok:0,ses:0,inf:0}),(g,x)=>{g.n++;g.te+=x[3];g.late+=x[4];g.dok+=x[6];g.ses+=x[7];g.inf+=x[8]}).sort((a,b)=>b.n-a.n);
+  const kpiItems=[
+    {k:'Kontainer',v:f0(X.cont.length),u:`${f0(teus)} TEUs`,d:P?delta(X.cont.length,P.cont.length,prevLabel):''},
+    {k:'Total CBM',v:f1(all),d:`plan ${f1(X.cont.reduce((a,c)=>a+c.ps+c.pt+c.pc,0))} CBM`},
+    {k:'to Storing',dot:'var(--s-stock)',v:f1(tot[0]),u:'CBM',d:`${pc(tot[0],all)}% dari total`},
+    {k:'to Outbound',dot:'var(--s-store)',v:f1(tot[1]+tot[2]),u:'CBM',d:`store ${f1(tot[1])} · cust ${f1(tot[2])}`}];
+  return `
+  <div class="pagehead"><h2>Dashboard</h2><div class="sub"><p>${esc(plabel())} · ${esc(rlabel())} · BU ${S.bus.size===BUS.length?'semua':[...S.bus].join(', ')}</p></div></div>
+  ${kpis(kpiItems)}
+  ${brief('Ringkasan',I.length?I:[{t:'Tidak ada kontainer, LPPBDO, atau penilaian vendor di periode ini. Coba ganti periode di filter atas.'}])}
+  <div class="grid2">
+    <section class="panel"><div class="ph"><h3>CBM masuk per ${buckets.length&&buckets[0].full.startsWith('Minggu')?'minggu':'hari'}</h3><span class="hint">menurut tanggal bongkar di MASTER_PLAN</span></div>
+      <div class="pb">${all>0?`<div class="legend" style="margin-bottom:8px">${SER.map(s=>`<span><i class="dot" style="background:${s.color}"></i>${s.name}</span>`).join('')}</div>${stackChart('cDash',buckets,SER)}`:empty('Belum ada CBM','Tidak ada LC terjadwal yang cocok dengan MASTER_LC di periode ini.')}</div></section>
+    <section class="panel"><div class="ph"><h3>Perlu perhatian</h3></div><div class="pb"><div class="alerts">${alerts.join('')}</div></div></section>
+  </div>
+  <div class="grid2">
+    <section class="panel"><div class="ph"><h3>Jadwal bongkar</h3><span class="hint">${byD.length>14?`14 dari ${byD.length} hari pertama`:'ketuk kontainer untuk detail'}</span></div>
+      <div class="pb">${showDays.length?`<div class="sched">${showDays.map(g=>{const d=pd(g.d);const cb=g.cs.reduce((a,c)=>a+(c.lc&&LCSET.has(c.lc)?LCTOT[LCI[c.lc]].reduce((x,y)=>x+y,0):0),0);return `<div class="day"><div class="dl"><div class="dn">${HARI[d.getDay()]}</div><div class="dd">${d.getDate()}</div><div class="dm">${BLN[d.getMonth()]}</div></div><div><div class="boxes">${g.cs.map(c=>{const i=D.cont.indexOf(c);const has=c.lc&&LCSET.has(c.lc);return `<button class="box ${c.fl.startsWith('40')?'f40':''} ${has?'':'miss'}" data-cont="${i}"><span class="kk">${esc(c.k||'—')}</span><span class="mm"><span>${c.j||'--:--'}</span><span>${c.bu}</span><span>${esc(c.exp||'')}</span><span>${c.fl?c.fl.replace(' FEET',"'"):''}</span></span></button>`}).join('')}</div><div class="dsum">${g.cs.length} kontainer · ${f1(cb)} CBM (LC)</div></div></div>`}).join('')}</div>`:empty('Tidak ada jadwal','Tidak ada kontainer dijadwalkan bongkar di periode ini.')}</div></section>
+    <div style="display:grid;gap:16px;align-content:start;min-width:0">
+      <section class="panel"><div class="ph"><h3>Per BU</h3><span class="hint">CBM menurut MASTER_LC</span></div><div class="pb"><div class="hbars">${buRows.map(r=>{const t=r.t[0]+r.t[1]+r.t[2];return `<div class="hb"><span class="l">${r.b} <span class="muted small">${r.n} kont</span></span><div class="tr" title="Storing ${f1(r.t[0])} · Store ${f1(r.t[1])} · Customer ${f1(r.t[2])}">${t?[0,1,2].filter(j=>r.t[j]>0).map(j=>`<span style="width:${r.t[j]/buMax*100}%;background:${SER[j].color}"></span>`).join(''):''}</div><span class="v">${t?f1(t):(r.n?`<span class="muted small">plan ${f1(r.plan)}</span>`:'–')}</span></div>`}).join('')}</div></div></section>
+      <section class="panel"><div class="ph"><h3>Kinerja ekspedisi</h3><span class="hint">sheet VENDOR</span></div><div class="pb" style="padding-top:6px">${vt.length?`<div class="tw"><table><thead><tr><th>Ekspedisi</th><th class="r">Kont</th><th class="r">Tepat waktu</th><th class="r">Dokumen</th><th class="r">Info</th></tr></thead><tbody>${vt.map(v=>{const ot=100-pc(v.late,v.n);return `<tr><td class="code">${esc(v.k)}</td><td class="r num">${v.n}</td><td class="r"><span class="badge ${ot>=90?'b-good':ot>=80?'b-warn':'b-crit'}">${ot}%</span></td><td class="r num">${pc(v.dok,v.n)}%</td><td class="r num">${pc(v.inf,v.n)}%</td></tr>`}).join('')}</tbody></table></div>`:empty('Belum ada penilaian','Penilaian vendor diisi setelah kontainer dibongkar. Pilih periode yang sudah lewat.',false)}</div></section>
+    </div>
+  </div>
+  <div class="foot"><span>Storing = KODE SITE stock di LOGIC (H019, A017, F004, T009).</span><span>Outbound = store di LOGIC + customer (KODE SITE 0).</span><span>Hanya LC yang ada di MASTER_PLAN yang dihitung.</span></div>`;
+}
+
+// ---------- STORING
+function lcList(rows,mode,q){
+  const g=groupBy(rows,r=>r[0],k=>({k,cbm:0,sku:0,qty:0,dep:new Set(),bu:new Set()}),(g,r)=>{g.cbm+=r[6];g.sku+=r[4];g.qty+=r[5];g.dep.add(r[3]);g.bu.add(BUS[r[7]])});
+  let arr=g.map(x=>{const lc=D.lcs[x.k];const cs=CONT_BY_LC[lc]||[];return {...x,lc,d:D.lcd[x.k],c:cs[0]}}).sort((a,b)=>(a.d+(a.c?.j||'')).localeCompare(b.d+(b.c?.j||'')));
+  if(q){const Q=q.toUpperCase();arr=arr.filter(x=>x.lc.includes(Q)||(x.c&&x.c.k.toUpperCase().includes(Q)))}
+  return arr;
+}
+function pageStock(){
+  const [from,to]=range(), X=slice(from,to), pr=prevRange(from,to), P=pr?slice(pr[0],pr[1]):null;
+  const R=X.rows.filter(r=>r[1]===0), PR=P?P.rows.filter(r=>r[1]===0):null;
+  const cbm=R.reduce((a,r)=>a+r[6],0), qty=R.reduce((a,r)=>a+r[5],0);
+  const lcs=lcList(R,'S',S.lcQ);
+  const nLC=new Set(R.map(r=>r[0])).size;
+  const byBU=BUS.filter(b=>S.bus.has(b)).map(b=>{const rs=R.filter(r=>BUS[r[7]]===b);return {b,cbm:rs.reduce((a,r)=>a+r[6],0),lc:new Set(rs.map(r=>r[0])).size,sku:rs.length}});
+  const bm=Math.max(1,...byBU.map(x=>x.cbm));
+  let dep=groupBy(R,r=>r[3],k=>({k,cbm:0,sku:0,qty:0,lc:new Set(),bu:new Set()}),(g,r)=>{g.cbm+=r[6];g.sku+=r[4];g.qty+=r[5];g.lc.add(r[0]);g.bu.add(BUS[r[7]])}).sort((a,b)=>b.cbm-a.cbm);
+  const dmax=dep.length?dep[0].cbm:1;
+  const top3=dep.slice(0,3).reduce((a,d)=>a+d.cbm,0);
+  if(S.deptQ){const Q=S.deptQ.toUpperCase();dep=dep.filter(d=>D.depts[d.k].toUpperCase().includes(Q))}
+  const I=[];
+  if(cbm>0){
+    I.push({c:'h',t:`<b class="num">${f1(cbm)} CBM</b> masuk ke gudang dari <b>${nLC} LC</b> (${f0(sumN(R))} baris SKU, ${f0(qty)} pcs).`});
+    I.push({t:`Tiga dept teratas (${dep.slice(0,3).map(d=>`<span class="code">${esc(D.depts[d.k])}</span>`).join(', ')}) menyumbang <b>${pc(top3,cbm)}%</b> volume storing.`});
+    const big=lcs.slice().sort((a,b)=>b.cbm-a.cbm)[0];if(big)I.push({t:`LC terbesar <span class="code">${esc(big.lc)}</span>: ${f1(big.cbm)} CBM ke storing, ${big.dep.size} dept, bongkar ${dday(big.d)}${big.c?` jam ${big.c.j}`:''}.`});
+    const zero=X.cont.filter(c=>c.lc&&LCSET.has(c.lc)&&c.ps>0&&LCTOT[LCI[c.lc]][0]===0);if(zero.length)I.push({c:'w',t:`${zero.length} kontainer punya TO STOCK di MASTER_PLAN, tapi MASTER_LC tidak mencatat baris storing untuk LC-nya.`});
+  }
+  return `
+  <div class="pagehead"><h2>to Storing</h2><div class="sub"><p>CBM masuk untuk stock gudang · ${esc(plabel())} · ${esc(rlabel())}</p></div></div>
+  ${kpis([{k:'CBM storing',dot:'var(--s-stock)',v:f1(cbm),d:`plan TO STOCK ${f1(X.cont.reduce((a,c)=>a+c.ps,0))}`},{k:'No LC',v:f0(nLC),d:`${f0(new Set(R.map(r=>r[3])).size)} dept`},{k:'Baris SKU',v:f0(sumN(R))},{k:'Qty',v:f0(qty),u:'pcs'}])}
+  ${brief('Ringkasan',I)}
+  ${cbm>0?`
+  <div class="grid2">
+    <section class="panel"><div class="ph"><h3>Per dept</h3><span class="hint">${dep.length} dept</span><div class="right"><input class="search" type="search" placeholder="Cari dept" data-q="deptQ" id="qdept" value="${esc(S.deptQ)}" aria-label="Cari dept"></div></div>
+      <div class="pb" style="padding-top:6px"><div class="tw tblscroll"><table><thead><tr><th>Dept</th><th class="r">LC</th><th class="r">SKU</th><th class="r">Qty</th><th class="r">CBM</th><th>Porsi</th></tr></thead><tbody>${dep.map(d=>`<tr><td class="code">${esc(D.depts[d.k])}</td><td class="r num">${d.lc.size}</td><td class="r num">${f0(d.sku)}</td><td class="r num">${f0(d.qty)}</td><td class="r num"><b>${f2(d.cbm)}</b></td><td><div class="share">${share(d.cbm,dmax,'var(--s-stock)')}<span class="p">${pc(d.cbm,cbm)}%</span></div></td></tr>`).join('')}</tbody></table></div></div></section>
+    <section class="panel"><div class="ph"><h3>Per BU stock</h3></div><div class="pb"><div class="hbars">${byBU.map(x=>`<div class="hb"><span class="l">${x.b} <span class="muted small">${x.lc} LC</span></span><div class="tr">${x.cbm?`<span style="width:${x.cbm/bm*100}%;background:var(--s-stock)"></span>`:''}</div><span class="v">${x.cbm?f1(x.cbm):'–'}</span></div>`).join('')}</div>
+      <p class="small muted" style="margin:12px 0 0">Gudang stock: ${['H019','A017','F004','T009'].map(c=>`<span class="code">${c}</span> ${esc(nameOf(c)||'')}`).join(' · ')}</p></div></section>
+  </div>`:''}
+  <section class="panel"><div class="ph"><h3>Daftar No LC</h3><span class="hint">ketuk baris untuk melihat isi LC</span><div class="right"><input class="search" type="search" placeholder="Cari LC / kontainer" data-q="lcQ" id="qlc" value="${esc(S.lcQ)}" aria-label="Cari LC atau kontainer"></div></div>
+    <div class="pb" style="padding-top:6px">${lcs.length?`<div class="tw"><table><thead><tr><th>Bongkar</th><th>No LC</th><th>Kontainer</th><th>BU</th><th class="r">Dept</th><th class="r">SKU</th><th class="r">Qty</th><th class="r">CBM storing</th></tr></thead><tbody>${lcs.map(x=>`<tr class="click" data-lc="${esc(x.lc)}" data-mode="S" tabindex="0"><td class="small">${dday(x.d)} <span class="muted">${x.c?.j||''}</span></td><td class="code">${esc(x.lc)}</td><td class="code muted">${esc(x.c?.k||'')}</td><td>${[...x.bu].map(buTag).join(' ')}</td><td class="r num">${x.dep.size}</td><td class="r num">${f0(x.sku)}</td><td class="r num">${f0(x.qty)}</td><td class="r num"><b>${f2(x.cbm)}</b></td></tr>`).join('')}</tbody><tfoot><tr><td colspan="5">${lcs.length} LC</td><td class="r num">${f0(lcs.reduce((a,x)=>a+x.sku,0))}</td><td class="r num">${f0(lcs.reduce((a,x)=>a+x.qty,0))}</td><td class="r num">${f2(lcs.reduce((a,x)=>a+x.cbm,0))}</td></tr></tfoot></table></div>`:empty(S.lcQ?'Tidak ditemukan':'Tidak ada storing',S.lcQ?'Tidak ada LC atau kontainer yang cocok dengan pencarian.':'Tidak ada LC ke storing yang terjadwal di periode dan BU ini.',!S.lcQ)}</div></section>`;
+}
+
+// ---------- OUTBOUND
+function pageOut(){
+  const [from,to]=range(), X=slice(from,to), pr=prevRange(from,to), P=pr?slice(pr[0],pr[1]):null;
+  const RA=X.rows.filter(r=>r[1]>0);
+  const R=RA.filter(r=>S.outMode==='all'||(S.outMode==='store'?r[1]===1:r[1]===2));
+  const st=RA.filter(r=>r[1]===1).reduce((a,r)=>a+r[6],0), cu=RA.filter(r=>r[1]===2).reduce((a,r)=>a+r[6],0), all=st+cu;
+  const pall=P?P.rows.filter(r=>r[1]>0).reduce((a,r)=>a+r[6],0):null;
+  const dest=groupBy(R,r=>r[1]+'|'+r[2],k=>({k,t:+k.split('|')[0],c:D.codes[+k.split('|')[1]],cbm:0,sku:0,qty:0,lc:new Set(),bu:new Set()}),(g,r)=>{g.cbm+=r[6];g.sku+=r[4];g.qty+=r[5];g.lc.add(r[0]);g.bu.add(BUS[r[7]])}).sort((a,b)=>b.cbm-a.cbm);
+  const dm=dest.length?dest[0].cbm:1;const cbm=R.reduce((a,r)=>a+r[6],0);
+  const byBU=BUS.filter(b=>S.bus.has(b)).map(b=>{const rs=RA.filter(r=>BUS[r[7]]===b);return {b,st:rs.filter(r=>r[1]===1).reduce((a,r)=>a+r[6],0),cu:rs.filter(r=>r[1]===2).reduce((a,r)=>a+r[6],0),n:new Set(rs.map(r=>r[1]+'|'+r[2])).size}});
+  const bm=Math.max(1,...byBU.map(x=>x.st+x.cu));
+  const lcs=lcList(R,'O',S.lcQ);
+  const dep=groupBy(R,r=>r[3],k=>({k,cbm:0}),(g,r)=>g.cbm+=r[6]).sort((a,b)=>b.cbm-a.cbm).slice(0,8);
+  const I=[];
+  if(all>0){
+    I.push({c:'h',t:`<b class="num">${f1(all)} CBM</b> langsung keluar ke ${new Set(RA.map(r=>r[1]+'|'+r[2])).size} tujuan: store <b>${f1(st)}</b> CBM (${pc(st,all)}%) dan customer <b>${f1(cu)}</b> CBM (${pc(cu,all)}%).`});
+    const s1=dest.find(d=>d.t===1);if(s1)I.push({t:`Store dengan volume terbesar <span class="code">${esc(s1.c)}</span> ${esc(nameOf(s1.c))}: ${f1(s1.cbm)} CBM dari ${s1.lc.size} LC.`});
+    const c1=dest.find(d=>d.t===2);if(c1)I.push({t:`Pesanan customer terbanyak lewat <span class="code">${esc(c1.c)}</span>${nameOf(c1.c)?' '+esc(nameOf(c1.c)):''}: ${f1(c1.cbm)} CBM, ${f0(c1.sku)} baris SKU.`});
+    const n80=(()=>{let a=0,n=0;for(const d of dest.slice()){a+=d.cbm;n++;if(a>=cbm*.8)break}return n})();if(dest.length>4)I.push({t:`${n80} dari ${dest.length} tujuan sudah mencakup 80% volume outbound${S.outMode!=='all'?' (sesuai tampilan)':''}. Prioritaskan staging untuk tujuan-tujuan ini.`});
+  }
+  return `
+  <div class="pagehead"><h2>to Outbound</h2><div class="sub"><p>CBM yang langsung disalurkan ke store dan customer · ${esc(plabel())} · ${esc(rlabel())}</p></div></div>
+  ${kpis([{k:'CBM outbound',v:f1(all),d:`plan ${f1(X.cont.reduce((a,c)=>a+c.pt+c.pc,0))}`},{k:'ke Store',dot:'var(--s-store)',v:f1(st),u:'CBM',d:`${pc(st,all)}%`},{k:'ke Customer',dot:'var(--s-cust)',v:f1(cu),u:'CBM',d:`${pc(cu,all)}% · KODE SITE 0`},{k:'Tujuan',v:f0(new Set(RA.map(r=>r[1]+'|'+r[2])).size),d:`${new Set(RA.map(r=>r[0])).size} LC`}])}
+  ${brief('Ringkasan',I)}
+  ${all>0?`
+  <div class="grid2">
+    <section class="panel"><div class="ph"><h3>Per tujuan</h3><span class="hint">${dest.length} tujuan</span><div class="right"><div class="seg" role="group" aria-label="Jenis tujuan">${[['all','Semua'],['store','Store'],['cust','Customer']].map(([k,l])=>`<button data-om="${k}" aria-pressed="${S.outMode===k}">${l}</button>`).join('')}</div></div></div>
+      <div class="pb" style="padding-top:6px"><div class="tw tblscroll"><table><thead><tr><th>Tujuan</th><th>Jenis</th><th class="r">LC</th><th class="r">SKU</th><th class="r">CBM</th><th>Porsi</th></tr></thead><tbody>${dest.map(d=>`<tr><td><div class="code">${esc(d.c)}</div><div class="muted small nm">${esc(nameOf(d.c))||(d.t===2?'Store di luar LOGIC':'')}</div></td><td><span class="badge b-n"><i class="dot" style="background:${d.t===1?'var(--s-store)':'var(--s-cust)'}"></i>${d.t===1?'Store':'Customer'}</span></td><td class="r num">${d.lc.size}</td><td class="r num">${f0(d.sku)}</td><td class="r num"><b>${f2(d.cbm)}</b></td><td><div class="share">${share(d.cbm,dm,d.t===1?'var(--s-store)':'var(--s-cust)')}<span class="p">${pc(d.cbm,cbm)}%</span></div></td></tr>`).join('')}</tbody></table></div>
+      <p class="small muted" style="margin:10px 0 0">Customer dikelompokkan per TradingPartner (store penjual). Nama customer pribadi tidak ditampilkan.</p></div></section>
+    <div style="display:grid;gap:16px;align-content:start;min-width:0">
+      <section class="panel"><div class="ph"><h3>Per BU</h3></div><div class="pb"><div class="legend" style="margin-bottom:10px"><span><i class="dot" style="background:var(--s-store)"></i>Store</span><span><i class="dot" style="background:var(--s-cust)"></i>Customer</span></div><div class="hbars">${byBU.map(x=>`<div class="hb"><span class="l">${x.b} <span class="muted small">${x.n} tuj</span></span><div class="tr">${x.st?`<span style="width:${x.st/bm*100}%;background:var(--s-store)"></span>`:''}${x.cu?`<span style="width:${x.cu/bm*100}%;background:var(--s-cust)"></span>`:''}</div><span class="v">${x.st+x.cu?f1(x.st+x.cu):'–'}</span></div>`).join('')}</div></div></section>
+      <section class="panel"><div class="ph"><h3>Dept outbound</h3><span class="hint">8 teratas</span></div><div class="pb"><div class="hbars">${dep.map(d=>`<div class="hb"><span class="l code">${esc(D.depts[d.k])}</span><div class="tr"><span style="width:${d.cbm/dep[0].cbm*100}%;background:var(--ink-3)"></span></div><span class="v">${f1(d.cbm)}</span></div>`).join('')}</div></div></section>
+    </div>
+  </div>`:''}
+  <section class="panel"><div class="ph"><h3>Daftar No LC</h3><span class="hint">ketuk baris untuk melihat isi LC</span><div class="right"><input class="search" type="search" placeholder="Cari LC / kontainer" data-q="lcQ" id="qlc2" value="${esc(S.lcQ)}" aria-label="Cari LC atau kontainer"></div></div>
+    <div class="pb" style="padding-top:6px">${lcs.length?`<div class="tw"><table><thead><tr><th>Bongkar</th><th>No LC</th><th>Kontainer</th><th>BU</th><th class="r">SKU</th><th class="r">Qty</th><th class="r">CBM outbound</th></tr></thead><tbody>${lcs.map(x=>`<tr class="click" data-lc="${esc(x.lc)}" data-mode="O" tabindex="0"><td class="small">${dday(x.d)} <span class="muted">${x.c?.j||''}</span></td><td class="code">${esc(x.lc)}</td><td class="code muted">${esc(x.c?.k||'')}</td><td>${[...x.bu].map(buTag).join(' ')}</td><td class="r num">${f0(x.sku)}</td><td class="r num">${f0(x.qty)}</td><td class="r num"><b>${f2(x.cbm)}</b></td></tr>`).join('')}</tbody><tfoot><tr><td colspan="4">${lcs.length} LC</td><td class="r num">${f0(lcs.reduce((a,x)=>a+x.sku,0))}</td><td class="r num">${f0(lcs.reduce((a,x)=>a+x.qty,0))}</td><td class="r num">${f2(lcs.reduce((a,x)=>a+x.cbm,0))}</td></tr></tfoot></table></div>`:empty(S.lcQ?'Tidak ditemukan':'Tidak ada outbound',S.lcQ?'Tidak ada LC atau kontainer yang cocok dengan pencarian.':'Tidak ada LC ke store atau customer yang terjadwal di periode dan BU ini.',!S.lcQ)}</div></section>`;
+}
+
+// ---------- LPPBDO
+function pageLpp(){
+  const [from,to]=range(), X=slice(from,to), pr=prevRange(from,to), P=pr?slice(pr[0],pr[1]):null;
+  const L=X.lp, docs=new Set(L.map(x=>x.no)), qty=L.reduce((a,x)=>a+x.q,0);
+  const open=L.filter(x=>x.up!=='DONE'||x.st==='Pending');
+  const lpBus=new Set(D.lp.map(x=>x.bu));
+  const head=`<div class="pagehead"><h2>LPPBDO</h2><div class="sub"><p>Laporan selisih barang datang · ${esc(plabel())} · ${esc(rlabel())}</p></div></div>`;
+  if(!L.length){
+    const noBU=![...S.bus].some(b=>lpBus.has(b));
+    return head+kpis([{k:'Dokumen',v:'0'},{k:'Item',v:'0'},{k:'Qty selisih',v:'0'},{k:'Belum selesai',v:'0'}])+`<section class="panel">${noBU?empty('Belum ada sheet LPPBDO untuk BU ini','Saat ini hanya ada LPPBDO_HCI dan LPPBDO_AHI. Pilih HCI atau AHI di filter BU.',false):empty('Tidak ada LPPBDO','LPPBDO dicatat setelah barang dibongkar, jadi periode ke depan biasanya kosong. Coba pilih periode yang sudah lewat.')}</section>`;
+  }
+  const kat=groupBy(L,x=>x.k,k=>({k,n:0,q:0,docs:new Set()}),(g,x)=>{g.n++;g.q+=x.q;g.docs.add(x.no)}).sort((a,b)=>b.n-a.n);
+  const km=kat[0].n;
+  const ex=groupBy(L,x=>x.ex||'-',k=>({k,n:0,q:0,docs:new Set(),kat:{}}),(g,x)=>{g.n++;g.q+=x.q;g.docs.add(x.no);g.kat[x.k]=(g.kat[x.k]||0)+1}).sort((a,b)=>b.n-a.n);
+  const venN={};X.ven.forEach(v=>venN[v[1]]=(venN[v[1]]||0)+1);
+  ex.forEach(e=>{e.cont=venN[e.k]||0;e.rate=e.cont?e.docs.size/e.cont*100:null});
+  const site=groupBy(L,x=>x.si,k=>({k,n:0,q:0}),(g,x)=>{g.n++;g.q+=x.q}).sort((a,b)=>b.n-a.n);
+  const dep=groupBy(L,x=>x.dp==='-'?'(dept kosong)':x.dp,k=>({k,n:0,q:0}),(g,x)=>{g.n++;g.q+=x.q}).sort((a,b)=>b.n-a.n).slice(0,8);
+  const art=groupBy(L,x=>x.a,k=>({k,n:0,q:0,ds:'',kat:new Set()}),(g,x)=>{g.n++;g.q+=x.q;g.ds=x.ds;g.kat.add(x.k)}).filter(a=>a.n>1).sort((a,b)=>b.n-a.n).slice(0,8);
+  const st=groupBy(L,x=>x.st,k=>({k,n:0}),g=>g.n++).sort((a,b)=>b.n-a.n);
+  // trend buckets per month if span>62 else per day/week
+  const months=groupBy(L,x=>x.d.slice(0,7),k=>({k,v:[0,0,0]}),(g,x)=>{const j=x.k==='DAMAGE GOODS'?0:(x.k==='GOODS WITHOUT OD'||x.k==='OD WITHOUT GOODS')?1:2;g.v[j]++}).sort((a,b)=>a.k.localeCompare(b.k));
+  const span=(from<'1000'||to>'9000')?999:days(from,to);
+  let tb;const TS=[{name:'Barang rusak',color:'var(--s-store)'},{name:'Selisih OD / barang',color:'var(--s-stock)'},{name:'Kurang / lebih / lainnya',color:'var(--s-cust)'}];
+  const jOf=x=>x.k==='DAMAGE GOODS'?0:(x.k==='GOODS WITHOUT OD'||x.k==='OD WITHOUT GOODS')?1:2;
+  if(span>62){tb=months.map(m=>{const [y,mm]=m.k.split('-').map(Number);return {key:m.k,label:BLN[mm-1],full:`${BLNL[mm-1]} ${y}`,vals:m.v}})}
+  else tb=bucketize(from,to,L,x=>x.d,x=>{const v=[0,0,0];v[jOf(x)]=1;return v},3);
+  // previous
+  const pL=P?P.lp:null;
+  const I=[];
+  I.push({c:'h',t:`<b>${docs.size} dokumen LPPBDO</b> berisi ${L.length} item dan <b class="num">${f0(qty)} pcs</b> selisih.${pL&&pL.length?` ${pL.length<L.length?'Naik':'Turun'} ${Math.abs(Math.round((L.length-pL.length)/pL.length*100))}% dibanding periode sebelumnya (${pL.length} item).`:''}`});
+  I.push({c:kat[0].k==='DAMAGE GOODS'?'w':'',t:`Masalah terbanyak <b>${KAT[kat[0].k]||kat[0].k}</b>: ${kat[0].n} item (${pc(kat[0].n,L.length)}%)${kat[1]?`, lalu ${KAT[kat[1].k]||kat[1].k} ${kat[1].n} item (${pc(kat[1].n,L.length)}%)`:''}.`});
+  const ex1=ex.filter(e=>e.k!=='-')[0];if(ex1){const topK=Object.entries(ex1.kat).sort((a,b)=>b[1]-a[1])[0];I.push({t:`Ekspedisi dengan kasus terbanyak <b>${esc(ex1.k)}</b>: ${ex1.n} item dari ${ex1.docs.size} dokumen, didominasi ${(KAT[topK[0]]||topK[0]).toLowerCase()}.`})}
+  const rated=ex.filter(e=>e.cont>=5&&e.rate!=null).sort((a,b)=>b.rate-a.rate);if(rated.length>1)I.push({c:'w',t:`Rasio tertinggi per kontainer: <b>${esc(rated[0].k)}</b>, ${f1(rated[0].rate)} dokumen per 100 kontainer (${rated[0].docs.size} dok / ${rated[0].cont} kont). Terendah ${esc(rated[rated.length-1].k)} (${f1(rated[rated.length-1].rate)}).`});
+  if(site.length>1)I.push({t:`Asal kiriman paling sering bermasalah: <b>${esc(site[0].k)}</b> (${pc(site[0].n,L.length)}% item).`});
+  if(art.length)I.push({t:`Artikel berulang: <span class="code">${esc(art[0].k)}</span> ${esc(art[0].ds)} muncul ${art[0].n}×. Pertimbangkan cek kemasan atau data OD di asal.`});
+  if(open.length)I.push({c:'c',t:`<b>${open.length} item</b> masih berstatus pending. Lihat daftar dokumen di bawah.`});else I.push({c:'g',t:'Semua item sudah selesai (DONE).'});
+  let docList=groupBy(L,x=>x.no,k=>({k,items:[],q:0}),(g,x)=>{g.items.push(x);g.q+=x.q}).map(g=>({...g,d:g.items[0].d,bu:g.items[0].bu,ex:g.items[0].ex,si:g.items[0].si,kat:[...new Set(g.items.map(i=>i.k))],open:g.items.some(i=>i.up!=='DONE'||i.st==='Pending'),st:[...new Set(g.items.map(i=>i.st))]})).sort((a,b)=>b.d.localeCompare(a.d)||(b.open-a.open));
+  if(S.lppQ){const Q=S.lppQ.toUpperCase();docList=docList.filter(d=>d.k.toUpperCase().includes(Q)||d.items.some(i=>(i.a+' '+i.ds+' '+i.dp).toUpperCase().includes(Q))||(d.ex||'').toUpperCase().includes(Q))}
+  const stBadge=s=>{const u=s.toUpperCase();return `<span class="badge ${u==='ACCEPTED'?'b-good':u==='PENDING'?'b-crit':u==='REJECTED'||u.includes('CANCEL')?'b-warn':'b-n'}">${esc(u==='CIS'?'CIS':s.replace('Cis','CIS'))}</span>`};
+  return head+kpis([
+    {k:'Dokumen',v:f0(docs.size),d:pL?delta(docs.size,new Set(pL.map(x=>x.no)).size,'periode sebelumnya'):''},
+    {k:'Item',v:f0(L.length),d:`${f0(new Set(L.map(x=>x.a)).size)} artikel`},
+    {k:'Qty selisih',v:f0(qty),u:'pcs',d:`rata-rata ${f1(qty/L.length)} pcs/item`},
+    {k:'Belum selesai',v:f0(open.length),d:open.length?'<span class="badge b-crit">perlu tindak lanjut</span>':'<span class="badge b-good">semua DONE</span>'}])+
+  brief('Ringkasan',I)+`
+  <div class="grid2">
+    <section class="panel"><div class="ph"><h3>Item per ${span>62?'bulan':tb.length&&tb[0].full.startsWith('Minggu')?'minggu':'hari'}</h3></div><div class="pb"><div class="legend" style="margin-bottom:8px">${TS.map(s=>`<span><i class="dot" style="background:${s.color}"></i>${s.name}</span>`).join('')}</div>${tb.length?stackChart('cLpp',tb,TS,{unit:'item',fmt:f0}):''}</div></section>
+    <section class="panel"><div class="ph"><h3>Per kategori</h3></div><div class="pb"><div class="hbars">${kat.map(k=>`<div class="hb wide"><span class="l" title="${esc(k.k)}">${KAT[k.k]||esc(k.k)}</span><div class="tr"><span style="width:${k.n/km*100}%;background:var(--s-one)"></span></div><span class="v">${k.n} <span class="muted">· ${f0(k.q)} pcs</span></span></div>`).join('')}</div></div></section>
+  </div>
+  <div class="grid2e">
+    <section class="panel"><div class="ph"><h3>Per ekspedisi</h3><span class="hint">rasio vs kontainer di sheet VENDOR</span></div><div class="pb" style="padding-top:6px"><div class="tw"><table><thead><tr><th>Ekspedisi</th><th class="r">Item</th><th class="r">Dok</th><th class="r">Qty</th><th class="r">Kont</th><th class="r">Dok/100 kont</th></tr></thead><tbody>${ex.map(e=>`<tr><td class="code">${esc(e.k)}</td><td class="r num">${e.n}</td><td class="r num">${e.docs.size}</td><td class="r num">${f0(e.q)}</td><td class="r num">${e.cont||'–'}</td><td class="r num">${e.rate!=null?f1(e.rate):'–'}</td></tr>`).join('')}</tbody></table></div></div></section>
+    <section class="panel"><div class="ph"><h3>Asal & dept</h3></div><div class="pb"><div class="hbars">${site.map(s=>`<div class="hb wide"><span class="l">${esc(s.k)}</span><div class="tr"><span style="width:${s.n/site[0].n*100}%;background:var(--ink-3)"></span></div><span class="v">${s.n} item</span></div>`).join('')}</div>
+      <div style="height:14px"></div><div class="hbars">${dep.map(s=>`<div class="hb wide"><span class="l code">${esc(s.k)}</span><div class="tr"><span style="width:${s.n/dep[0].n*100}%;background:var(--ink-3)"></span></div><span class="v">${s.n} item</span></div>`).join('')}</div>
+      <p class="small muted" style="margin:12px 0 0">Status: ${st.map(s=>`${stBadge(s.k)} ${s.n}`).join(' &nbsp;')}</p></div></section>
+  </div>
+  ${art.length?`<section class="panel"><div class="ph"><h3>Artikel berulang</h3><span class="hint">muncul lebih dari sekali di periode ini</span></div><div class="pb" style="padding-top:6px"><div class="tw"><table><thead><tr><th>Artikel</th><th>Deskripsi</th><th>Kategori</th><th class="r">Kali</th><th class="r">Qty</th></tr></thead><tbody>${art.map(a=>`<tr><td class="code">${esc(a.k)}</td><td class="small">${esc(a.ds)}</td><td class="small">${[...a.kat].map(k=>KAT[k]||k).join(', ')}</td><td class="r num">${a.n}</td><td class="r num">${f0(a.q)}</td></tr>`).join('')}</tbody></table></div></div></section>`:''}
+  <section class="panel"><div class="ph"><h3>Daftar dokumen</h3><span class="hint">${docList.length} dokumen · ketuk untuk detail</span><div class="right"><input class="search" type="search" placeholder="Cari no, artikel, ekspedisi" data-q="lppQ" id="qlpp" value="${esc(S.lppQ)}" aria-label="Cari LPPBDO"></div></div>
+    <div class="pb" style="padding-top:6px"><div class="tw tblscroll"><table><thead><tr><th>Tanggal</th><th>No LPPBDO</th><th>BU</th><th>Ekspedisi</th><th>Asal</th><th>Kategori</th><th class="r">Item</th><th class="r">Qty</th><th>Status</th></tr></thead><tbody>${docList.slice(0,300).map(d=>`<tr class="click" data-lpp="${esc(d.k)}" tabindex="0"><td class="small">${dshort(d.d)}</td><td class="code">${esc(d.k)}</td><td>${buTag(d.bu)}</td><td class="code">${esc(d.ex)}</td><td class="small">${esc(d.si)}</td><td class="small">${d.kat.map(k=>KAT[k]||k).join(', ')}</td><td class="r num">${d.items.length}</td><td class="r num">${f0(d.q)}</td><td>${d.open?'<span class="badge b-crit">Pending</span>':d.st.map(stBadge).join(' ')}</td></tr>`).join('')}</tbody></table></div></div></section>`;
+}
+
+// ---------- drawers
+function drawer(head,body){document.getElementById('drawerHost').innerHTML=`<div class="scrim" data-close></div><aside class="drawer" role="dialog" aria-modal="true">${head}<div class="db">${body}</div></aside>`;document.body.style.overflow='hidden';setTimeout(()=>document.querySelector('.drawer .x')?.focus(),0)}
+function closeDrawer(){document.getElementById('drawerHost').innerHTML='';document.body.style.overflow=''}
+function dHead(title,meta,badge=''){return `<div class="dh"><div class="row1"><h3>${title}</h3>${badge}<button class="x" data-close aria-label="Tutup">${ICON.x}</button></div><div class="meta">${meta}</div></div>`}
+function openCont(i){const c=D.cont[i];if(c.lc&&LCSET.has(c.lc)){openLC(c.lc,'all');return}
+  drawer(dHead(esc(c.k||'Tanpa no. kontainer'),`<span><b>${dlong(c.d)}</b> ${c.j}</span><span>BU <b>${c.bu}</b></span><span>${esc(c.exp)} · ${esc(c.fl)} · ${esc(c.fr)}</span>`,`<span class="badge b-crit">${c.lc?'LC tidak ada di MASTER_LC':'Tanpa No LC'}</span>`),
+  `<div><h4>Plan di MASTER_PLAN</h4><div class="cmp">${[['TO STOCK',c.ps,'var(--s-stock)'],['TO STORE',c.pt,'var(--s-store)'],['TO CUSTOMER',c.pc,'var(--s-cust)']].map(([k,v,col])=>`<div><div class="k"><i class="dot" style="background:${col}"></i>${k}</div><div class="v">${f2(v)}</div><div class="p">CBM plan</div></div>`).join('')}</div></div>
+   <p class="small">${c.lc?`No LC <span class="code">${esc(c.lc)}</span> belum ada di MASTER_LC, jadi isi dept dan SKU-nya belum bisa ditampilkan. Pastikan data LC sudah ditarik dari WMS ke MASTER_LC.`:'Baris ini tidak punya No LC, jadi tidak bisa dicocokkan ke MASTER_LC. Isi No LC di MASTER_PLAN agar CBM-nya ikut terhitung.'}</p>`)}
+function openLC(lc,mode){
+  const k=LCI[lc];if(k==null)return;const cs=CONT_BY_LC[lc]||[];const c=cs[0];
+  const all=D.rows.filter(r=>r[0]===k);const t=LCTOT[k];
+  const R=all.filter(r=>mode==='S'?r[1]===0:mode==='O'?r[1]>0:true);
+  const dep=groupBy(R,r=>r[3]+'|'+r[1],x=>({d:+x.split('|')[0],t:+x.split('|')[1],cbm:0,sku:0,qty:0}),(g,r)=>{g.cbm+=r[6];g.sku+=r[4];g.qty+=r[5]}).sort((a,b)=>a.t-b.t||b.cbm-a.cbm);
+  const dst=groupBy(R.filter(r=>r[1]>0),r=>r[1]+'|'+r[2],x=>({t:+x.split('|')[0],c:D.codes[+x.split('|')[1]],cbm:0,sku:0}),(g,r)=>{g.cbm+=r[6];g.sku+=r[4]}).sort((a,b)=>b.cbm-a.cbm);
+  const plan=c?[c.ps,c.pt,c.pc]:[0,0,0];
+  const col=['var(--s-stock)','var(--s-store)','var(--s-cust)'];
+  const rid='sku-'+k;
+  drawer(dHead(esc(lc),`${cs.map(c=>`<span><b>${dlong(c.d)}</b> ${c.j}</span><span class="code">${esc(c.k)}</span><span>${c.bu} · ${esc(c.exp)} · ${esc(c.fl)} · ${esc(c.fr)}</span>`).join('')}`,`<span class="badge b-n">${mode==='S'?'Storing':mode==='O'?'Outbound':'Semua tujuan'}</span>`),
+  `<div><h4>Plan vs MASTER_LC</h4><div class="cmp">${['Storing','Store','Customer'].map((n,j)=>{const d=t[j]-plan[j];return `<div><div class="k"><i class="dot" style="background:${col[j]}"></i>${n}</div><div class="v">${f2(t[j])}</div><div class="p">plan ${f2(plan[j])} ${Math.abs(d)>=.5?`<span class="badge b-warn">${d>0?'+':''}${f1(d)}</span>`:''}</div></div>`}).join('')}</div><p class="small muted" style="margin:6px 0 0">Angka besar = CBM dari MASTER_LC. Plan = kolom TO STOCK / TO STORE / TO CUSTOMER di MASTER_PLAN.</p></div>
+   <div><h4>Per dept</h4><div class="tw"><table><thead><tr><th>Dept</th><th>Tujuan</th><th class="r">SKU</th><th class="r">Qty</th><th class="r">CBM</th></tr></thead><tbody>${dep.map(d=>`<tr><td class="code">${esc(D.depts[d.d])}</td><td><span class="badge b-n"><i class="dot" style="background:${col[d.t]}"></i>${DEST[d.t]}</span></td><td class="r num">${d.sku}</td><td class="r num">${f0(d.qty)}</td><td class="r num"><b>${f2(d.cbm)}</b></td></tr>`).join('')}</tbody><tfoot><tr><td colspan="2">Total</td><td class="r num">${f0(sumN(R))}</td><td class="r num">${f0(R.reduce((a,r)=>a+r[5],0))}</td><td class="r num">${f2(R.reduce((a,r)=>a+r[6],0))}</td></tr></tfoot></table></div></div>
+   ${dst.length?`<div><h4>Tujuan outbound</h4><div class="tw"><table><thead><tr><th>Tujuan</th><th class="r">SKU</th><th class="r">CBM</th></tr></thead><tbody>${dst.map(d=>`<tr><td><span class="code">${esc(d.c)}</span> <span class="small muted">${d.t===2?'Customer':''} ${esc(nameOf(d.c))}</span></td><td class="r num">${d.sku}</td><td class="r num">${f2(d.cbm)}</td></tr>`).join('')}</tbody></table></div></div>`:''}
+   <div><h4>Isi SKU <span class="muted small" id="${rid}-n" style="font-family:var(--f-body);text-transform:none;letter-spacing:0"></span></h4><input class="search" style="width:100%;margin-bottom:8px" type="search" placeholder="Cari SKU atau deskripsi" id="${rid}-q" aria-label="Cari SKU" disabled>
+   <div class="tw" id="${rid}"><p class="small muted">Memuat isi SKU dari MASTER_LC…</p></div></div>`);
+  showSku(lc,mode,rid);
+}
+async function showSku(lc,mode,rid){
+  const box=()=>document.getElementById(rid);
+  try{
+    const all=await loadSkuDetail(lc);
+    const sk=all.filter(x=>mode==='S'?x.dest===0:mode==='O'?x.dest>0:true);
+    if(!box())return;
+    document.getElementById(rid+'-n').textContent=`${sk.length} SKU, urut CBM`;
+    const q=document.getElementById(rid+'-q');q.disabled=false;
+    box().innerHTML=skuTable(sk,'');
+    q.addEventListener('input',()=>{box().innerHTML=skuTable(sk,q.value)});
+  }catch(e){if(box())box().innerHTML=`<p class="small">Isi SKU belum bisa dimuat. ${esc(e.message)}</p><button class="btn ghost sm" data-lc="${esc(lc)}" data-mode="${mode}">Coba lagi</button>`}
+}
+function skuTable(sk,q){const Q=q.trim().toUpperCase();const f=Q?sk.filter(r=>(r.sku+' '+r.desc+' '+r.dept).toUpperCase().includes(Q)):sk;
+  return `<table><thead><tr><th>SKU</th><th>Deskripsi</th><th>Dept</th><th>Tujuan</th><th class="r">Qty</th><th class="r">CBM</th></tr></thead><tbody>${f.slice(0,250).map(r=>`<tr><td class="code">${esc(r.sku)}</td><td class="small">${esc(r.desc)}</td><td class="code small">${esc(r.dept)}</td><td class="small">${r.dest===0?'Storing':`<span class="code">${esc(r.code)}</span>${r.dest===2?' cust':''}`}</td><td class="r num">${f0(r.qty)}</td><td class="r num">${f2(r.cbm)}</td></tr>`).join('')}</tbody></table>${f.length>250?`<p class="small muted">Menampilkan 250 dari ${f.length} baris. Gunakan pencarian untuk mempersempit.</p>`:''}${!f.length?'<p class="small muted">Tidak ada SKU yang cocok.</p>':''}`}
+function openUnscheduled(){
+  const u=D.un.filter(x=>S.bus.has(x[1])).map(x=>({lc:x[0],bu:x[1],s:x[2],o:x[3],c:x[4],n:x[5],d:lcDate(x[0])})).sort((a,b)=>b.d.localeCompare(a.d));
+  const byM=groupBy(u,x=>x.d.slice(0,7),k=>({k,n:0,cbm:0}),(g,x)=>{g.n++;g.cbm+=x.s+x.o+x.c}).sort((a,b)=>b.k.localeCompare(a.k));
+  drawer(dHead('LC belum dijadwalkan',`<span><b>${u.length}</b> LC</span><span><b>${f1(u.reduce((a,x)=>a+x.s+x.o+x.c,0))}</b> CBM</span><span>Ada di MASTER_LC, tidak ada di MASTER_PLAN</span>`),
+  `<p class="small">LC ini tidak dihitung di Dashboard, to Storing, atau to Outbound karena belum punya tanggal bongkar. Bisa jadi kontainernya masih dalam perjalanan, atau No LC di MASTER_PLAN ditulis berbeda.</p>
+   <div><h4>Per bulan LC</h4><div class="hbars">${byM.map(m=>{const[y,mm]=m.k.split('-').map(Number);return `<div class="hb wide"><span class="l">${BLNL[mm-1]} ${y}</span><div class="tr"><span style="width:${m.cbm/Math.max(...byM.map(x=>x.cbm))*100}%;background:var(--ink-3)"></span></div><span class="v">${m.n} LC</span></div>`}).join('')}</div></div>
+   <div><h4>Daftar</h4><div class="tw"><table><thead><tr><th>No LC</th><th>BU</th><th class="r">SKU</th><th class="r">Storing</th><th class="r">Store</th><th class="r">Cust</th></tr></thead><tbody>${u.slice(0,400).map(x=>`<tr><td class="code">${esc(x.lc)}</td><td>${buTag(x.bu)}</td><td class="r num">${x.n}</td><td class="r num">${x.s?f2(x.s):'–'}</td><td class="r num">${x.o?f2(x.o):'–'}</td><td class="r num">${x.c?f2(x.c):'–'}</td></tr>`).join('')}</tbody></table></div></div>`)}
+function openMissing(){const [from,to]=range();const X=slice(from,to);const m=X.cont.filter(c=>!c.lc||!LCSET.has(c.lc));
+  drawer(dHead('Kontainer belum terhitung',`<span><b>${m.length}</b> baris plan</span><span>${esc(rlabel())}</span>`),
+  `<div class="tw"><table><thead><tr><th>Bongkar</th><th>Kontainer</th><th>No LC</th><th>BU</th><th>Masalah</th><th class="r">CBM plan</th></tr></thead><tbody>${m.map(c=>`<tr class="click" data-cont="${D.cont.indexOf(c)}"><td class="small">${dday(c.d)} <span class="muted">${c.j}</span></td><td class="code">${esc(c.k||'—')}</td><td class="code">${esc(c.lc||'—')}</td><td>${buTag(c.bu)}</td><td>${c.lc?'<span class="badge b-crit">LC tidak ada di MASTER_LC</span>':'<span class="badge b-warn">Tanpa No LC</span>'}</td><td class="r num">${f2(c.ps+c.pt+c.pc)}</td></tr>`).join('')}</tbody></table></div>`)}
+function openLpp(no){const items=D.lp.filter(x=>x.no===no);const f=items[0];
+  drawer(dHead(esc(no),`<span><b>${dlong(f.d)}</b></span><span>BU <b>${f.bu}</b></span><span>Ekspedisi <b>${esc(f.ex)}</b></span><span>Asal <b>${esc(f.si)}</b></span>`),
+  `<div class="tw"><table><thead><tr><th>Artikel</th><th>Deskripsi</th><th>Kategori</th><th class="r">OD</th><th class="r">Terima</th><th class="r">Selisih</th><th>Status</th></tr></thead><tbody>${items.map(i=>`<tr><td class="code">${esc(i.a)}</td><td class="small">${esc(i.ds)}<div class="muted">${esc(i.rm)}</div></td><td class="small">${KAT[i.k]||esc(i.k)}</td><td class="r num">${f0(i.od)}</td><td class="r num">${f0(i.rc)}</td><td class="r num"><b>${f0(i.q)}</b></td><td><span class="badge ${i.up!=='DONE'||i.st==='Pending'?'b-crit':'b-good'}">${esc(i.up)} · ${esc(i.st)}</span></td></tr>`).join('')}</tbody></table></div>`)}
+
+// ---------- render
+function render(){
+  renderShell();
+  const m=document.getElementById('main');
+  if(!D){m.innerHTML=STATUS.state==='error'?`<section class="panel">${empty('Data belum bisa dimuat',esc(STATUS.msg),false)}<div class="empty" style="padding-top:0"><button class="btn" data-reload>Coba lagi</button></div></section>`:`<section class="panel"><div class="empty"><div class="e1">Memuat data</div><div>Mengambil MASTER_PLAN, MASTER_LC, LPPBDO, dan VENDOR dari Google Sheets. Pertama kali bisa butuh 10–30 detik.</div></div></section>`;return}
+  m.innerHTML=({dash:pageDash,stock:pageStock,out:pageOut,lpp:pageLpp})[S.page]();
+  if(location.hash.slice(1)!==S.page)history.replaceState(null,'','#'+S.page);
+}
+document.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target.matches('tr.click')){e.preventDefault();e.target.click()}});
+(function boot(){
+  try{const c=localStorage.getItem(CACHE_KEY);if(c){D=JSON.parse(c);reindex();STATUS.at=D.snap}}catch(e){D=null}
+  render();loadData();
+  let hiddenAt=0;document.addEventListener('visibilitychange',()=>{if(document.hidden)hiddenAt=Date.now();else if(Date.now()-hiddenAt>5*60e3)loadData()});
+})();
+</script>
+
+</body>
+</html>
