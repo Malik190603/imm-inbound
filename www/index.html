@@ -65,6 +65,16 @@ button{cursor:pointer}
 .intro-logo .base{stroke:#F2B230;stroke-width:5;stroke-linecap:round;stroke-dasharray:90;stroke-dashoffset:90;animation:draw .7s .85s var(--ease) forwards}
 .intro-word{font-weight:800;font-size:40px;letter-spacing:.42em;margin-right:-.42em;line-height:1;opacity:0;animation:word 1s 1s var(--ease) forwards}
 .intro-sub{font-size:12.5px;letter-spacing:.16em;text-transform:uppercase;color:#AAB4BB;text-align:center;line-height:1.7;opacity:0;animation:fadeUp .8s 1.35s var(--ease) forwards}
+.intro-copy{position:absolute;left:0;right:0;bottom:calc(var(--sab) + 28px);text-align:center;font-size:11.5px;letter-spacing:.08em;color:#6F7C84;opacity:0;animation:fadeUp .8s 1.6s var(--ease) forwards}
+.intro-copy b{color:#AAB4BB;font-weight:600}
+#intro.leaving .intro-word,#intro.leaving .intro-sub,#intro.leaving .intro-load,#intro.leaving .intro-copy{transition:opacity .25s ease,transform .35s var(--ease);opacity:0!important;transform:translateY(-6px)}
+#intro.leaving{background:transparent;transition:background-color .7s var(--ease)}
+#intro.leaving::before{content:"";position:absolute;inset:0;background:#111820;animation:bgOut .75s .05s var(--ease) forwards}
+@keyframes bgOut{to{opacity:0}}
+#intro.leaving .intro-in{position:relative;z-index:1}
+.fly{position:fixed;z-index:120;border-radius:12px;display:grid;place-items:center;pointer-events:none;will-change:transform}
+.fly svg{width:22px;height:22px}
+.mark.hide{visibility:hidden}
 .intro-load{font-size:12px;color:#7D8A92;min-height:18px;opacity:0;animation:fadeUp .6s 1.8s var(--ease) forwards}
 @keyframes draw{to{stroke-dashoffset:0}}
 @keyframes ribIn{from{opacity:0;transform:scaleY(.2)}to{opacity:1;transform:none}}
@@ -98,7 +108,8 @@ button{cursor:pointer}
 .vsep{width:1px;height:22px;background:var(--line);flex:none;margin:0 2px}
 
 /* ---------- page ---------- */
-main{max-width:1120px;margin:0 auto;padding-block:6px 124px;padding-inline:16px;display:grid;gap:16px}
+main{max-width:1120px;margin:0 auto;padding-block:6px 124px;padding-inline:16px;display:grid;gap:16px;grid-template-columns:minmax(0,1fr)}
+main>*,.ins-wrap{min-width:0}
 .enter>*{animation:rise .6s var(--ease) both;animation-delay:calc(var(--i,0)*60ms)}
 @keyframes rise{from{opacity:0;transform:translateY(16px)}}
 .hello{padding:6px 2px 0}
@@ -160,15 +171,30 @@ main{max-width:1120px;margin:0 auto;padding-block:6px 124px;padding-inline:16px;
 @media (min-width:861px){.ins{grid-auto-flow:row;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));overflow:visible}.ins-head .ins-nav,.dots{display:none}}
 
 /* bars */
-.hbars{display:grid;gap:13px}
-.hb{display:grid;gap:6px}
-.hb .top{display:flex;align-items:baseline;gap:8px;font-size:13px}
+.hbars{display:grid;gap:13px;grid-template-columns:minmax(0,1fr)}
+.hb{display:grid;gap:6px;min-width:0}
+.hb .top{display:flex;align-items:baseline;gap:8px;font-size:13px;min-width:0}
+.hb .top .l>span{overflow:hidden;text-overflow:ellipsis}
+.hb .top .l>span.mono{flex:none}
 .hb .top .l{font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:flex;align-items:center;gap:7px}
 .hb .top .s{color:var(--ink-3);font-size:12px;white-space:nowrap}
 .hb .top .v{margin-left:auto;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
 .track{height:8px;border-radius:999px;background:var(--sunk);display:flex;gap:2px;overflow:hidden}
 .track span{display:block;height:100%;transform-origin:left;animation:grow .9s var(--ease) both}
 .track span:last-child{border-radius:0 999px 999px 0}
+.trow{display:flex;align-items:center;gap:12px;min-width:0}
+.trow .track{flex:1}
+.pct{flex:none;min-width:44px;text-align:right;font-size:12px;font-weight:700;color:var(--ink-2);background:var(--sunk);border-radius:999px;padding:2px 8px;font-variant-numeric:tabular-nums}
+.hb .top .v small{font-weight:500;color:var(--ink-3);font-size:11.5px;margin-left:3px}
+.types{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.type{border:1.5px solid transparent;background:var(--surface-2);border-radius:16px;padding:11px 11px 10px;text-align:left;display:grid;gap:2px;min-width:0}
+.type .k{font-size:12px;color:var(--ink-2);display:flex;align-items:center;gap:6px;font-weight:700}
+.type .v{font-size:20px;font-weight:800;font-variant-numeric:tabular-nums;line-height:1.25}
+.type .p{font-size:11.5px;color:var(--ink-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.type[aria-pressed="true"]{border-color:var(--tc);background:var(--surface);box-shadow:var(--shadow)}
+.type:disabled{opacity:.45}
+.pick{border:1.5px dashed var(--line);border-radius:16px;padding:18px 14px;text-align:center;color:var(--ink-3);font-size:13px}
+.lcd{animation:rise .45s var(--ease) both}
 .hb.click{cursor:pointer;border-radius:12px;margin:-6px -8px;padding:6px 8px}
 .hb.click:hover{background:var(--surface-2)}
 
@@ -364,17 +390,18 @@ html.calm *,html.calm *::before,html.calm *::after{animation-duration:.001ms!imp
 <body>
 <div id="intro" role="presentation" aria-hidden="true">
   <div class="intro-in">
-    <svg class="intro-logo" viewBox="0 0 112 84"><rect class="box" x="6" y="8" width="100" height="58" rx="10"/><line class="rib" x1="28" y1="22" x2="28" y2="52"/><line class="rib" x1="47" y1="22" x2="47" y2="52"/><line class="rib" x1="65" y1="22" x2="65" y2="52"/><line class="rib" x1="84" y1="22" x2="84" y2="52"/><line class="base" x1="10" y1="78" x2="102" y2="78"/></svg>
+    <svg class="intro-logo" id="introLogo" viewBox="0 0 112 84"><rect class="box" x="6" y="8" width="100" height="58" rx="10"/><line class="rib" x1="28" y1="22" x2="28" y2="52"/><line class="rib" x1="47" y1="22" x2="47" y2="52"/><line class="rib" x1="65" y1="22" x2="65" y2="52"/><line class="rib" x1="84" y1="22" x2="84" y2="52"/><line class="base" x1="10" y1="78" x2="102" y2="78"/></svg>
     <div class="intro-word">IMM</div>
     <div class="intro-sub">Inbound Mini Monitoring<br>DC Tallo</div>
     <div class="intro-load" id="introLoad"></div>
   </div>
+  <div class="intro-copy">Created by <b>Inbound DC Tallo</b></div>
 </div>
 
 <header class="bar">
   <div class="bar-in">
     <div class="brand">
-      <div class="mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="var(--accent-ink)" stroke-width="1.9" stroke-linecap="round"><rect x="3" y="5.5" width="18" height="11" rx="2.2"/><path d="M7.5 8.5v5M10.5 8.5v5M13.5 8.5v5M16.5 8.5v5" stroke-width="1.5"/><path d="M4 20h16" stroke="#F2B230" stroke-width="2.2"/></svg></div>
+      <div class="mark" id="brandMark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="var(--accent-ink)" stroke-width="1.9" stroke-linecap="round"><rect x="3" y="5.5" width="18" height="11" rx="2.2"/><path d="M7.5 8.5v5M10.5 8.5v5M13.5 8.5v5M16.5 8.5v5" stroke-width="1.5"/><path d="M4 20h16" stroke="#F2B230" stroke-width="2.2"/></svg></div>
       <div><b>IMM</b><small>Inbound Mini Monitoring · DC Tallo</small></div>
     </div>
     <nav class="tabs-top" id="tabsTop" role="tablist" aria-label="Menu"></nav>
@@ -506,7 +533,7 @@ function loadData(manual){
       const res=await Promise.all(keys.map(k=>gviz(QUERIES[k]).catch(e=>{if(k==='rdc')return {__err:e.message};throw e})));
       const R=Object.fromEntries(keys.map((k,i)=>[k,res[i]]));
       let rdcErr='';if(R.rdc&&R.rdc.__err){rdcErr=R.rdc.__err;R.rdc=[]}
-      D=buildModel(R);D.rdcErr=rdcErr;reindex();
+      D=buildModel(R);D.rdcErr=rdcErr;reindex();SKU_CACHE={};
       STATUS.state='ok';
       if(!window.IMM_SNAPSHOT)LS.set(CACHE_KEY,D);
       if(manual){toast('Data diperbarui');buzz(12)}
@@ -648,7 +675,7 @@ function bindCarousel(id,n){const el=document.getElementById(id);if(!el)return;c
   el.addEventListener('scroll',()=>{const w=el.firstElementChild?el.firstElementChild.offsetWidth+10:1;const k=Math.min(n-1,Math.round(el.scrollLeft/w));dots.forEach((d,j)=>d.classList.toggle('on',j===k))},{passive:true})}
 function emptyState(title,msg,acts=true,icon=I.box){const cur=F().preset;return `<div class="empty"><div class="art">${icon}</div><div class="e1">${title}</div><div>${msg}</div>${acts?`<div class="acts">${[['today','Hari ini'],['tomorrow','Besok'],['next7','7 hari ke depan'],['last30','30 hari terakhir']].filter(x=>x[0]!==cur).map(([k,l])=>`<button class="btn ghost sm press" data-qp="${k}">${l}</button>`).join('')}</div>`:''}</div>`}
 function hbars(items){const max=Math.max(1e-9,...items.map(x=>x.segs?x.segs.reduce((a,s)=>a+s[0],0):x.v));
-  return `<div class="hbars">${items.map((x,i)=>{const segs=x.segs||[[x.v,x.color||'var(--s-stock)']];return `<div class="hb ${x.click?'click press':''}" ${x.click||''}><div class="top"><span class="l">${x.l}</span>${x.s?`<span class="s">${x.s}</span>`:''}<span class="v">${x.vt}</span></div><div class="track">${segs.filter(s=>s[0]>0).map(s=>`<span style="width:${s[0]/max*100}%;background:${s[1]};animation-delay:${i*45}ms"></span>`).join('')}</div></div>`}).join('')}</div>`}
+  return `<div class="hbars">${items.map((x,i)=>{const segs=x.segs||[[x.v,x.color||'var(--s-stock)']];const tr=`<div class="track">${segs.filter(s=>s[0]>0).map(s=>`<span style="width:${s[0]/max*100}%;background:${s[1]};animation-delay:${i*45}ms"></span>`).join('')}</div>`;return `<div class="hb ${x.click?'click press':''}" ${x.click||''}><div class="top"><span class="l">${x.l}</span>${x.s?`<span class="s">${x.s}</span>`:''}<span class="v">${x.vt}</span></div>${x.pct!=null?`<div class="trow">${tr}<span class="pct">${x.pct}%</span></div>`:tr}</div>`}).join('')}</div>`}
 const buLabel=b=>`<i class="dot" style="background:${buCol(b)};border-radius:50%"></i>${esc(b)}`;
 function searchBox(key,ph){return `<label class="search">${I.search}<input type="search" placeholder="${ph}" data-q="${key}" value="${esc(S.q[key]||'')}" aria-label="${ph}"></label>`}
 function moreBtn(key,total,shown){return total>shown?`<div class="more"><button class="btn ghost sm press" data-more="${key}">Tampilkan ${Math.min(20,total-shown)} lagi · ${total-shown} tersisa</button></div>`:''}
@@ -768,7 +795,7 @@ function pageHome(){
     <section class="card"><div class="ch"><h2>Perlu dicek</h2></div><div class="cb" style="padding-top:4px">${al.join('')}</div></section>
   </div>
   ${buckets.length?`<section class="card" style="--i:4"><div class="ch"><h2>CBM per ${buckets[0].mode==='w'?'minggu':buckets[0].mode==='m'?'bulan':'hari'}</h2><span class="hint">ketuk batang untuk detail</span></div><div class="cb">${all>0?`<div class="legend">${SER.map(s=>`<span><i class="dot" style="background:${s.color}"></i>${s.name}</span>`).join('')}</div>${stackChart('cHome',buckets,SER)}`:emptyState('Belum ada CBM','Tidak ada LC terjadwal yang cocok dengan MASTER_LC di periode ini.')}</div></section>`:''}
-  <section class="card" style="--i:5"><div class="ch"><h2>Per BU</h2><span class="hint">CBM · TEUs</span></div><div class="cb">${hbars(buRows.map(r=>({l:buLabel(r.b),s:`${f0(r.te)} TEUs`,vt:r.v?f1(r.v):'–',v:r.v,color:buCol(r.b)})))}</div></section>`;
+  <section class="card" style="--i:5"><div class="ch"><h2>Per BU</h2><span class="hint">CBM · TEUs</span></div><div class="cb">${hbars(buRows.map(r=>({l:buLabel(r.b),s:`${f0(r.te)} TEUs`,vt:r.v?`${f1(r.v)}<small>CBM</small>`:'–',pct:pc(r.v,all),v:r.v,color:buCol(r.b)})))}</div></section>`;
 }
 
 // ======================= STORING / OUTBOUND =======================
@@ -791,7 +818,7 @@ function pageStock(){
     const bg=lcs.slice().sort((a,b)=>b.cbm-a.cbm)[0];if(bg)ins.push({h:'LC terbesar',t:`<span class="mono">${esc(bg.lc)}</span>: ${f1(bg.cbm)} CBM, ${bg.dep.size} dept, bongkar ${dday(bg.d)}${bg.c?' '+bg.c.j:''}.`});
     const zero=X.cont.filter(c=>c.lc&&LCSET.has(c.lc)&&c.ps>0&&LCTOT[LCI[c.lc]][0]===0);if(zero.length)ins.push({c:'w',h:'Data tidak cocok',t:`${zero.length} kontainer punya TO STOCK di plan, tapi MASTER_LC tidak mencatat baris storing.`});
   }
-  const byBU=BUS.filter(buOK).map(b=>{const rs=R.filter(r=>BUS[r[7]]===b);return {l:buLabel(b),s:`${new Set(rs.map(r=>r[0])).size} LC`,v:rs.reduce((a,r)=>a+r[6],0),color:buCol(b)}});
+  const byBU=BUS.filter(buOK).map(b=>{const rs=R.filter(r=>BUS[r[7]]===b);const v=rs.reduce((a,r)=>a+r[6],0);return {l:buLabel(b),s:`${new Set(rs.map(r=>r[0])).size} LC`,v,pct:pc(v,cbm),color:buCol(b)}});
   if(S.q.dept){const Q=S.q.dept.toUpperCase();dep=dep.filter(d=>D.depts[d.k].toUpperCase().includes(Q))}
   const nd=lim('dept',8);
   return `
@@ -799,8 +826,8 @@ function pageStock(){
   <div style="--i:1">${tiles([{k:'CBM storing',dot:'var(--s-stock)',v:cnt(cbm,1),d:`plan ${f1(X.cont.reduce((a,c)=>a+c.ps,0))}`},{k:'Kontainer',v:cnt(teS),u:'TEUs',d:`${nLC} LC`},{k:'Baris SKU',v:cnt(sumN(R)),d:`${new Set(R.map(r=>r[3])).size} dept`},{k:'Qty',v:cnt(qty),u:'pcs'}])}</div>
   <div style="--i:2">${insights('Ringkasan pintar',ins)}</div>
   ${cbm>0?`<div class="grid2" style="--i:3">
-    <section class="card"><div class="ch"><h2>Per dept</h2><span class="hint">${dep.length} dept</span><div class="right" style="flex:1 1 160px;max-width:220px">${searchBox('dept','Cari dept')}</div></div><div class="cb">${dep.length?hbars(dep.slice(0,nd).map(d=>({l:`<span class="mono">${esc(D.depts[d.k])}</span>`,s:`${d.lc.size} LC · ${f0(d.sku)} SKU`,vt:`${f1(d.cbm)} <span style="color:var(--ink-3);font-weight:500">${pc(d.cbm,cbm)}%</span>`,v:d.cbm,color:'var(--s-stock)'}))):emptyState('Dept tidak ditemukan','Coba kata kunci lain.',false,I.search)}${moreBtn('dept',dep.length,nd)}</div></section>
-    <section class="card"><div class="ch"><h2>Per BU</h2></div><div class="cb">${hbars(byBU.map(x=>({...x,vt:x.v?f1(x.v):'–'})))}</div></section>
+    <section class="card"><div class="ch"><h2>Per dept</h2><span class="hint">${dep.length} dept</span><div class="right" style="flex:1 1 160px;max-width:220px">${searchBox('dept','Cari dept')}</div></div><div class="cb">${dep.length?hbars(dep.slice(0,nd).map(d=>({l:`<span class="mono">${esc(D.depts[d.k])}</span>`,s:`${d.lc.size} LC · ${f0(d.sku)} SKU`,vt:`${f1(d.cbm)}<small>CBM</small>`,pct:pc(d.cbm,cbm),v:d.cbm,color:'var(--s-stock)'}))):emptyState('Dept tidak ditemukan','Coba kata kunci lain.',false,I.search)}${moreBtn('dept',dep.length,nd)}</div></section>
+    <section class="card"><div class="ch"><h2>Per BU</h2></div><div class="cb">${hbars(byBU.map(x=>({...x,vt:x.v?`${f1(x.v)}<small>CBM</small>`:'–'})))}</div></section>
   </div>`:''}
   <section class="card" style="--i:4"><div class="ch"><h2>Daftar No LC</h2><span class="hint">${lcs.length} LC</span><div class="right" style="flex:1 1 180px;max-width:240px">${searchBox('lcS','Cari LC / kontainer')}</div></div><div class="cb" style="padding-top:4px">${lcs.length?lcRows(lcs,'S','lcS'):emptyState(S.q.lcS?'Tidak ditemukan':'Tidak ada storing',S.q.lcS?'Tidak ada LC yang cocok.':`Tidak ada LC ke storing ${whenWord()}.`,!S.q.lcS)}</div></section>`;
 }
@@ -815,15 +842,15 @@ function pageOut(){
     if(dest[0])ins.push({h:'Store terbesar',t:`<span class="mono">${esc(dest[0].c)}</span> ${esc(nameOf(dest[0].c))}: <b>${f1(dest[0].cbm)} CBM</b> dari ${dest[0].lc.size} LC.`});
     if(dest.length>3){let a=0,n=0;for(const d of dest){a+=d.cbm;n++;if(a>=st*.8)break}ins.push({h:'Prioritas staging',t:`${n} dari ${dest.length} store sudah mencakup 80% volume store. Siapkan staging untuk store ini dulu.`})}
   }
-  const byBU=BUS.filter(buOK).map(b=>{const rs=RA.filter(r=>BUS[r[7]]===b);return {l:buLabel(b),s:`${new Set(rs.filter(r=>r[1]===1).map(r=>r[2])).size} store`,v:rs.reduce((x,r)=>x+r[6],0),color:buCol(b)}});
+  const byBU=BUS.filter(buOK).map(b=>{const rs=RA.filter(r=>BUS[r[7]]===b);const v=rs.reduce((x,r)=>x+r[6],0);return {l:buLabel(b),s:`${new Set(rs.filter(r=>r[1]===1).map(r=>r[2])).size} store`,v,pct:pc(v,all),color:buCol(b)}});
   const nd=lim('dest',8);
   return `
   <div class="hello" style="--i:0"><h1>to Outbound</h1><p>Langsung ke store dan customer · ${esc(rlabel())}</p></div>
   <div style="--i:1">${tiles([{k:'CBM outbound',v:cnt(all,1),d:`plan ${f1(X.cont.reduce((a,c)=>a+c.pt+c.pc,0))}`},{k:'ke Store',dot:'var(--s-store)',v:cnt(st,1),d:`${pc(st,all)}% · ${dest.length} store`},{k:'ke Customer',dot:'var(--s-cust)',v:cnt(cu,1),d:`${pc(cu,all)}%`},{k:'Kontainer',v:cnt(teO),u:'TEUs',d:`${new Set(RA.map(r=>r[0])).size} LC`}])}</div>
   <div style="--i:2">${insights('Ringkasan pintar',ins)}</div>
   ${all>0?`<div class="grid2" style="--i:3">
-    <section class="card"><div class="ch"><h2>Per store</h2><span class="hint">${dest.length} store</span></div><div class="cb">${dest.length?hbars(dest.slice(0,nd).map(d=>({l:`<span class="mono">${esc(d.c)}</span> <span style="font-weight:500;color:var(--ink-3)">${esc(nameOf(d.c))}</span>`,s:'',vt:f1(d.cbm),v:d.cbm,color:'var(--s-store)'}))):emptyState('Tidak ada store','Semua outbound di periode ini adalah pesanan customer.',false,I.out)}${moreBtn('dest',dest.length,nd)}</div></section>
-    <section class="card"><div class="ch"><h2>Per BU</h2></div><div class="cb">${hbars(byBU.map(x=>({...x,vt:x.v?f1(x.v):'–'})))}</div></section>
+    <section class="card"><div class="ch"><h2>Per store</h2><span class="hint">${dest.length} store</span></div><div class="cb">${dest.length?hbars(dest.slice(0,nd).map(d=>({l:`<span class="mono">${esc(d.c)}</span> <span style="font-weight:500;color:var(--ink-3)">${esc(nameOf(d.c))}</span>`,s:`${d.lc.size} LC`,vt:`${f1(d.cbm)}<small>CBM</small>`,pct:pc(d.cbm,st),v:d.cbm,color:'var(--s-store)'}))):emptyState('Tidak ada store','Semua outbound di periode ini adalah pesanan customer.',false,I.out)}${moreBtn('dest',dest.length,nd)}</div></section>
+    <section class="card"><div class="ch"><h2>Per BU</h2><span class="hint">store + customer</span></div><div class="cb">${hbars(byBU.map(x=>({...x,vt:x.v?`${f1(x.v)}<small>CBM</small>`:'–'})))}</div></section>
   </div>`:''}
   <section class="card" style="--i:4"><div class="ch"><h2>Daftar No LC</h2><span class="hint">${lcs.length} LC</span><div class="right" style="flex:1 1 180px;max-width:240px">${searchBox('lcO','Cari LC / kontainer')}</div></div><div class="cb" style="padding-top:4px">${lcs.length?lcRows(lcs,'O','lcO'):emptyState(S.q.lcO?'Tidak ditemukan':'Tidak ada outbound',S.q.lcO?'Tidak ada LC yang cocok.':`Tidak ada LC ke store atau customer ${whenWord()}.`,!S.q.lcO)}</div></section>`;
 }
@@ -1028,23 +1055,41 @@ function openCont(i){const c=D.cont[i];if(c.lc&&LCSET.has(c.lc)){openLC(c.lc,'al
    <p style="margin:0;color:var(--ink-2)">${c.lc?`No LC <span class="mono">${esc(c.lc)}</span> belum ada di MASTER_LC, jadi isi dept dan SKU-nya belum bisa ditampilkan.`:'Baris ini tidak punya No LC. Isi No LC di MASTER_PLAN agar CBM-nya ikut terhitung.'}</p>`)}
 function openLC(lc,mode){
   const k=LCI[lc];if(k==null){if(lc in RDC_BY_SI){openRdc(RDC_BY_SI[lc]);return}toast('LC belum ada di MASTER_PLAN');return}
-  const cl=CONT_BY_LC[lc]||[];const c=cl[0];const R=D.rows.filter(r=>r[0]===k&&(mode==='S'?r[1]===0:mode==='O'?r[1]>0:true));const t=LCTOT[k];
-  const dep=groupBy(R,r=>r[3]+'|'+r[1],x=>({d:+x.split('|')[0],t:+x.split('|')[1],cbm:0,sku:0,qty:0}),(g,r)=>{g.cbm+=r[6];g.sku+=r[4];g.qty+=r[5]}).sort((a,b)=>a.t-b.t||b.cbm-a.cbm);
-  const plan=c?[c.ps,c.pt,c.pc]:[0,0,0];const col=['var(--s-stock)','var(--s-store)','var(--s-cust)'];const rid='sku'+k;
+  const cl=CONT_BY_LC[lc]||[];const c=cl[0];const t=LCTOT[k];const plan=c?[c.ps,c.pt,c.pc]:[0,0,0];
   const ri=RDC_BY_SI[lc],rdc=ri!=null?D.rdc[ri]:null;
-  sheet(sHead(esc(lc),`${cl.map(c=>`<span><b>${dday(c.d)}</b> ${c.j}</span><span class="mono">${esc(c.k)}</span>${buTag(c.bu)}<span>${f0(c.te)} TEU</span>`).join('')}`,tag(mode==='S'?'Storing':mode==='O'?'Outbound':'Semua tujuan')),
-  `<div><h4>Plan vs MASTER_LC</h4><div class="cmp">${['Storing','Store','Customer'].map((n,j)=>{const d=t[j]-plan[j];return `<div><div class="k"><i class="dot" style="background:${col[j]}"></i>${n}</div><div class="v">${f2(t[j])}</div><div class="p">plan ${f2(plan[j])}${Math.abs(d)>=.5?` · <span style="color:var(--warn);font-weight:700">${d>0?'+':''}${f1(d)}</span>`:''}</div></div>`}).join('')}</div></div>
-   ${rdc?`<div><h4>Posisi kontainer</h4><button class="row press" data-rdc="${ri}" style="padding-top:0"><span class="a">${esc(rdc.pos||'-')} ${rdc.p===4?tag('Delivered','good'):''}</span><span class="b">${esc(rdc.org)}${rdc.eta?` · ETA ${dshort(rdc.eta)}`:''}${rdc.ag!=null?` · aging ${rdc.ag} hari`:''}</span><span class="v" style="color:var(--ink-3)">${I.chev}</span></button></div>`:''}
-   <div><h4>Per dept</h4>${hbars(dep.map(d=>({l:`<span class="mono">${esc(D.depts[d.d])}</span>`,s:`${DEST[d.t]} · ${f0(d.sku)} SKU · ${f0(d.qty)} pcs`,vt:f2(d.cbm),v:d.cbm,color:col[d.t]})))}</div>
-   <div><h4>Isi SKU <span id="${rid}-n" style="font-weight:500;color:var(--ink-3);font-size:12px"></span></h4><label class="search" style="margin-bottom:8px">${I.search}<input type="search" placeholder="Cari SKU atau deskripsi" id="${rid}-q" aria-label="Cari SKU" disabled></label><div id="${rid}"><div class="sk" style="height:120px"></div></div></div>`);
-  showSku(lc,mode,rid);
+  const pre=mode==='S'?0:mode==='O'?(t[1]>0?1:2):null;
+  sheet(sHead(esc(lc),`${cl.map(c=>`<span><b>${dday(c.d)}</b> ${c.j}</span><span class="mono">${esc(c.k)}</span>${buTag(c.bu)}<span>${f0(c.te)} TEU</span>`).join('')}`),
+  `${rdc?`<div><h4>Posisi kontainer</h4><button class="row press" data-rdc="${ri}" style="padding-top:0"><span class="a">${esc(rdc.pos||'-')} ${rdc.p===4?tag('Delivered','good'):''}</span><span class="b">${esc(rdc.org)}${rdc.eta?` · ETA ${dshort(rdc.eta)}`:''}${rdc.ag!=null?` · aging ${rdc.ag} hari`:''}</span><span class="v" style="color:var(--ink-3)">${I.chev}</span></button></div>`:''}
+   <div><h4>Tipe inbound</h4><div class="types" id="lcTypes">${['Storing','Store','Customer'].map((n,j)=>{const d=t[j]-plan[j];return `<button class="type press" data-lctype="${j}" data-lck="${k}" style="--tc:${TCOL[j]}" aria-pressed="${pre===j}" ${t[j]<=0?'disabled':''}><span class="k"><i class="dot" style="background:${TCOL[j]}"></i>${n}</span><span class="v">${f1(t[j])}</span><span class="p">plan ${f1(plan[j])}${Math.abs(d)>=.5?` · <b style="color:var(--warn)">${d>0?'+':''}${f1(d)}</b>`:''}</span></button>`}).join('')}</div></div>
+   <div id="lcDetail">${pre!=null?'':'<div class="pick">Ketuk salah satu tipe inbound di atas untuk melihat rinciannya.</div>'}</div>`);
+  if(pre!=null)lcDetail(k,pre);
 }
-async function showSku(lc,mode,rid){const box=()=>document.getElementById(rid);
-  try{const all=await loadSkuDetail(lc);const sk=all.filter(x=>mode==='S'?x.dest===0:mode==='O'?x.dest>0:true);if(!box())return;
+const TCOL=['var(--s-stock)','var(--s-store)','var(--s-cust)'];
+let SKU_CACHE={};
+function lcDetail(k,type){
+  const el=document.getElementById('lcDetail');if(!el)return;const lc=D.lcs[k];
+  document.querySelectorAll('#lcTypes .type').forEach(b=>b.setAttribute('aria-pressed',String(+b.dataset.lctype===type)));
+  const R=D.rows.filter(r=>r[0]===k&&r[1]===type);const cbm=R.reduce((a,r)=>a+r[6],0),sku=sumN(R),qty=R.reduce((a,r)=>a+r[5],0);
+  let html='';
+  if(type===0){
+    const dep=groupBy(R,r=>r[3],x=>({d:x,cbm:0,sku:0,qty:0}),(g,r)=>{g.cbm+=r[6];g.sku+=r[4];g.qty+=r[5]}).sort((a,b)=>b.cbm-a.cbm);
+    html=`<div><h4>Per dept <span style="font-weight:500;color:var(--ink-3);font-size:12px">· storing ${f1(cbm)} CBM</span></h4>${hbars(dep.map(d=>({l:`<span class="mono">${esc(D.depts[d.d])}</span>`,s:`${f0(d.sku)} SKU · ${f0(d.qty)} pcs`,vt:`${f2(d.cbm)}<small>CBM</small>`,pct:pc(d.cbm,cbm),v:d.cbm,color:TCOL[0]})))}</div>`;
+  }else if(type===1){
+    const st=groupBy(R,r=>r[2],x=>({c:D.codes[x],cbm:0,sku:0,qty:0}),(g,r)=>{g.cbm+=r[6];g.sku+=r[4];g.qty+=r[5]}).sort((a,b)=>b.cbm-a.cbm);
+    html=`<div><h4>Store tujuan <span style="font-weight:500;color:var(--ink-3);font-size:12px">· ${st.length} store · ${f1(cbm)} CBM</span></h4>${hbars(st.map(d=>({l:`<span class="mono">${esc(d.c)}</span> <span style="font-weight:500;color:var(--ink-3)">${esc(nameOf(d.c))}</span>`,s:`${f0(d.sku)} SKU · ${f0(d.qty)} pcs`,vt:`${f2(d.cbm)}<small>CBM</small>`,pct:pc(d.cbm,cbm),v:d.cbm,color:TCOL[1]})))}</div>`;
+  }else{
+    el.innerHTML=`<div class="lcd"><div class="pick" style="border-style:solid;text-align:left;color:var(--ink-2)"><b style="color:var(--ink)">${f2(cbm)} CBM</b> untuk pesanan customer (${f0(sku)} SKU, ${f0(qty)} pcs). Rincian customer tidak ditampilkan.</div></div>`;return;
+  }
+  const rid='sku'+k+'-'+type;
+  el.innerHTML=`<div class="lcd" style="display:grid;gap:18px">${html}<div><h4>Isi SKU <span id="${rid}-n" style="font-weight:500;color:var(--ink-3);font-size:12px"></span></h4><label class="search" style="margin-bottom:8px">${I.search}<input type="search" placeholder="Cari SKU atau deskripsi" id="${rid}-q" aria-label="Cari SKU" disabled></label><div id="${rid}"><div class="sk" style="height:120px"></div></div></div></div>`;
+  showSku(lc,type,rid);
+}
+async function showSku(lc,type,rid){const box=()=>document.getElementById(rid);
+  try{const all=SKU_CACHE[lc]||(SKU_CACHE[lc]=await loadSkuDetail(lc));const sk=all.filter(x=>x.dest===type);if(!box())return;
     document.getElementById(rid+'-n').textContent=`· ${sk.length} SKU`;const q=document.getElementById(rid+'-q');q.disabled=false;box().innerHTML=skuTable(sk,'');q.addEventListener('input',()=>{box().innerHTML=skuTable(sk,q.value)})}
-  catch(e){if(box())box().innerHTML=`<p style="margin:0;color:var(--ink-2)">Isi SKU belum bisa dimuat. ${esc(e.message)}</p><button class="btn ghost sm press" data-lc="${esc(lc)}" data-mode="${mode}" style="margin-top:8px">Coba lagi</button>`}}
+  catch(e){delete SKU_CACHE[lc];if(box())box().innerHTML=`<p style="margin:0;color:var(--ink-2)">Isi SKU belum bisa dimuat. ${esc(e.message)}</p><button class="btn ghost sm press" data-lctype="${type}" data-lck="${LCI[lc]}" style="margin-top:8px">Coba lagi</button>`}}
 function skuTable(sk,q){const Q=q.trim().toUpperCase();const f=Q?sk.filter(r=>(r.sku+' '+r.desc+' '+r.dept).toUpperCase().includes(Q)):sk;
-  return `<div class="list">${f.slice(0,150).map(r=>`<div class="row"><span class="a" style="font-size:13px">${esc(r.desc)}</span><span class="b"><span class="mono">${esc(r.sku)}</span> · ${esc(r.dept)} · ${r.dest===0?'Storing':esc(r.code)+(r.dest===2?' cust':'')} · ${f0(r.qty)} pcs</span><span class="v">${f2(r.cbm)}<small>CBM</small></span></div>`).join('')}</div>${f.length>150?`<p class="foot">Menampilkan 150 dari ${f.length}. Gunakan pencarian.</p>`:''}${!f.length?'<p class="foot">Tidak ada SKU yang cocok.</p>':''}`}
+  return `<div class="list">${f.slice(0,150).map(r=>`<div class="row"><span class="a" style="font-size:13px">${esc(r.desc)}</span><span class="b"><span class="mono">${esc(r.sku)}</span> · ${esc(r.dept)}${r.dest===1?' · '+esc(r.code):''} · ${f0(r.qty)} pcs</span><span class="v">${f2(r.cbm)}<small>CBM</small></span></div>`).join('')}</div>${f.length>150?`<p class="foot">Menampilkan 150 dari ${f.length}. Gunakan pencarian.</p>`:''}${!f.length?'<p class="foot">Tidak ada SKU yang cocok.</p>':''}`}
 function openRdc(i){const r=D.rdc[i];if(!r)return;const pl=CONT_BY_LC[r.si]||[];const cb=D.lcAll[r.si];
   const ms=[['Checkout dari asal',r.ck||r.dd],['Masuk POO',r.poo],['Kapal berangkat (ETD)',r.etd],['Berangkat (ATD)',r.atd],['Perkiraan tiba (ETA)',r.eta],['Tiba di pelabuhan (ATA)',r.ata],['Request dooring',r.rqd],['Dooring',r.acd],['Bongkar di DC',r.bk]];
   const ag=[['Aging POO',r.agPoo],['Pelayaran',r.agOtw],['Sandar→terima',r.agPod],['Lead time',r.lead]].filter(x=>x[1]!=null);
@@ -1088,6 +1133,7 @@ document.addEventListener('click',e=>{
   if(g('#updCheck')){checkForUpdate(true);return}
   if(g('#whatsNew')){showWhatsNew(true);return}
   if(g('#clearCache')){LS.del(CACHE_KEY);D=null;render();loadData(true);return}
+  if(t=g('[data-lctype]')){buzz(6);lcDetail(+t.dataset.lck,+t.dataset.lctype);return}
   if(t=g('[data-lc]')){openLC(t.dataset.lc,t.dataset.mode||'all');return}
   if(t=g('[data-cont]')){openCont(+t.dataset.cont);return}
   if(t=g('[data-rdc]')){openRdc(+t.dataset.rdc);return}
@@ -1113,13 +1159,32 @@ function render(anim){
   m.className='';if(anim&&!reduced()){void m.offsetWidth;m.className='enter'}m.innerHTML=html;placeKnobs();requestAnimationFrame(placeKnobs);if(anim)countUp(m);
   if(location.hash.slice(1)!==S.page)history.replaceState(null,'','#'+S.page);
 }
+function flyOut(el){
+  const logo=document.getElementById('introLogo'),mark=document.getElementById('brandMark');
+  if(reduced()||!logo||!mark||!el.animate){el.classList.add('out');setTimeout(()=>el.remove(),900);return}
+  const a=logo.getBoundingClientRect(),b=mark.getBoundingClientRect();
+  // pusat persegi kontainer: intro (56,37 dari 112x84), ikon brand (12,11 dari 24 di svg 22px di tengah kotak)
+  const sx=a.left+a.width*56/112,sy=a.top+a.height*37/84,iconW=22*18/24;
+  const scale=(a.width*100/112)/iconW;
+  const bcx=b.left+b.width/2,bcy=b.top+b.height/2,o=-22/24;
+  const fly=document.createElement('div');fly.className='fly';
+  Object.assign(fly.style,{left:b.left+'px',top:b.top+'px',width:b.width+'px',height:b.height+'px'});
+  fly.innerHTML=mark.innerHTML.replace('stroke="var(--accent-ink)"','stroke="currentColor"');
+  document.body.appendChild(fly);mark.classList.add('hide');
+  const cs=getComputedStyle(document.documentElement);const acc=cs.getPropertyValue('--accent').trim()||'#111820',ink=cs.getPropertyValue('--accent-ink').trim()||'#fff';
+  const from=`translate(${sx-bcx}px,${sy-bcy-scale*o}px) scale(${scale})`;
+  logo.style.opacity='0';el.classList.add('leaving');
+  const anim=fly.animate([{transform:from,backgroundColor:'rgba(17,24,32,0)',color:'#F6F7F4',borderRadius:'2px'},{offset:.7,backgroundColor:'rgba(17,24,32,0)',color:'#F6F7F4'},{transform:'translate(0px,0px) scale(1)',backgroundColor:acc,color:ink,borderRadius:'12px'}],{duration:1050,easing:'cubic-bezier(.65,0,.22,1)',fill:'forwards'});
+  setTimeout(()=>{el.style.pointerEvents='none'},300);
+  anim.onfinish=()=>{mark.classList.remove('hide');fly.animate([{opacity:1},{opacity:0}],{duration:180,fill:'forwards'}).onfinish=()=>fly.remove();el.remove()};
+}
 (function boot(){
   applyTheme();const t0=performance.now();
   if(!window.IMM_SNAPSHOT){const c=LS.get(CACHE_KEY);if(c&&c.cont){D=c;reindex()}}
   const p=loadData();
   const minT=reduced()?0:2300;let shown=false;
   const reveal=()=>{if(shown)return;shown=true;const el=document.getElementById('intro');render(true);liveReady();
-    if(el){requestAnimationFrame(()=>{el.classList.add('out');setTimeout(()=>el.remove(),900)})}
+    if(el)flyOut(el);
     setTimeout(()=>{checkForUpdate(false);showWhatsNew(false)},1500)};
   const go=()=>setTimeout(reveal,Math.max(0,minT-(performance.now()-t0)));
   if(D)go();else{p.finally(go);setTimeout(reveal,8000)}
