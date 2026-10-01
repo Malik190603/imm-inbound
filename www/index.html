@@ -221,9 +221,11 @@ main>*,.ins-wrap{min-width:0}
 .jr-d{font-size:10.5px;color:var(--ink-3);line-height:1.25}
 .lt-sec{font-size:14px;font-weight:700;margin:18px 0 10px;display:flex;align-items:baseline;gap:8px}
 .lt-sec span{font-size:12px;font-weight:500;color:var(--ink-3)}
-.orgs{display:grid;gap:12px}
+.orgs{display:grid;gap:12px;margin-top:6px}
+button.org{border:0;background:none;padding:0;width:100%;text-align:left;font:inherit;color:inherit}
+.lt-hint{font-size:11.5px;color:var(--ink-3);margin:8px 2px 4px;line-height:1.4}
 .org{display:grid;gap:6px;min-width:0}
-.org-top,.slow-top{display:flex;align-items:baseline;gap:8px;min-width:0}
+.org-top{display:flex;align-items:baseline;gap:8px;min-width:0}
 .org-n{font-weight:700;font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
 .org-c{font-size:12px;color:var(--ink-3);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
 .org-t{margin-left:auto;font-weight:800;font-size:14px;white-space:nowrap;font-variant-numeric:tabular-nums}
@@ -231,9 +233,6 @@ main>*,.ins-wrap{min-width:0}
 .dchip.bad{background:var(--crit-bg);color:var(--crit)} .dchip.good{background:var(--good-bg);color:var(--good)}
 .seg3{display:flex;gap:3px;height:22px;transform-origin:left;animation:grow .9s var(--ease) both}
 .seg3 span{background:var(--c);border-radius:7px;display:grid;place-items:center;font-size:11px;font-weight:800;color:var(--o);min-width:18px}
-.slow{display:grid;gap:6px;padding:11px 2px;border:0;border-bottom:1px solid var(--line);background:none;width:100%;text-align:left}
-.slow:last-child{border-bottom:0}
-.slow-top .mono{white-space:nowrap;flex:none}
 .hic{width:30px;height:30px;border-radius:10px;background:var(--sunk);display:grid;place-items:center;color:var(--ink-2);flex:none}
 .hic svg{width:16px;height:16px}
 body::before{content:"";position:fixed;left:0;right:0;top:0;height:var(--sat);background:var(--bg);z-index:35}
@@ -659,7 +658,7 @@ const STAGE_COL=['var(--p1)','var(--p2)','var(--p3)','var(--p4)','var(--p5)'];
 // ======================= STATE =======================
 const DEFAULTS={home:'today',stock:'tomorrow',out:'tomorrow',mon:'last30'};
 const newF=p=>({bus:new Set(BUS),preset:DEFAULTS[p],month:TODAY.slice(0,7),from:TODAY,to:TODAY});
-const S={page:'home',monTab:'kont',f:{home:newF('home'),stock:newF('stock'),out:newF('out'),mon:newF('mon')},q:{},stage:2,dayPick:'',more:{},theme:LS.get('imm.theme.v')||'auto',calm:!!LS.get('imm.calm'),upd:null};
+const S={page:'home',monTab:'kont',f:{home:newF('home'),stock:newF('stock'),out:newF('out'),mon:newF('mon')},q:{},stage:2,ltm:'avg',dayPick:'',more:{},theme:LS.get('imm.theme.v')||'auto',calm:!!LS.get('imm.calm'),upd:null};
 {const h=location.hash.slice(1);if(['home','stock','out','mon','set'].includes(h))S.page=h}
 const F=()=>S.f[S.page]||S.f.home;
 const allBU=()=>F().bus.size===BUS.length;
@@ -946,7 +945,7 @@ function monKont(){
   const legSum=legMed.reduce((a,b)=>a+b,0)||1;const bott=legMed.indexOf(Math.max(...legMed));
   const pr=(from>'1000'&&to<'9000')?[addD(from,-days(from,to)),addD(from,-1)]:null;
   const prevL=pr?(D.rdc||[]).filter(r=>buOK(r.bu)&&r.p===4&&r.bk&&r.bk>=pr[0]&&r.bk<=pr[1]).map(legs).filter(x=>x.lead!=null).map(x=>x.lead):[];
-  const orgs=groupBy(L,x=>x.r.org||'-',k=>({k,a:[],poo:[],sail:[],port:[],te:0}),(g,x)=>{g.a.push(x.lead);g.te+=x.r.te;['poo','sail','port'].forEach(k=>x[k]!=null&&g[k].push(x[k]))}).filter(g=>g.a.length).map(g=>({...g,med:median(g.a),legs:['poo','sail','port'].map(k=>median(g[k]))})).sort((a,b)=>b.med-a.med);
+  const orgs=groupBy(L,x=>x.r.org||'-',k=>({k,a:[],xs:[],poo:[],sail:[],port:[],te:0}),(g,x)=>{g.a.push(x.lead);g.xs.push(x);g.te+=x.r.te;['poo','sail','port'].forEach(k=>x[k]!=null&&g[k].push(x[k]))}).filter(g=>g.a.length).map(g=>({...g,med:median(g.a),legs:['poo','sail','port'].map(k=>median(g[k]))})).sort((a,b)=>b.med-a.med);
   const slow=L.filter(x=>x.lead>leadP90&&L.length>=8).sort((a,b)=>b.lead-a.lead).slice(0,5);
   // ---- perkiraan bongkar 7 hari
   const fc=act.map(r=>({r,e:estBk(r)})).filter(x=>x.e&&x.e.d>=TODAY&&x.e.d<=addD(TODAY,6));
@@ -971,7 +970,11 @@ function monKont(){
   const q=(S.q.rdc||'').toUpperCase().replace(/\s+/g,'');const fl=q?list.filter(r=>(r.k+r.si).toUpperCase().replace(/\s+/g,'').includes(q)):list;
   const sorted=fl.slice().sort((a,b)=>stage===2?(b.ag||0)-(a.ag||0):stage===1?(a.eta||'9').localeCompare(b.eta||'9'):stage===4?(bkOf(b)||'').localeCompare(bkOf(a)||''):(startOf(a)||'').localeCompare(startOf(b)||''));
   const n=lim('rdc',10);const tot=grp.reduce((a,x)=>a+teu(x),0)||1;
-  const maxOrg=Math.max(1,...orgs.map(o=>hasLegs?o.legs.reduce((a,b)=>a+b,0):o.med));
+  const ltm=S.ltm||'avg';
+  const orgV=orgs.map(o=>{if(ltm==='avg')return {o,v:o.med,lg:o.legs,x:null};
+    const x=o.xs.slice().sort((a,b)=>ltm==='min'?a.lead-b.lead:b.lead-a.lead)[0];return {o,v:x.lead,lg:[x.poo,x.sail,x.port],x}})
+    .sort((a,b)=>ltm==='min'?a.v-b.v:b.v-a.v);
+  const maxOrg=Math.max(1,...orgV.map(z=>hasLegs?z.lg.reduce((a,b)=>a+(b||0),0):z.v),...(hasLegs?[]:[0]));
   return `
   <section class="card pad" style="--i:2"><div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap"><span class="hic">${I.ship}</span><h2 style="margin:0;font-size:15.5px;font-weight:700">Posisi kontainer</h2><span style="font-size:12px;color:var(--ink-3)">dalam TEUs · Delivered = ${esc(rlabel())}</span></div>
     <div class="pipe">${STAGES.map(([l,x],i)=>`<button class="stage press" data-stage="${i}" aria-pressed="${stage===i}"><span class="sd" style="background:${STAGE_COL[i]}">${STAGE_IC[i]}</span><span class="n">${cnt(teu(grp[i]))}</span><span class="l">${l}</span><span class="x">${x}</span></button>`).join('')}</div>
@@ -983,9 +986,10 @@ function monKont(){
       ${L.length?`<div class="lt-head"><div><div class="lt-big">${cnt(leadMed)}<span class="u">hari</span></div><div class="lt-sub">rata-rata (median) dari checkout di asal sampai dibongkar di DC</div></div>
         <div class="lt-chips"><span class="lt-chip"><b>≤ ${f0(leadP90)} hari</b>untuk 9 dari 10 kontainer</span><span class="lt-chip"><b>${L.length}</b>kontainer dihitung</span>${prevL.length>=3?`<span class="lt-chip ${median(prevL)>leadMed?'good':median(prevL)<leadMed?'bad':''}"><b>${median(prevL)===leadMed?'Sama':(median(prevL)>leadMed?'−':'+')+f1(Math.abs(median(prevL)-leadMed))+' hari'}</b>dibanding periode lalu</span>`:''}</div></div>
       ${journey(legMed,hasLegs,leadMed)}
-      <div class="lt-sec">Per asal kiriman <span>urut dari paling lama</span></div>
-      <div class="orgs">${orgs.map(o=>{const d=o.med-leadMed;return `<div class="org"><div class="org-top"><span class="org-n">${esc(o.k)}</span><span class="org-c">${o.a.length} kontainer</span><span class="org-t">${f0(o.med)} hari</span>${Math.abs(d)>=1?`<span class="dchip ${d>0?'bad':'good'}">${d>0?'+':'−'}${f0(Math.abs(d))}</span>`:'<span class="dchip">=</span>'}</div>${seg3(hasLegs?o.legs:[0,0,0],maxOrg,o.med)}</div>`}).join('')}</div>
-      ${slow.length?`<div class="lt-sec">Paling lambat <span>di atas ${f0(leadP90)} hari</span></div><div class="list">${slow.map(x=>`<button class="slow press" data-rdc="${RDC_BY_SI[x.r.si]}"><div class="slow-top"><span class="mono">${esc(x.r.k)}</span>${buTag(x.r.bu)}<span class="org-c">${esc(x.r.org)}</span><span class="org-t">${x.lead} hari</span></div>${seg3(hasLegs?[x.poo,x.sail,x.port]:[0,0,0],Math.max(...slow.map(z=>z.lead)),x.lead)}</button>`).join('')}</div>`:''}
+      <div class="lt-sec">Per asal kiriman</div>${seg('ltm',[['avg','Rata-rata'],['min','Tercepat'],['max','Terlama']],ltm)}<p class="lt-hint">${ltm==='avg'?'Median tiap asal · urut dari paling lama · angka kanan = selisih dari rata-rata semua asal':ltm==='min'?'Kontainer paling cepat dari tiap asal · ketuk untuk detail':'Kontainer paling lama dari tiap asal · ketuk untuk detail'}</p>
+      <div class="orgs">${orgV.map(({o,v,lg,x})=>{const d=o.med-leadMed;const top=`<div class="org-top"><span class="org-n">${esc(o.k)}</span><span class="org-c${x?' mono':''}">${x?esc(x.r.k||x.r.si):o.a.length+' kontainer'}</span><span class="org-t">${f0(v)} hari</span>${x?'':Math.abs(d)>=1?`<span class="dchip ${d>0?'bad':'good'}">${d>0?'+':'−'}${f0(Math.abs(d))}</span>`:'<span class="dchip">=</span>'}</div>${seg3(hasLegs?lg:[0,0,0],maxOrg,v)}`;
+        return x?`<button class="org press" data-rdc="${RDC_BY_SI[x.r.si]}">${top}</button>`:`<div class="org">${top}</div>`}).join('')}</div>
+      
       `:emptyState('Belum ada data',`Belum ada kontainer yang dibongkar ${esc(rlabel())} dengan tanggal lengkap.`,true,I.wait)}
     </div></section>
     <section class="card"><div class="ch"><span class="hic">${I.cal}</span><h2>Perkiraan bongkar</h2><span class="hint">7 hari ke depan · TEUs</span></div><div class="cb">
