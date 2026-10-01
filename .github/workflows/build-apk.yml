@@ -32,6 +32,13 @@ jobs:
           beta=false; case "$MSG" in *"[beta]"*) beta=true;; esac
           echo "beta=$beta" >> "$GITHUB_OUTPUT"; echo "Saluran: $([ $beta = true ] && echo beta || echo stabil)"
 
+      - name: Basis native (update kilat)
+        # Rilis tanpa perubahan native (plugin, izin, ikon, konfigurasi Capacitor, kunci) dipasang langsung
+        # di HP pengguna tanpa APK; selain itu APK ini menjadi basis native baru.
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: node scripts/live.mjs base
+
       - uses: actions/setup-node@v5
         with:
           node-version: 22
@@ -48,6 +55,11 @@ jobs:
       - name: Pemeriksaan kode sebelum rilis
         # Sintaks skrip, konfigurasi, dan kunci rahasia. Gagal = tidak ada rilis.
         run: npm run check
+
+      - name: Tulis versi aplikasi (www/config.js)
+        env:
+          VERSION_CODE: ${{ github.run_number }}
+        run: node scripts/build-web.mjs
 
       - name: Salin aplikasi web ke proyek Android
         run: npx cap sync android
@@ -85,6 +97,9 @@ jobs:
       - name: Catatan rilis (dari pesan commit)
         run: node scripts/release-notes.mjs
 
+      - name: Paket update kilat (web) + info di catatan rilis
+        run: node scripts/live.mjs pack
+
       - name: Terbitkan di Releases
         uses: softprops/action-gh-release@v2
         with:
@@ -93,4 +108,6 @@ jobs:
           body_path: release-notes.md
           prerelease: ${{ steps.ver.outputs.beta == 'true' }}
           make_latest: ${{ steps.ver.outputs.beta == 'true' && 'false' || 'true' }}
-          files: IMM-Tallo-*.apk
+          files: |
+            IMM-Tallo-*.apk
+            IMM-web-*.zip

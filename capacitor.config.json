@@ -3,7 +3,8 @@
   "appName": "IMM",
   "webDir": "www",
   "android": {
-    "allowMixedContent": false
+    "allowMixedContent": false,
+    "backgroundColor": "#111820"
   },
   "plugins": {
     "CapacitorHttp": {
@@ -11,7 +12,23 @@
     },
     "SystemBars": {
       "insetsHandling": "css",
-      "style": "DEFAULT"
+      "initialViewportFitValueHint": "cover"
+    },
+    "CapacitorUpdater": {
+      "autoUpdate": false,
+      "appReadyTimeout": 20000,
+      "resetWhenUpdate": true,
+      "autoDeleteFailed": true,
+      "autoDeletePrevious": true,
+      "statsUrl": "",
+      "updateUrl": "",
+      "channelUrl": "",
+      "allowModifyUrl": false,
+      "shakeMenu": false,
+      "keepUrlPathAfterReload": false
     }
+  },
+  "server": {
+    "androidScheme": "https"
   }
 }

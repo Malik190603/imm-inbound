@@ -21,7 +21,7 @@ while ((m = re.exec(html))) {
   catch (e) { fail('index.html skrip ke-' + n + ': ' + e.message); }
 }
 if (!n) fail('tidak ada skrip di index.html'); else ok(n + ' skrip di index.html');
-for (const s of ['MASTER_PLAN', 'MASTER_LC', 'LOGIC', 'LPPBDO_HCI', 'LPPBDO_AHI', 'VENDOR', 'RDC Tallo']) {
+for (const s of ['MASTER_PLAN', 'MASTER_LC', 'LOGIC', 'LPPBDO_HCI', 'LPPBDO_AHI', 'RDC']) {
   if (!html.includes("'" + s + "'")) fail('sheet ' + s + ' tidak dibaca aplikasi');
 }
 ok('semua sheet yang dibutuhkan dibaca');
@@ -30,6 +30,10 @@ for (const f of ['package.json', 'capacitor.config.json']) {
 }
 const cap = JSON.parse(fs.readFileSync(path.join(ROOT, 'capacitor.config.json'), 'utf8'));
 if (!(cap.plugins && cap.plugins.CapacitorHttp && cap.plugins.CapacitorHttp.enabled)) fail('CapacitorHttp harus aktif (tanpa itu Google Sheets diblokir CORS)'); else ok('CapacitorHttp aktif');
+const cu = (cap.plugins || {}).CapacitorUpdater;
+if (!cu || cu.autoUpdate !== false || cu.statsUrl !== '' || cu.updateUrl !== '' || cu.channelUrl !== '') fail('CapacitorUpdater harus mode manual tanpa server pihak ketiga'); else ok('update kilat: mode manual, tanpa statistik pihak ketiga');
+if (!fs.existsSync(path.join(ROOT, 'www', 'config.js'))) fail('www/config.js tidak ada'); else ok('config.js');
+if (!fs.readFileSync(path.join(ROOT, 'android/app/src/main/AndroidManifest.xml'), 'utf8').includes('REQUEST_INSTALL_PACKAGES')) fail('izin REQUEST_INSTALL_PACKAGES tidak ada'); else ok('izin pasang update');
 const PATTERNS = [[/-----BEGIN (?:RSA )?PRIVATE KEY-----/, 'private key'], [/AIza[0-9A-Za-z_-]{30,}/, 'Google API key'], [/ghp_[0-9A-Za-z]{30,}/, 'GitHub token']];
 for (const [p, name] of PATTERNS) if (p.test(html)) fail('kunci rahasia ikut ke aplikasi: ' + name);
 ok('tidak ada kunci rahasia di www/');

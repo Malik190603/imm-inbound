@@ -2,23 +2,28 @@
 
 Aplikasi Android untuk tim Inbound DC Tallo Makassar. Datanya dibaca langsung dari spreadsheet **IMM** di Google Sheets. Semua edit tetap dilakukan di spreadsheet, dan aplikasi mengambil data terbaru setiap kali dibuka, saat tombol **Muat ulang** diketuk, atau setelah aplikasi ditinggal lebih dari 5 menit.
 
-## Halaman
-- **Beranda**: ringkasan pintar, CBM masuk (storing vs outbound), jadwal bongkar per hari, hal yang perlu dicek, CBM per hari, per BU, dan ketepatan ekspedisi.
-- **Storing**: CBM ke gudang stock per dept, per BU, dan per No LC. Ketuk LC untuk melihat isi SKU dan posisinya.
-- **Outbound**: CBM ke store dan customer per tujuan.
-- **Monitoring**
-  - *Kontainer*: posisi kontainer dari sheet **RDC Tallo** (POO → Berlayar → Yard → Dooring → Delivered), aging, ETA, jadwal bongkar dari MASTER_PLAN, CBM dari MASTER_LC, lead time, dan SLA dokumen. Kolom vendor tidak dipakai.
-  - *LPPBDO*: ringkasan pintar per kategori, asal kiriman, dept, artikel berulang, rasio per 100 kontainer, dan daftar dokumen.
+## Menu
+- **Beranda** (bawaan: Semua BU, hari ini): ringkasan pintar, CBM masuk (storing vs outbound), kontainer dalam TEUs, jadwal bongkar, hal yang perlu dicek, CBM per hari, per BU.
+- **Storing** (bawaan: Semua BU, besok): CBM ke gudang stock per dept, per BU, per No LC. Ketuk LC untuk isi SKU dan posisinya.
+- **Outbound** (bawaan: Semua BU, besok): CBM ke store dan customer; daftar per tujuan hanya store.
+- **Monitoring** (bawaan: Semua BU, 30 hari terakhir)
+  - *Kontainer*: posisi kontainer dari sheet RDC (hanya BU NAME Makassar), dalam TEUs: POO → Berlayar → Yard → Dooring → Delivered, aging, ETA, jadwal bongkar, CBM per LC, lead time.
+  - *LPPBDO*: ringkasan pintar per kategori, asal kiriman, dept, artikel berulang, rasio per 100 TEUs, daftar dokumen.
+- **Pengaturan**: mode terang/malam/otomatis, kurangi animasi, periksa & pasang pembaruan (titik merah di menu bila ada versi baru), status data, muat ulang, hapus data tersimpan.
 
-Filter BU dan periode di bagian atas berlaku untuk semua menu. Tarik layar ke bawah atau ketuk jam di pojok kanan atas untuk memuat ulang data.
+Setiap menu punya filter BU dan periode sendiri. Tarik layar ke bawah atau ketuk jam di pojok kanan atas untuk memuat ulang data.
 
-## Cara pasang di HP
-1. Buka halaman **Releases** repo ini dari HP, lalu unduh file `IMM-Tallo-v1.x.x.apk` yang terbaru.
-2. Buka file tersebut. Kalau Android meminta izin "Instal aplikasi tidak dikenal", izinkan untuk browser atau aplikasi File yang dipakai.
-3. Untuk update, cukup instal APK versi baru di atas versi lama. Tidak perlu uninstall.
+Warna: Storing hijau, Store oranye, Customer biru. BU: HCI biru, AHI merah, TGI biru muda, FBI ungu, KWI oranye.
+
+## Cara pasang & update
+1. Pertama kali: unduh `IMM-Tallo-vX.apk` dari halaman **Releases**, buka, izinkan "Instal aplikasi tidak dikenal".
+2. Selanjutnya update dari dalam aplikasi (sama seperti Active Coach): titik merah muncul di menu **Pengaturan**, lalu ketuk **Perbarui sekarang**.
+   - Perubahan tampilan/logika saja → **update kilat** (±1 MB), langsung dipakai tanpa instal APK.
+   - Perubahan native (plugin, izin, ikon) → APK diunduh di dalam aplikasi lalu dipasang menimpa versi lama. Tidak perlu uninstall.
+3. Repo ini harus **publik** supaya aplikasi bisa membaca halaman Releases tanpa login.
 
 ## Syarat spreadsheet
-- Kedua spreadsheet (IMM dan RDC Tallo) harus dibagikan **"Siapa saja yang memiliki link" sebagai Pelihat**. Kalau aksesnya ditutup, aplikasi menampilkan pesan gagal memuat.
+- Kedua spreadsheet (IMM dan RDC) harus dibagikan **"Siapa saja yang memiliki link" sebagai Pelihat**. Kalau aksesnya ditutup, aplikasi menampilkan pesan gagal memuat.
 - **Jangan ganti nama sheet dan jangan menggeser kolom** yang dibaca aplikasi. Menambah baris atau mengubah isi sel aman.
 
 | Sheet | Kolom yang dibaca |
@@ -27,8 +32,7 @@ Filter BU dan periode di bagian atas berlaku untuk semua menu. Tarik layar ke ba
 | MASTER_PLAN | D tgl bongkar, E jam, G no. kontainer, H No LC, I site/BU, M CBM to stock, R CBM to store, W CBM to customer, Z ekspedisi, AA fleet, AB ship from, AC TEUs |
 | MASTER_LC | A No LC, E TradingPartner, F KODE SITE, G SITE NAME, P SITE, Q SKU, R DESCR, S Dept, T ORIGINALQTY, Z CBM_ORIGINAL_QTY |
 | LPPBDO_HCI, LPPBDO_AHI | A UPDATE, B Tgl, C Bulan, D BU, E LPPBDO No., F Site Receiver, H Driver, L Artikel, M Desc, O Qty OD, P Qty Receive, Q Remark, R Status, S Kategori, T Qty LPPBDO, W Dept, AA Tanggal |
-| VENDOR | B tgl bongkar, G site, H TEUs, I ekspedisi, J status, K–P penilaian YA/TIDAK |
-| RDC Tallo (spreadsheet terpisah) | A origin, B SI (= No LC), D type armada, F delivery date, H moda, I no container, K nama kapal, M ETD, N ATD, O ETA, P ATA, Q dokumen diterima, R request dooring, S actual dooring, T tanggal bongkar, U POSITION, V status shipment, W kode site, X BU, Y aging, Z kategori aging, AF SLA document |
+| RDC (spreadsheet terpisah, gid 345900811) | A asal, B SI (= No LC), D type armada, G delivery date, H checkout, J no container, L nama kapal, M POO, N ETD, O ATD, P ETA, Q ATA, S request dooring, T actual dooring, U tanggal bongkar, V position, W status shipment, Y BU, Z aging yard, AA kategori aging, AJ BU NAME (difilter Makassar), AL TEUs, AM–AP aging POO/OTW/POD & lead time |
 
 ## Aturan perhitungan
 - Patokan tanggal adalah **tanggal bongkar di MASTER_PLAN**. Baris MASTER_LC hanya dihitung kalau No LC-nya ada di MASTER_PLAN.
