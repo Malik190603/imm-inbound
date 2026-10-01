@@ -75,12 +75,12 @@ jobs:
           if grep -q "application-debuggable" badging.txt; then echo "::error::APK masih bisa di-debug. Rilis dibatalkan."; exit 1; fi
 
       - name: Beri nama file
-        run: cp android/app/build/outputs/apk/release/app-release.apk "IMM-Inbound-v${{ steps.ver.outputs.version }}.apk"
+        run: cp android/app/build/outputs/apk/release/app-release.apk "IMM-Tallo-v${{ steps.ver.outputs.version }}.apk"
 
       - uses: actions/upload-artifact@v4
         with:
-          name: IMM-Inbound-APK
-          path: IMM-Inbound-*.apk
+          name: IMM-Tallo-APK
+          path: IMM-Tallo-*.apk
 
       - name: Catatan rilis (dari pesan commit)
         run: node scripts/release-notes.mjs
@@ -89,8 +89,8 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ steps.ver.outputs.version }}
-          name: IMM Inbound v${{ steps.ver.outputs.version }}${{ steps.ver.outputs.beta == 'true' && ' (beta)' || '' }}
+          name: IMM v${{ steps.ver.outputs.version }}${{ steps.ver.outputs.beta == 'true' && ' (beta)' || '' }}
           body_path: release-notes.md
           prerelease: ${{ steps.ver.outputs.beta == 'true' }}
           make_latest: ${{ steps.ver.outputs.beta == 'true' && 'false' || 'true' }}
-          files: IMM-Inbound-*.apk
+          files: IMM-Tallo-*.apk

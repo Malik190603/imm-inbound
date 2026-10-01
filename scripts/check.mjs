@@ -21,7 +21,7 @@ while ((m = re.exec(html))) {
   catch (e) { fail('index.html skrip ke-' + n + ': ' + e.message); }
 }
 if (!n) fail('tidak ada skrip di index.html'); else ok(n + ' skrip di index.html');
-for (const s of ['MASTER_PLAN', 'MASTER_LC', 'LOGIC', 'LPPBDO_HCI', 'LPPBDO_AHI', 'VENDOR']) {
+for (const s of ['MASTER_PLAN', 'MASTER_LC', 'LOGIC', 'LPPBDO_HCI', 'LPPBDO_AHI', 'VENDOR', 'RDC Tallo']) {
   if (!html.includes("'" + s + "'")) fail('sheet ' + s + ' tidak dibaca aplikasi');
 }
 ok('semua sheet yang dibutuhkan dibaca');

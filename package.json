@@ -1,8 +1,8 @@
 {
   "name": "imm-inbound",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "private": true,
-  "description": "IMM Inbound DC Tallo Makassar - aplikasi Android yang membaca data dari Google Sheets",
+  "description": "IMM - Inbound Mini Monitoring DC Tallo: aplikasi Android yang membaca data dari Google Sheets",
   "scripts": {
     "sync": "cap sync android",
     "check": "node scripts/check.mjs",
