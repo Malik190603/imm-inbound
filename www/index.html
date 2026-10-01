@@ -339,6 +339,26 @@ button.row:hover{background:var(--surface-2)}
 
 /* settings */
 .set-group{display:grid}
+.uv.rl .uv-r{grid-template-columns:118px minmax(0,1fr) 38px}
+.uv.rl .uv-v{font-family:var(--f-sans);font-weight:600;font-size:12.5px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#roleGate{position:fixed;inset:0;z-index:95;display:grid;place-items:end center;padding:16px 12px calc(16px + var(--sab));background:rgba(8,12,16,.42);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);opacity:0;transition:opacity .4s var(--ease)}
+#roleGate.in{opacity:1} #roleGate.out{opacity:0}
+.rg-card{width:100%;max-width:460px;background:var(--surface);border-radius:28px;padding:18px 18px 16px;box-shadow:0 30px 80px -30px rgba(0,0,0,.5);transform:translateY(40px);transition:transform .55s var(--ease);max-height:calc(100dvh - 32px - var(--sat));overflow:auto}
+#roleGate.in .rg-card{transform:none} #roleGate.out .rg-card{transform:translateY(40px)}
+.rg-top{display:flex;justify-content:space-between;align-items:center;min-height:40px}
+.rg-logo{display:inline-grid}
+.rg-card h2{font-size:22px;font-weight:800;letter-spacing:-.02em;margin:14px 0 4px}
+.rg-card>p{margin:0 0 16px;color:var(--ink-3);font-size:13px}
+.rg-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-bottom:16px}
+.rg-opt{display:flex;align-items:center;gap:10px;padding:12px;border-radius:16px;border:1.5px solid var(--line);background:var(--surface-2);font:inherit;font-weight:700;font-size:13.5px;color:var(--ink);text-align:left;min-width:0;animation:rise .5s var(--ease) both;transition:border-color .2s,background .2s}
+.rg-opt>span:last-child{min-width:0;overflow-wrap:anywhere;line-height:1.2}
+.rg-opt .ic{width:30px;height:30px;border-radius:10px;display:grid;place-items:center;background:var(--sunk);color:var(--ink-2);flex:none;transition:background .2s,color .2s}
+.rg-opt .ic svg{width:17px;height:17px}
+.rg-opt[aria-pressed="true"]{border-color:var(--accent);background:var(--surface)}
+.rg-opt[aria-pressed="true"] .ic{background:var(--accent);color:var(--accent-ink)}
+.rg-opt:nth-child(9){grid-column:1/-1}
+.rg-go{padding:14px 18px;font-size:15px}
+.rg-go:disabled{opacity:.35}
 .uv{display:grid;gap:8px;margin-top:10px}
 .uv-r{display:grid;grid-template-columns:44px minmax(0,1fr) 28px;gap:10px;align-items:center}
 .uv-v{font-family:var(--f-mono);font-size:12px;color:var(--ink-2)}
@@ -786,7 +806,7 @@ function renderStatus(){
   const il=document.getElementById('introLoad');if(il)il.textContent=STATUS.state==='loading'?'Mengambil data dari spreadsheet…':'';
 }
 function toast(msg){const t=document.createElement('div');t.className='toast';t.textContent=msg;document.body.appendChild(t);setTimeout(()=>{t.style.transition='opacity .35s';t.style.opacity='0';setTimeout(()=>t.remove(),360)},2200)}
-function setPage(p){if(S.page===p){window.scrollTo({top:0,behavior:'smooth'});return}S.page=p;if(p==='set')loadStats();S.more={};buzz(6);render(true);window.scrollTo({top:0})}
+function setPage(p){if(S.page===p){window.scrollTo({top:0,behavior:'smooth'});return}S.page=p;if(p==='set'){loadStats();loadRoles()}S.more={};buzz(6);render(true);window.scrollTo({top:0})}
 
 // ======================= BERANDA =======================
 function pageHome(){
@@ -1088,6 +1108,50 @@ function pageSet(){
   </div></section>`;
 }
 
+// ======================= ROLE PENGGUNA (ditanya sekali per HP) =======================
+// Jawaban dikirim ke Google Form (tanpa login, tanpa GAS); responsnya masuk ke tab ROLE di spreadsheet IMM lalu dibaca lewat gviz.
+const ROLE_FORM={post:'',role:'',dev:'',ver:'',sheet:'ROLE'};
+const ROLES=[['Manager',I.star],['Assistant Manager',I.star],['Inbound',I.box],['Storing',I.stock],['Outbound',I.truck],['Inventory',I.db],['Planner',I.cal],['MHE',I.motion],['Ekspediter',I.ship]];
+function deviceId(){let d=LS.get('imm.dev');if(!d){d='d'+Date.now().toString(36)+Math.random().toString(36).slice(2,8);LS.set('imm.dev',d)}return d}
+async function sendRole(){
+  const r=LS.get('imm.role');if(!r||LS.get('imm.role.sent')===r.t||!ROLE_FORM.post||window.IMM_SNAPSHOT)return;
+  const b=new URLSearchParams();b.set(ROLE_FORM.role,r.role);if(ROLE_FORM.dev)b.set(ROLE_FORM.dev,deviceId());if(ROLE_FORM.ver)b.set(ROLE_FORM.ver,currentVersion());
+  try{await fetch(ROLE_FORM.post,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:b.toString()});LS.set('imm.role.sent',r.t);S.roles=null}catch(e){}
+}
+function roleGate(onDone,canClose){
+  if(document.getElementById('roleGate'))return;const cur=(LS.get('imm.role')||{}).role||'';let pick=cur;
+  const el=document.createElement('div');el.id='roleGate';el.setAttribute('role','dialog');el.setAttribute('aria-modal','true');
+  el.innerHTML=`<div class="rg-card"><div class="rg-top"><span class="rg-logo"><span class="mark">${(document.getElementById('brandMark')||{}).innerHTML||''}</span></span>${canClose?`<button class="icon-btn press" data-rg-x aria-label="Tutup">${I.x}</button>`:''}</div>
+    <h2>What Role you are?</h2><p>Pilih peranmu di DC Tallo. Cukup sekali di HP ini.</p>
+    <div class="rg-grid">${ROLES.map(([r,ic],i)=>`<button class="rg-opt press" data-role="${esc(r)}" aria-pressed="${r===cur}" style="animation-delay:${80+i*35}ms"><span class="ic">${ic}</span><span>${esc(r)}</span></button>`).join('')}</div>
+    <button class="btn block press rg-go" ${cur?'':'disabled'}>Lanjut</button></div>`;
+  document.body.appendChild(el);requestAnimationFrame(()=>el.classList.add('in'));
+  const close=()=>{el.classList.remove('in');el.classList.add('out');setTimeout(()=>el.remove(),450)};
+  el.addEventListener('click',e=>{const o=e.target.closest('[data-role]');
+    if(o){pick=o.dataset.role;buzz(6);el.querySelectorAll('[data-role]').forEach(b=>b.setAttribute('aria-pressed',b===o));el.querySelector('.rg-go').disabled=false;return}
+    if(e.target.closest('[data-rg-x]')){close();return}
+    if(e.target.closest('.rg-go')&&pick){LS.set('imm.role',{role:pick,t:Date.now()});buzz(12);close();sendRole();if(S.page==='set')render();toast('Terima kasih! Role: '+pick);onDone&&onDone()}});
+}
+async function loadRoles(){
+  if(!ROLE_FORM.post||S.rolesBusy||(S.roles&&Date.now()-S.roles.at<10*60e3))return;S.rolesBusy=true;
+  try{const rows=await gviz({doc:DOC_IMM,sheet:ROLE_FORM.sheet,tq:'select B,C',h:1});const by=new Map();let anon=0;
+    rows.forEach(r=>{const role=cs(r[0]),dev=cs(r[1]);if(!role)return;if(dev)by.set(dev,role);else anon++,by.set('#'+anon,role)});
+    const cnt={};by.forEach(v=>{cnt[v]=(cnt[v]||0)+1});S.roles={at:Date.now(),n:by.size,cnt}}
+  catch(e){S.roles={at:Date.now()-9*60e3,err:e.message||String(e)}}
+  S.rolesBusy=false;if(S.page==='set')render();
+}
+function rolesBlock(){
+  const me=(LS.get('imm.role')||{}).role;const R=S.roles;
+  const mine=`<button class="set-row press" id="roleEdit"><span class="ic">${I.users}</span><span><div class="t">Role kamu</div><div class="x">${me?esc(me):'Belum dipilih'}</div></span><span class="end">${I.chev}</span></button>`;
+  if(!ROLE_FORM.post)return `<div class="set-group" style="margin-top:14px">${mine}</div>`;
+  if(!R||R.err)return `<div class="set-group" style="margin-top:14px">${mine}</div><p class="foot" style="padding:8px 0 0">${R&&R.err?'Data role belum bisa dibaca: '+esc(R.err):'Memuat data role…'}</p>`;
+  const list=ROLES.map(([r])=>({k:r,v:R.cnt[r]||0})).concat(Object.keys(R.cnt).filter(k=>!ROLES.some(x=>x[0]===k)).map(k=>({k,v:R.cnt[k]}))).filter(x=>x.v).sort((a,b)=>b.v-a.v);
+  const mx=Math.max(1,...list.map(x=>x.v));
+  return `<div class="lt-sec">Per role <span>${f0(R.n)} HP menjawab</span></div>
+    ${list.length?`<div class="uv rl">${list.map(x=>`<div class="uv-r"><span class="uv-v">${esc(x.k)}</span><div class="uv-b"><div class="seg3" style="width:${Math.max(8,x.v/mx*100)}%"><span style="flex:1;--c:var(--lg2);--o:var(--on2)">${x.v}</span></div></div><span class="uv-n">${pc(x.v,R.n)}%</span></div>`).join('')}</div>`:'<p class="foot" style="padding:0">Belum ada jawaban.</p>'}
+    <div class="set-group" style="margin-top:10px">${mine}</div>`;
+}
+
 // ======================= PENGGUNA (jumlah unduhan dari GitHub Releases) =======================
 // Tiap HP mengunduh tiap versi paling banyak sekali (APK baru, atau paket update kilat .zip),
 // jadi jumlah unduhan per versi ≈ jumlah HP di versi itu; angka tertinggi = perkiraan jumlah perangkat.
@@ -1105,7 +1169,7 @@ async function loadStats(force){
 }
 function usersCard(){
   const st=S.stats;const vs=(st&&st.vs)||[];
-  if(!vs.length)return `<section class="card" style="--i:2"><div class="ch"><span class="hic">${I.users}</span><h2>Pengguna</h2></div><div class="cb"><p class="foot" style="padding:0">${st&&st.err?esc(st.err)+'. Cek koneksi internet.':'Memuat jumlah unduhan…'}</p></div></section>`;
+  if(!vs.length)return `<section class="card" style="--i:2"><div class="ch"><span class="hic">${I.users}</span><h2>Pengguna</h2></div><div class="cb"><p class="foot" style="padding:0">${st&&st.err?esc(st.err)+'. Cek koneksi internet.':'Memuat jumlah unduhan…'}</p>${rolesBlock()}</div></section>`;
   const tot=x=>x.apk+x.upd;const est=Math.max(...vs.map(tot));const apk=vs.reduce((a,x)=>a+x.apk,0),upd=vs.reduce((a,x)=>a+x.upd,0);
   const last=vs[0];const show=vs.slice(0,6);const mx=Math.max(1,...show.map(tot));
   return `<section class="card" style="--i:2"><div class="ch"><span class="hic">${I.users}</span><h2>Pengguna</h2><span class="hint">dari unduhan GitHub</span></div><div class="cb">
@@ -1114,6 +1178,7 @@ function usersCard(){
     <div class="legend"><span><i class="dot" style="background:var(--lg2)"></i>Unduh APK</span><span><i class="dot" style="background:var(--lg1)"></i>Update kilat</span></div>
     <div class="uv">${show.map(x=>`<div class="uv-r"><span class="uv-v">${esc(x.v)}</span><div class="uv-b"><div class="seg3" style="width:${Math.max(8,tot(x)/mx*100)}%">${x.apk?`<span style="flex:${x.apk};--c:var(--lg2);--o:var(--on2)">${x.apk}</span>`:''}${x.upd?`<span style="flex:${x.upd};--c:var(--lg1);--o:var(--on1)">${x.upd}</span>`:''}</div></div><span class="uv-n">${f0(tot(x))}</span></div>`).join('')}</div>
     <p class="foot" style="padding:10px 0 0">Satu HP mengunduh tiap versi sekali (APK atau update kilat), jadi angka tertinggi per versi dipakai sebagai perkiraan jumlah perangkat. APK yang dibagikan lewat WhatsApp atau dipindah antar-HP tidak ikut terhitung.</p>
+    ${rolesBlock()}
   </div></section>`;
 }
 
@@ -1274,6 +1339,7 @@ document.addEventListener('click',e=>{
   if(g('#updGo')){runUpdate();return}
   if(g('#updCheck')){checkForUpdate(true);return}
   if(g('#whatsNew')){showWhatsNew(true);return}
+  if(g('#roleEdit')){roleGate(null,true);return}
   if(g('#clearCache')){LS.del(CACHE_KEY);D=null;render();loadData(true);return}
   if(t=g('[data-lctype]')){buzz(6);lcDetail(+t.dataset.lck,+t.dataset.lctype);return}
   if(t=g('[data-lc]')){openLC(t.dataset.lc,t.dataset.mode||'all');return}
@@ -1287,7 +1353,7 @@ let qT;document.addEventListener('input',e=>{const k=e.target.dataset.q;if(!k)re
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeSheet()});
 addEventListener('resize',()=>{placePills();placeKnobs()});
 if(document.fonts&&document.fonts.ready)document.fonts.ready.then(()=>{placePills();placeKnobs()});
-try{PL.App&&PL.App.addListener&&PL.App.addListener('backButton',()=>{if(document.querySelector('.sheet')){closeSheet();return}if(S.page!=='home'){setPage('home');return}PL.App.exitApp&&PL.App.exitApp()})}catch(e){}
+try{PL.App&&PL.App.addListener&&PL.App.addListener('backButton',()=>{const rg=document.getElementById('roleGate');if(rg){const x=rg.querySelector('[data-rg-x]');x&&x.click();return}if(document.querySelector('.sheet')){closeSheet();return}if(S.page!=='home'){setPage('home');return}PL.App.exitApp&&PL.App.exitApp()})}catch(e){}
 (function(){const ptr=document.getElementById('ptr');let y0=null,dy=0;
   addEventListener('touchstart',e=>{if(scrollY<=0&&!document.querySelector('.sheet'))y0=e.touches[0].clientY;else y0=null},{passive:true});
   addEventListener('touchmove',e=>{if(y0==null)return;dy=e.touches[0].clientY-y0;if(dy>0){ptr.style.transition='none';ptr.style.transform=`translateY(${Math.min(dy*.5,70)-70}px) rotate(${dy*2}deg)`}},{passive:true});
@@ -1327,7 +1393,8 @@ function flyOut(el){
   const minT=reduced()?0:2300;let shown=false;
   const reveal=()=>{if(shown)return;shown=true;const el=document.getElementById('intro');render(true);liveReady();
     if(el)flyOut(el);
-    setTimeout(()=>{checkForUpdate(false);showWhatsNew(false)},1500)};
+    const after=()=>setTimeout(()=>{checkForUpdate(false);showWhatsNew(false)},600);
+    if(!LS.get('imm.role')&&!window.IMM_SNAPSHOT_NOROLE)setTimeout(()=>roleGate(after,false),reduced()?0:1100);else{sendRole();setTimeout(after,900)}};
   const go=()=>setTimeout(reveal,Math.max(0,minT-(performance.now()-t0)));
   if(D)go();else{p.finally(go);setTimeout(reveal,8000)}
   let hiddenAt=0;document.addEventListener('visibilitychange',()=>{if(document.hidden)hiddenAt=Date.now();else if(Date.now()-hiddenAt>5*60e3){loadData();checkForUpdate(false)}});
