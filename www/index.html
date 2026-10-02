@@ -493,11 +493,11 @@ const buzz=(ms=8)=>{try{if(navigator.vibrate)navigator.vibrate(ms)}catch(e){}};
 // ======================= DATA LAYER =======================
 const DOC_IMM='1Dxejz_FVQqE6t3xg6dWsLwlJoB7qBFOyZKRqvsfonQs';
 const DOC_RDC='1IdI7WJr1SzyAL8WWASoO3ZkbFu3fp-xpGEn2Mm-W7VI', GID_RDC='345900811';
-const CACHE_KEY='imm.data.v3';
+const CACHE_KEY='imm.data.v4';
 const QUERIES={
   logic:{doc:DOC_IMM,sheet:'LOGIC',tq:'select A,B,D,E',h:0},
   plan:{doc:DOC_IMM,sheet:'MASTER_PLAN',tq:'select D,E,G,H,I,M,R,W,Z,AA,AB,AC where D is not null',h:0},
-  lc:{doc:DOC_IMM,sheet:'MASTER_LC',tq:'select A,F,E,S,P,count(T),sum(T),sum(Z) where A is not null group by A,F,E,S,P',h:1},
+  lc:{doc:DOC_IMM,sheet:'MASTER_LC',tq:'select A,F,E,S,P,count(T),sum(Y),sum(AA) where A is not null group by A,F,E,S,P',h:1},
   names:{doc:DOC_IMM,sheet:'MASTER_LC',tq:"select F,G,count(T) where F is not null and F <> '0' group by F,G",h:1},
   lph:{doc:DOC_IMM,sheet:'LPPBDO_HCI',tq:'select A,D,E,F,H,L,M,O,P,Q,R,S,T,W,AA,B,C where E is not null',h:1},
   lpa:{doc:DOC_IMM,sheet:'LPPBDO_AHI',tq:'select A,D,E,F,H,L,M,O,P,Q,R,S,T,W,AA,B,C where E is not null',h:1},
@@ -609,12 +609,12 @@ function loadData(manual){
 }
 async function loadSkuDetail(lc){
   const rawLc=(D.raw&&D.raw[lc])||lc;
-  const rows=await gviz({doc:DOC_IMM,sheet:'MASTER_LC',tq:`select Q,R,S,F,E,T,Z where A = '${rawLc.replace(/'/g,'')}'`,h:1});
+  const rows=await gviz({doc:DOC_IMM,sheet:'MASTER_LC',tq:`select Q,R,S,F,E,Y,AA where A = '${rawLc.replace(/'/g,'')}'`,h:1});
   const stock=new Set(D.stock||[]);const m=new Map();
   rows.forEach(r=>{const ks=cs(r[3]).toUpperCase(),tp=cs(r[4]).toUpperCase();const dest=stock.has(ks)?0:(!ks||ks==='0')?2:1;const code=dest===2?(tp||'-'):ks;
     const sku=cs(r[0])||'-';const key=sku+'|'+dest+'|'+code;const g=m.get(key);
     if(g){g.qty+=cn(r[5]);g.cbm+=cn(r[6])}else m.set(key,{sku,desc:cs(r[1]),dept:cs(r[2])||'-',dest,code,qty:cn(r[5]),cbm:cn(r[6])})});
-  return [...m.values()].sort((a,b)=>b.cbm-a.cbm);
+  return [...m.values()].filter(g=>g.qty>0||g.cbm>0).sort((a,b)=>b.cbm-a.cbm);
 }
 
 // ======================= UTIL =======================
@@ -1104,7 +1104,7 @@ function pageSet(){
   <section class="card" style="--i:5"><div class="ch"><span class="hic">${I.info}</span><h2>Tentang</h2></div><div class="cb">
     <dl class="kv"><dt>Aplikasi</dt><dd>IMM – Inbound Mini Monitoring</dd><dt>Lokasi</dt><dd>DC Tallo Makassar</dd><dt>Versi</dt><dd>${esc(v)}</dd><dt>Perangkat</dt><dd>${NATIVE?'Android':'Browser'}</dd></dl>
     <div style="height:14px"></div>
-    <div class="notes"><b>Aturan perhitungan</b><br>Patokan tanggal = tanggal bongkar di MASTER_PLAN; hanya LC yang ada di plan yang dihitung.<br>Storing = KODE SITE stock di LOGIC. Outbound = store di LOGIC + customer (KODE SITE 0).<br>Kontainer dihitung dalam TEUs (40' = 2, 20' = 1).<br>Monitoring kontainer = sheet RDC, hanya BU NAME Makassar.</div>
+    <div class="notes"><b>Aturan perhitungan</b><br>Patokan tanggal = tanggal bongkar di MASTER_PLAN; hanya LC yang ada di plan yang dihitung.<br>Storing = KODE SITE stock di LOGIC. Outbound = store di LOGIC + customer (KODE SITE 0).<br>CBM dan qty = yang benar-benar dikirim (SHIPPEDQTY dan CBM_SHIPPED_QTY di MASTER_LC), bukan original.<br>Kontainer dihitung dalam TEUs (40' = 2, 20' = 1).<br>Monitoring kontainer = sheet RDC, hanya BU NAME Makassar.</div>
   </div></section>`;
 }
 

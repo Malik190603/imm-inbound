@@ -30,7 +30,7 @@ Warna: Storing hijau, Store oranye, Customer biru. BU: HCI biru, AHI merah, TGI 
 |---|---|
 | LOGIC | A (kode Stock), D (kode Store) |
 | MASTER_PLAN | D tgl bongkar, E jam, G no. kontainer, H No LC, I site/BU, M CBM to stock, R CBM to store, W CBM to customer, Z ekspedisi, AA fleet, AB ship from, AC TEUs |
-| MASTER_LC | A No LC, E TradingPartner, F KODE SITE, G SITE NAME, P SITE, Q SKU, R DESCR, S Dept, T ORIGINALQTY, Z CBM_ORIGINAL_QTY |
+| MASTER_LC | A No LC, E TradingPartner, F KODE SITE, G SITE NAME, P SITE, Q SKU, R DESCR, S Dept, Y SHIPPEDQTY, AA CBM_SHIPPED_QTY (yang dikirim, bukan original) |
 | LPPBDO_HCI, LPPBDO_AHI | A UPDATE, B Tgl, C Bulan, D BU, E LPPBDO No., F Site Receiver, H Driver, L Artikel, M Desc, O Qty OD, P Qty Receive, Q Remark, R Status, S Kategori, T Qty LPPBDO, W Dept, AA Tanggal |
 | RDC (spreadsheet terpisah, gid 345900811) | A asal, B SI (= No LC), D type armada, G delivery date, H checkout, J no container, L nama kapal, M POO, N ETD, O ATD, P ETA, Q ATA, S request dooring, T actual dooring, U tanggal bongkar, V position, W status shipment, Y BU, Z aging yard, AA kategori aging, AJ BU NAME (difilter Makassar), AL TEUs, AM–AP aging POO/OTW/POD & lead time |
 
