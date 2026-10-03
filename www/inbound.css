@@ -23,6 +23,7 @@
 .tile-n{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;min-width:0}
 .tile-v{font-size:32px;font-weight:800;letter-spacing:-.03em;line-height:1.05;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
 .tile.wide:not(.row) .tile-v{font-size:42px}
+.tile-h+.t{margin-top:2px}
 .tile-u,.tile-x{font-size:12.5px;color:var(--ink-3);line-height:1.35}
 .tile-f{display:flex;flex-wrap:wrap;gap:6px;margin-top:6px}
 .tile-f .tag{padding:4px 10px}
@@ -146,3 +147,8 @@ span.ph-thumb{display:block}
 .put-loc select{width:100%;height:100%;min-height:38px;border:0;background:var(--sunk);color:var(--ink);border-radius:999px;padding:9px 12px;font:inherit;font-size:13px;font-weight:600;outline:none;min-width:0}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 .put-list-head h2{min-width:0;overflow-wrap:anywhere}
+
+.mpp-all{display:grid;gap:18px;padding-top:16px}
+.mpp-gt{margin:0 0 2px;font-size:13px;font-weight:800;color:var(--ink-2);display:flex;align-items:baseline;gap:8px;padding-bottom:6px;border-bottom:1.5px solid var(--line)}
+.mpp-gt span{font-size:12px;font-weight:600;color:var(--ink-3)}
+@media (min-width:900px){.mpp-all{grid-template-columns:repeat(2,minmax(0,1fr));gap:22px 36px;align-items:start}}

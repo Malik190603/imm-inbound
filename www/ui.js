@@ -3,6 +3,8 @@
 I.up='<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 16V4M5 9l5-5 5 5"/></svg>';
 I.eq='<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M5 8h10M5 12h10"/></svg>';
 
+// angka bulat yang diringkas bila terlalu panjang untuk kotak kecil
+const fC=v=>IMMUi.compact(v)||f0(v);
 // delta: hasil IMMUi.deltaInfo + keterangan pembanding ("rata-rata 7 hari")
 function leadDelta(info,against){
   if(!info)return '';
@@ -25,7 +27,7 @@ function weekStrip(days,selected,fmt){
   const max=Math.max(1e-9,...days.map(x=>x.v||0));fmt=fmt||f0;
   return `<div class="ws" role="group" aria-label="CBM per hari, ketuk untuk pindah tanggal">${days.map((x,i)=>{const dd=pd(x.d);const today=x.d===TODAY;
     return `<button class="ws-d press${today?' today':''}" data-day="${x.d}" aria-pressed="${x.d===selected}" aria-label="${dlong(x.d)}: ${fmt(x.v||0)} CBM${today?' (hari ini)':''}">
-      <span class="ws-n">${x.v>0?fmt(x.v):'–'}</span><span class="ws-bar"><i style="height:${Math.max(4,(x.v||0)/max*100)}%;animation-delay:${i*45}ms"></i></span><span class="ws-l">${HARI[dd.getDay()]} ${dd.getDate()}</span></button>`}).join('')}</div>`;
+      <span class="ws-n">${x.v>0?(IMMUi.compact(x.v)||fmt(x.v)):'–'}</span><span class="ws-bar"><i style="height:${Math.max(4,(x.v||0)/max*100)}%;animation-delay:${i*45}ms"></i></span><span class="ws-l">${HARI[dd.getDay()]} ${dd.getDate()}</span></button>`}).join('')}</div>`;
 }
 // Perlu perhatian. items=[{n, u, label, sub, tone:'w'|'c', attr}] — attr = atribut data-* supaya bisa diketuk
 function attention(items,i){

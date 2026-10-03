@@ -55,7 +55,7 @@ function inbList(){
   const ic=k=>INB_ITEMS.find(x=>x[0]===k)[3],go=`<span class="tile-go">${I.chev}</span>`;
   return `<div class="hello slim" style="--i:0"><h1>Inbound</h1><p>Angka hari ini · ketuk untuk membuka</p></div>
   <div class="tiles" style="--i:1">
-    <button class="tile wide press" data-inb="put"><span class="tile-h"><span class="tile-ic">${ic('put')}</span><span class="t">Putaway</span>${go}</span>
+    <button class="tile wide press" data-inb="put"><span class="tile-h"><span class="tile-ic">${ic('put')}</span>${go}</span><span class="t">Putaway</span>
       <span class="tile-n"><span class="tile-v">${put}</span><span class="tile-u">LPN hari ini</span></span>
       ${putFlags.length?`<span class="tile-f">${putFlags.join('')}</span>`:putNote?`<span class="tile-x">${putNote}</span>`:''}</button>
     <button class="tile press" data-inb="tto"><span class="tile-h"><span class="tile-ic">${ic('tto')}</span>${go}</span><span class="t">TTO/Dokumen</span>
@@ -69,7 +69,7 @@ function inbHead(title,sub){return `<div class="inb-head" style="--i:0"><button 
 function inbMpp(){
   const groups=[];IMMCore.MPP.forEach(p=>{let g=groups.find(x=>x.title===p.title);if(!g){g={title:p.title,people:[]};groups.push(g)}g.people.push(p)});
   const ini=n=>n.replace(/[^A-Za-z ]/g,'').split(/\s+/).filter(Boolean).slice(0,2).map(w=>w[0].toUpperCase()).join('');
-  return inbHead('MPP detail',`${IMMCore.MPP.length} orang · tim inbound DC Tallo`)+groups.map((g,i)=>`<section class="card" style="--i:${i+1}"><div class="ch"><span class="hic">${I.users}</span><h2>${esc(g.title)}</h2><span class="hint">${g.people.length} orang</span></div><div class="cb"><div class="mpp">${g.people.map(p=>`<div class="mpp-p"><span class="mpp-av">${ini(p.name)}</span><span><div class="mpp-n">${esc(p.name)}</div><div class="mpp-b">${esc(p.bu)}</div></span></div>`).join('')}</div></div></section>`).join('');
+  return inbHead('MPP detail',`${IMMCore.MPP.length} orang · tim inbound DC Tallo`)+`<section class="card" style="--i:1"><div class="cb mpp-all">${groups.map(g=>`<div class="mpp-g"><h2 class="mpp-gt">${esc(g.title)}<span>${g.people.length} orang</span></h2><div class="mpp">${g.people.map(p=>`<div class="mpp-p"><span class="mpp-av">${ini(p.name)}</span><span><div class="mpp-n">${esc(p.name)}</div><div class="mpp-b">${esc(p.bu)}</div></span></div>`).join('')}</div></div>`).join('')}</div></section>`;
 }
 
 // ---------- Data sheet inbound (stock + transit), dimuat saat menu Inbound dibuka ----------
@@ -183,7 +183,7 @@ function inbPutaway(){
     body:`<div class="put-sum">
       ${tile('all',cnt(PUT_LIST.length),'LPN')}${tile('dmg',cnt(nDmg),'damage',nDmg?'crit':'')}${tile('mix',cnt(nMix),'campur Dept',nMix?'warn':'')}${cfg?tile('noph',phOk?cnt(nNoPh):'…','belum ada foto',phOk?(nNoPh?'warn':'good'):''):''}
     </div><p class="lead-note">Ketuk satu kotak untuk menampilkan LPN-nya saja.</p>`,
-    stats:[{l:'Qty',v:f0(qty)},{l:'Lokasi',v:f0(locs.length)},{l:'Operator',v:f0(nOp)}]})+`
+    stats:[{l:'Qty',v:fC(qty)},{l:'Lokasi',v:f0(locs.length)},{l:'Operator',v:f0(nOp)}]})+`
     <section class="card" style="--i:2">${secHead({icon:I.box,title:active||'Daftar LPN',hint:`${f0(fl.length)} LPN`,sub:'Urut dari yang terbaru. Ketuk satu LPN untuk isi dan fotonya.',gloss:['lpn','campur','dept'],cls:'put-list-head',right:filtered?`<button class="btn ghost sm press" data-put-reset>Hapus filter</button>`:''})}
     <div class="put-tools">${searchBox('put','Cari LPN / lokasi')}<label class="put-loc"><span class="sr">Filter lokasi</span><select id="putLoc" aria-label="Filter lokasi"><option value="">Semua lokasi</option>${locs.map(x=>`<option value="${esc(x)}" ${S.putLoc===x?'selected':''}>${esc(x)}</option>`).join('')}</select></label></div>
     <div class="cb" style="padding-top:6px">${fl.length?`<div class="lpns">${fl.slice(0,n).map(l=>`<button class="lpn press${l.kind==='damage'?' dmg':''}" data-lpn="${esc(l.lpn)}">
@@ -210,11 +210,8 @@ function inbProd(){
   const o=inbOpt(),st=INB.err.stock?[]:INB.stock,tr=INB.err.transit?[]:INB.transit;
   const P=IMMCore.productivity(st,tr,o);const tot=x=>x.rcv+x.put;const teamTot=tot(P.team);
   const errs=[INB.err.stock,INB.err.transit].filter(Boolean);
-  const ins=[];const top=P.ops[0];const active=P.ops.filter(x=>tot(x)>0);let prodDelta='';
+  const ins=[];const top=P.ops[0];const active=P.ops.filter(x=>tot(x)>0),idle=P.ops.filter(x=>tot(x)===0);let prodDelta='';
   if(teamTot>0){
-    ins.push({c:'h',h:'Tertinggi',t:`<b>${esc(top.name)}</b> paling banyak: ${f2(top.rcv)} CBM receive dan ${f2(top.put)} CBM putaway (${pc(tot(top),teamTot)}% dari total tim).`});
-    const idle=P.ops.filter(x=>tot(x)===0);
-    ins.push({c:idle.length?'w':'',h:'Operator aktif',t:`<b>${active.length} dari ${P.ops.length}</b> operator punya transaksi ${esc(rlabel())}.${idle.length?` Belum ada: ${idle.map(x=>esc(x.name)).join(', ')}.`:''}`});
     const rT=P.ops.reduce((a,x)=>a+x.rcvTransit,0),pS=P.ops.reduce((a,x)=>a+x.putStock,0);
     ins.push({h:'Stock dan transit',t:`Receive: <b>${pc(rT,P.team.rcv)}%</b> dari transit, sisanya stock. Putaway stock ${f2(pS)} CBM dari total ${f2(P.team.put)} CBM.`});
     const [from,to]=range();
@@ -229,11 +226,11 @@ function inbProd(){
   const SER=[{name:'Receive',color:'var(--lg2)'},{name:'Putaway',color:'var(--lg3)'}];
   return head+
   (errs.length?`<div class="inb-note" style="--i:1">${I.warn}<span>${errs.map(esc).join(' ')} Angka di bawah hanya dari sheet yang terbaca.</span></div>`:'')+
-  lead({tone:'inb',i:1,empty:!(teamTot>0),headline:teamTot>0?`Tim inbound mengerjakan <b>${f2(teamTot)} CBM</b> ${inbWhen()}. Tertinggi <b>${esc(top.name)}</b> dengan ${f2(tot(top))} CBM.`:`Belum ada transaksi receive atau putaway ${inbWhen()}.`,
+  lead({tone:'inb',i:1,empty:!(teamTot>0),headline:teamTot>0?`Tertinggi ${inbWhen()}: <b>${esc(top.name)}</b> dengan ${f2(tot(top))} CBM (${pc(tot(top),teamTot)}% dari total tim).${active.length<P.ops.length?` ${P.ops.length-active.length} operator belum ada transaksi.`:''}`:`Belum ada transaksi receive atau putaway ${inbWhen()}.`,
     value:cnt(teamTot,2),unit:'CBM',delta:prodDelta,
     body:`<div class="lead-stats n3 prod-team"><div><span><i class="dot" style="background:var(--lg2)"></i>Receive</span><b>${f2(P.team.rcv)}<small>CBM</small></b></div><div><span><i class="dot" style="background:var(--lg3)"></i>Putaway</span><b>${f2(P.team.put)}<small>CBM</small></b></div><div><span>Operator aktif</span><b>${active.length}<small>dari ${P.ops.length}</small></b></div></div>`})+`
   <div style="--i:2">${insights('Ringkasan pintar',ins)}</div>
-  <section class="card" style="--i:3">${secHead({icon:I.users,title:'Per operator',hint:'urut dari tertinggi',sub:'Persen di kanan nama = porsi dari total tim.',gloss:['cbm']})}<div class="cb">${teamTot>0?'':`<p class="foot" style="padding:0 0 8px">Belum ada transaksi yang dihitung ${esc(rlabel())}.</p>`}<div class="prod-ops">${P.ops.map((x,i)=>`<div class="prod-op"><div class="prod-top"><span class="rank${i===0&&tot(x)>0?' first':''}">${i+1}</span><span class="prod-n">${esc(x.name)}</span><span class="prod-id mono">${x.id}</span><span class="prod-share" title="Porsi dari total tim">${pc(tot(x),teamTot)}%</span></div>${bar('Receive',x.rcv,x.rcvStock,x.rcvTransit,'var(--lg2)')}${bar('Putaway',x.put,x.putStock,x.putTransit,'var(--lg3)')}</div>`).join('')}</div></div></section>
+  <section class="card" style="--i:3">${secHead({icon:I.users,title:'Per operator',hint:'urut dari tertinggi',sub:'Persen di kanan nama = porsi dari total tim.',gloss:['cbm']})}<div class="cb">${teamTot>0?'':`<p class="foot" style="padding:0 0 8px">Belum ada transaksi yang dihitung ${esc(rlabel())}.</p>`}<div class="prod-ops">${active.map((x,i)=>`<div class="prod-op"><div class="prod-top"><span class="rank${i===0&&tot(x)>0?' first':''}">${i+1}</span><span class="prod-n">${esc(x.name)}</span><span class="prod-id mono">${x.id}</span><span class="prod-share" title="Porsi dari total tim">${pc(tot(x),teamTot)}%</span></div>${bar('Receive',x.rcv,x.rcvStock,x.rcvTransit,'var(--lg2)')}${bar('Putaway',x.put,x.putStock,x.putTransit,'var(--lg3)')}</div>`).join('')}</div>${idle.length?zeroLine(`${idle.length} operator belum ada transaksi: ${idle.map(x=>esc(x.name)).join(', ')}`):''}</div></section>
   ${multi&&bks.length?`<section class="card" style="--i:4"><div class="ch"><span class="hic">${I.trend}</span><h2>CBM per ${bks[0].mode==='m'?'bulan':bks[0].mode==='w'?'minggu':'hari'}</h2><span class="hint">tim</span></div><div class="cb"><div class="legend">${SER.map(s=>`<span><i class="dot" style="background:${s.color}"></i>${s.name}</span>`).join('')}</div>${stackChart('cProd',bks,SER,{unit:'CBM',fmt:f2})}</div></section>`:''}`;
 }
 // ---------- TTO / Dokumen ----------
@@ -255,8 +252,8 @@ function inbTto(){
   const q=(S.q.tto||'').toLowerCase().trim();
   const fl=q?TTO.rows.filter(r=>(r.no_tto+' '+r.barang+' '+r.penerima+' '+r.pic).toLowerCase().includes(q)):TTO.rows;const n=lim('tto',20);
   const koli=TTO.rows.reduce((a,r)=>a+(+r.koli||0),0),N=TTO.rows.length,withPh=TTO.rows.filter(r=>(r.photos||[]).length).length,pics=new Set(TTO.rows.map(r=>r.pic).filter(Boolean)).size;
-  const top=lead({tone:'inb',i:1,empty:!N,headline:N?`<b>${f0(N)} TTO</b> dicatat ${inbWhen()}, total ${f0(koli)} koli.${withPh<N?` ${f0(N-withPh)} belum ada fotonya.`:' Semua sudah berfoto.'}`:`Belum ada serah terima yang dicatat ${inbWhen()}.`,
-    value:cnt(N),unit:'TTO',stats:[{l:'Koli',v:f0(koli)},{l:'Berfoto',v:f0(withPh),u:`dari ${f0(N)}`},{l:'PIC',v:f0(pics),u:'orang'}]});
+  const top=lead({tone:'inb',i:1,empty:!N,headline:N?`Serah terima ${inbWhen()}: <b>${fC(koli)} koli</b> lewat ${f0(pics)} PIC.${withPh<N?` ${f0(N-withPh)} TTO belum ada fotonya.`:' Semua sudah berfoto.'}`:`Belum ada serah terima yang dicatat ${inbWhen()}.`,
+    value:cnt(N),unit:'TTO',stats:[{l:'Koli',v:fC(koli)},{l:'Berfoto',v:f0(withPh),u:`dari ${f0(N)}`},{l:'Penerima',v:f0(new Set(TTO.rows.map(r=>r.penerima).filter(Boolean)).size),u:'orang'}]});
   return head+top+add+`<section class="card" style="--i:3">${secHead({icon:I.doc,title:'Daftar TTO',hint:`${f0(fl.length)} TTO`,sub:'Urut dari yang terbaru. Ketuk untuk rincian dan foto.',gloss:['tto']})}<div class="tools">${searchBox('tto','Cari No TTO / barang')}</div>
     <div class="cb" style="padding-top:8px">${fl.length?`<div class="list">${fl.slice(0,n).map(r=>`<button class="tto-row press" data-tto="${r.id}"><div class="tto-top"><span class="mono tto-no">${esc(r.no_tto)}</span>${(r.photos||[]).length?`<span class="lpn-cam">${I.cam}${r.photos.length}</span>`:''}<span class="lpn-time">${dshort(r.tgl)}</span></div><div class="tto-b">${esc(r.barang)}</div><div class="tto-m"><span>${f0(r.koli)} koli</span><span>${esc(r.pic)} → ${esc(r.penerima)}</span></div></button>`).join('')}</div>${moreBtn('tto',fl.length,n)}`
       :emptyState(q?'Tidak ditemukan':'Belum ada TTO',q?'Tidak ada TTO yang cocok.':`Belum ada serah terima yang dicatat ${esc(rlabel())}.`,!q,I.doc)}</div></section>`;

@@ -22,6 +22,19 @@
     return { dir: pct < 1 ? 'same' : p > 0 ? 'up' : 'down', pct };
   }
 
+  // ---------- angka ringkas untuk tempat sempit: 12,3 rb · 1,2 jt · 2,5 M (null bila masih muat apa adanya) ----------
+  function compact(v) {
+    v = Number(v); if (!Number.isFinite(v) || Math.abs(v) < 9999.5) return null;
+    const a = Math.abs(v), steps = [[1e9, 'M'], [1e6, 'jt'], [1e3, 'rb']];
+    for (let i = 0; i < steps.length; i++) {
+      let [d, u] = steps[i]; if (a < d && i < steps.length - 1) continue;
+      let n = v / d, r = Math.abs(n) >= 99.95 ? Math.round(n) : Math.round(n * 10) / 10;
+      if (Math.abs(r) >= 1000 && i > 0) { [d, u] = steps[i - 1]; n = v / d; r = Math.abs(n) >= 99.95 ? Math.round(n) : Math.round(n * 10) / 10; }
+      return String(r).replace('.', ',') + ' ' + u;
+    }
+    return null;
+  }
+
   // ---------- kamus istilah ----------
   const GLOSSARY = {
     cbm: { t: 'CBM', d: 'Meter kubik: ukuran volume barang. Satu CBM kira-kira sebesar kotak 1 × 1 × 1 meter.' },
@@ -39,5 +52,5 @@
     tto: { t: 'TTO', d: 'Tanda terima serah terima dokumen atau barang antara tim inbound dan penerima.' },
   };
 
-  return { contrast, weekDays, splitZeros, deltaInfo, GLOSSARY, addDays };
+  return { contrast, weekDays, splitZeros, deltaInfo, compact, GLOSSARY, addDays };
 });

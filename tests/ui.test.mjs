@@ -40,3 +40,8 @@ test('dark media-query block and data-theme block define the same overrides in u
   const a = css.match(/@media \(prefers-color-scheme: dark\)\{:root:not\(\[data-theme="light"\]\)\{([\s\S]*?)\}\}/), b = css.match(/:root\[data-theme="dark"\]\{([\s\S]*?)\}/);
   ok(a && b); eq(a[1].replace(/\s+/g, ''), b[1].replace(/\s+/g, ''));
 });
+test('compact shortens only numbers that would not fit (≥ 10.000)', () => {
+  eq(U.compact(0), null); eq(U.compact(9999.4), null); eq(U.compact(NaN), null);
+  eq(U.compact(10000), '10 rb'); eq(U.compact(12345), '12,3 rb'); eq(U.compact(123456), '123 rb'); eq(U.compact(999999), '1 jt');
+  eq(U.compact(1234567), '1,2 jt'); eq(U.compact(25800000), '25,8 jt'); eq(U.compact(123456789), '123 jt'); eq(U.compact(2.5e9), '2,5 M');
+});
