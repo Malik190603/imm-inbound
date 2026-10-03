@@ -1271,8 +1271,8 @@ const sHead=(t,meta,badge='',mono=true)=>`<div class="sh"><div class="t1"><h3 cl
 function openPeriod(){
   const f=F();const months=[...new Set(D?D.cont.map(c=>c.d.slice(0,7)).concat(D.lp.map(x=>x.d.slice(0,7))):[])].sort().reverse();const [a,b]=range();
   const sub={today:dshort(TODAY),tomorrow:dshort(addD(TODAY,1)),next7:`${dshort(TODAY)} – ${dshort(addD(TODAY,6))}`};
-  const pn={home:'Beranda',stock:'Storing',out:'Outbound',mon:'Monitoring'}[S.page];
-  sheet(sHead('Pilih periode',`Untuk menu ${pn} · bawaan: ${PRESETS.find(p=>p[0]===DEFAULTS[S.page])[1].toLowerCase()}`,'',false),`<div class="pgrid">${PRESETS.map(([k,l])=>`<button class="popt press" data-preset="${k}" aria-pressed="${f.preset===k}">${l}${sub[k]?`<small>${sub[k]}</small>`:''}</button>`).join('')}</div>
+  const fk=S.page==='role'?S.roleTab:S.page;const pn={home:'Beranda',inb:'Inbound',stock:'Storing',out:'Outbound',mon:'Monitoring'}[fk];
+  sheet(sHead('Pilih periode',`Untuk menu ${pn} · bawaan: ${((PRESETS.find(p=>p[0]===DEFAULTS[fk])||[])[1]||'').toLowerCase()}`,'',false),`<div class="pgrid">${PRESETS.map(([k,l])=>`<button class="popt press" data-preset="${k}" aria-pressed="${f.preset===k}">${l}${sub[k]?`<small>${sub[k]}</small>`:''}</button>`).join('')}</div>
    <div class="field"><label for="pmonth">Pilih bulan</label><select id="pmonth"><option value="">—</option>${months.map(m=>{const [y,mm]=m.split('-').map(Number);return `<option value="${m}" ${f.preset==='month'&&f.month===m?'selected':''}>${BLNL[mm-1]} ${y}</option>`}).join('')}</select></div>
    <div class="field"><label>Rentang tanggal</label><div class="two"><input type="date" id="pfrom" value="${a<'1000'?TODAY:a}" aria-label="Dari"><input type="date" id="pto" value="${b>'9000'?TODAY:b}" aria-label="Sampai"></div><button class="btn block press" id="papply" style="margin-top:4px">Terapkan rentang</button></div>`)}
 function openCont(i){const c=D.cont[i];if(c.lc&&LCSET.has(c.lc)){openLC(c.lc,'all');return}

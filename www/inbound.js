@@ -104,7 +104,41 @@ function openLpn(id){
      ${l.mixed?`<div class="lpn-warn">${I.warn}<span><b>Campur Dept</b> · LPN ini berisi ${l.depts.length} Dept: ${depts.map(d=>`${esc(d.k)} (${d.n} SKU)`).join(', ')}</span></div>`:''}
      <div><h4>Isi LPN · ${l.items.length} SKU · ${f0(l.qty)} qty · ${f2(l.cbm)} CBM</h4><div class="list">${l.items.map(i=>`<div class="row"><span class="a" style="font-size:13px;white-space:normal">${esc(i.desc||'-')}</span><span class="b" style="white-space:normal"><span class="mono">${esc(i.sku)}</span> · Dept ${esc(i.dept)}${l.tolocs.length>1?' · '+esc(i.toloc):''}</span><span class="v">${f0(i.qty)}<small>qty</small></span></div>`).join('')}</div></div>`);
 }
-const INB_PAGES={mpp:inbMpp,put:inbPutaway,tto:()=>inbSoon('TTO/Dokumen'),prod:()=>inbSoon('Productivity')};
+// ---------- Productivity ----------
+function inbProd(){
+  const head=inbHead('Productivity',`CBM Receive dan Putaway · ${esc(rlabel())}`);
+  if(inbBusy())return head+inbSkeleton();
+  if(INB.err.stock&&INB.err.transit)return head+inbErrCard('Data productivity belum bisa dibaca',INB.err.stock);
+  const o=inbOpt(),st=INB.err.stock?[]:INB.stock,tr=INB.err.transit?[]:INB.transit;
+  const P=IMMCore.productivity(st,tr,o);const tot=x=>x.rcv+x.put;const teamTot=tot(P.team);
+  const errs=[INB.err.stock,INB.err.transit].filter(Boolean);
+  const ins=[];const top=P.ops[0];const active=P.ops.filter(x=>tot(x)>0);
+  if(teamTot>0){
+    ins.push({c:'h',h:'Tertinggi',t:`<b>${esc(top.name)}</b> paling banyak: ${f2(top.rcv)} CBM receive dan ${f2(top.put)} CBM putaway (${pc(tot(top),teamTot)}% dari total tim).`});
+    const idle=P.ops.filter(x=>tot(x)===0);
+    ins.push({c:idle.length?'w':'',h:'Operator aktif',t:`<b>${active.length} dari ${P.ops.length}</b> operator punya transaksi ${esc(rlabel())}.${idle.length?` Belum ada: ${idle.map(x=>esc(x.name)).join(', ')}.`:''}`});
+    const rT=P.ops.reduce((a,x)=>a+x.rcvTransit,0),pS=P.ops.reduce((a,x)=>a+x.putStock,0);
+    ins.push({h:'Stock dan transit',t:`Receive: <b>${pc(rT,P.team.rcv)}%</b> dari transit, sisanya stock. Putaway stock ${f2(pS)} CBM dari total ${f2(P.team.put)} CBM.`});
+    const [from,to]=range();
+    if(from>'1000'&&to<'9000'){const n=days(from,to);const Q=IMMCore.productivity(st,tr,{from:addD(from,-n),to:addD(from,-1),bu:o.bu});const q=tot(Q.team);
+      if(q>0){const d=(teamTot-q)/q*100;ins.push({c:d<0?'w':'',h:'Dibanding periode sebelumnya',t:`Total tim <b>${d>=0?'naik':'turun'} ${f0(Math.abs(d))}%</b> dibanding ${dshort(addD(from,-n))}${n>1?' – '+dshort(addD(from,-1)):''} (${f2(q)} CBM → ${f2(teamTot)} CBM).`})}}
+    if(P.days.length>1){const best=P.days.slice().sort((a,b)=>tot(b)-tot(a))[0];ins.push({h:'Hari tersibuk',t:`<b>${dday(best.d)}</b>: ${f2(best.rcv)} CBM receive dan ${f2(best.put)} CBM putaway.`})}
+  }
+  const mx=Math.max(1e-9,...P.ops.map(x=>Math.max(x.rcv,x.put)));
+  const bar=(lbl,v,s,t,c)=>`<div class="prod-row"><div class="prod-l"><span>${lbl}</span> <b>${f2(v)}</b> <small>CBM</small></div><div class="prod-bar"><i style="width:${v/mx*100}%;background:${c}"></i></div><div class="prod-s">stock ${f2(s)} · transit ${f2(t)}</div></div>`;
+  const [from,to]=range();const multi=from!==to;
+  const bks=multi?bucketize(from,to,P.days,d=>d.d,d=>[d.rcv,d.put],2):[];
+  const SER=[{name:'Receive',color:'var(--lg2)'},{name:'Putaway',color:'var(--lg3)'}];
+  return head+
+  (errs.length?`<div class="inb-note" style="--i:1">${I.warn}<span>${errs.map(esc).join(' ')} Angka di bawah hanya dari sheet yang terbaca.</span></div>`:'')+
+  `<section class="card pad" style="--i:1"><div class="prod-team">
+    <div><span>Receive</span><b>${cnt(P.team.rcv,2)}</b><small>CBM · tim</small></div><div><span>Putaway</span><b>${cnt(P.team.put,2)}</b><small>CBM · tim</small></div>
+  </div></section>
+  <div style="--i:2">${insights('Ringkasan pintar',ins)}</div>
+  <section class="card" style="--i:3"><div class="ch"><span class="hic">${I.users}</span><h2>Per operator</h2><span class="hint">urut dari tertinggi</span></div><div class="cb">${teamTot>0?'':`<p class="foot" style="padding:0 0 8px">Belum ada transaksi yang dihitung ${esc(rlabel())}.</p>`}<div class="prod-ops">${P.ops.map((x,i)=>`<div class="prod-op"><div class="prod-top"><span class="rank${i===0&&tot(x)>0?' first':''}">${i+1}</span><span class="prod-n">${esc(x.name)}</span><span class="prod-id mono">${x.id}</span></div>${bar('Receive',x.rcv,x.rcvStock,x.rcvTransit,'var(--lg2)')}${bar('Putaway',x.put,x.putStock,x.putTransit,'var(--lg3)')}</div>`).join('')}</div></div></section>
+  ${multi&&bks.length?`<section class="card" style="--i:4"><div class="ch"><span class="hic">${I.trend}</span><h2>CBM per ${bks[0].mode==='m'?'bulan':bks[0].mode==='w'?'minggu':'hari'}</h2><span class="hint">tim</span></div><div class="cb"><div class="legend">${SER.map(s=>`<span><i class="dot" style="background:${s.color}"></i>${s.name}</span>`).join('')}</div>${stackChart('cProd',bks,SER,{unit:'CBM',fmt:f2})}</div></section>`:''}`;
+}
+const INB_PAGES={mpp:inbMpp,put:inbPutaway,tto:()=>inbSoon('TTO/Dokumen'),prod:inbProd};
 function pageInbound(){
   if(!inbUnlocked())return inbLock();
   loadInbound();
