@@ -2,7 +2,7 @@
 // Dipakai aplikasi (window.IMMStore) dan diuji dengan node --test.
 (function (root, factory) { const m = factory(root); if (typeof module === 'object' && module.exports) module.exports = m; else root.IMMStore = m; })(typeof self !== 'undefined' ? self : this, function (root) {
   // Project URL + anon public key Supabase. Aman ada di aplikasi (memang kunci publik); JANGAN isi service_role.
-  const SUPA = Object.assign({ url: '', key: '' }, (root && root.IMM_SUPA) || {});
+  const SUPA = Object.assign({ url: 'https://rmvttktlzkecvooqvkpp.supabase.co', key: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InJtdnR0a3RsemtlY3Zvb3F2a3BwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTEwNDMyMzQsImV4cCI6MjEwNjYxOTIzNH0.4zy-du0WwTE348d-CBDOQH5zi24cDG80oGCc9COmoFI' }, (root && root.IMM_SUPA) || {});
   const BUCKET = 'imm-photos', MAX_PHOTOS = 4, CHUNK = 80;
   // Di Android, fetch bawaan WebView dipakai (bukan CapacitorHttp) supaya isi foto terkirim apa adanya; Supabase mengizinkan CORS.
   let fetchImpl = null;
