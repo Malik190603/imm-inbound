@@ -6,7 +6,7 @@ Tanggal: 3 Oktober 2026 · Status: menunggu persetujuan
 
 Tim inbound DC Tallo bisa memantau putaway, mendokumentasikan barang dan serah terima TTO dengan foto, dan melihat produktivitas operator dari satu aplikasi. Semua pengguna selalu memakai versi terbaru.
 
-Dirilis sekaligus sebagai satu APK baru (v1.3.0) yang dipasang ulang.
+Dirilis sekaligus sebagai v1.3.0 (APK untuk dibagikan; HP lama bisa juga lewat update kilat).
 
 ## 1. Kerangka aplikasi
 
@@ -41,11 +41,11 @@ Kartu profil, dikelompokkan per jabatan:
 
 ### Wajib update
 - Setiap dibuka (dan saat kembali dari latar belakang), aplikasi mengecek rilis terbaru di GitHub. Kalau ada versi lebih baru: layar terkunci penuh dengan tombol "Perbarui" dan "Keluar". Tidak bisa ditutup.
-- Kalau build aslinya sama: update kilat di dalam aplikasi. Kalau beda: unduh APK lalu pasang.
+- Update dipasang lewat update kilat di dalam aplikasi (tanpa pasang ulang) selama bagian native tidak berubah; kalau berubah, aplikasi mengunduh APK lalu memasangnya.
 - Tampilan "Yang baru di versi ini" dihapus seluruhnya.
 - Tanpa internet: aplikasi tetap terbuka dengan data terakhir; pengecekan diulang saat internet tersambung.
-- Versi lama (v1.2.6 ke bawah, build 1.2.0): diberi satu update kilat terakhir (v1.2.7) yang isinya hanya layar "Versi ini sudah tidak dipakai, pasang APK baru" dengan tombol unduh. Keterbatasan: HP yang tidak pernah menekan "Perbarui" tetap bisa memakai versi lama.
-- Build asli baru: 1.3.0, sehingga rilis v1.3.0+ tidak dianggap update kilat oleh versi lama.
+- Versi lama (v1.2.6 ke bawah): v1.3.0 tidak mengubah bagian native, jadi versi lama menerima v1.3.0 sebagai update kilat biasa. Begitu "Perbarui" ditekan, HP itu langsung menjadi v1.3.0 dan sejak itu ikut aturan wajib update. Ini menggantikan rencana "layar penutup v1.2.7": versi lama hanya membaca rilis terbaru, sehingga layar penutup tidak akan pernah terlihat setelah v1.3.0 terbit. Keterbatasan tetap sama: HP yang tidak pernah menekan "Perbarui" masih memakai versi lama.
+- APK v1.3.0 tetap dibuat untuk dibagikan dan dipasang di HP baru.
 
 ### Pengaturan
 - Dihapus: "Muat ulang data", "Hapus data tersimpan", "Aturan perhitungan", "Yang baru di versi ini".
