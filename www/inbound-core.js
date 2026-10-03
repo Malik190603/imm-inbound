@@ -26,6 +26,27 @@
   }
   const missingHeaders = (headers, needed) => needed.filter((h) => headers.indexOf(h) < 0);
 
+  // ---------- Sheet kontainer (RDC) ----------
+  // Susunan kolom sheet ini bisa berubah, jadi kolom dicari lewat judulnya. Urutan di bawah = urutan kolom yang dibaca aplikasi.
+  // [nama untuk pesan, cara mencocokkan judul (sudah huruf besar, spasi dirapikan), kemunculan ke-berapa]
+  const RDC_COLS = [
+    ['BU (asal)', (h) => h === 'BU', 1], ['SI', (h) => h === 'SI', 1], ['Type Armada', (h) => h === 'TYPE ARMADA', 1], ['Delivery Date', (h) => h === 'DELIVERY DATE', 1],
+    ['Checkout', (h) => h === 'CHECKOUT', 1], ['No Container', (h) => h === 'NO CONTAINER', 1], ['Nama Kapal', (h) => h === 'NAMA KAPAL', 1], ['POO', (h) => h === 'POO', 1],
+    ['ETD', (h) => h === 'ETD', 1], ['ATD', (h) => h === 'ATD', 1], ['ETA', (h) => h === 'ETA', 1], ['ATA', (h) => h.indexOf('ATA') === 0, 1],
+    ['REQUEST DOORING', (h) => h.indexOf('REQUEST DOORING') === 0, 1], ['ACTUAL DOORING', (h) => h.indexOf('ACTUAL DOORING') === 0, 1], ['TANGGAL BONGKAR', (h) => h === 'TANGGAL BONGKAR', 1],
+    ['Position', (h) => h.indexOf('POSITION') === 0, 1], ['Status Shipment', (h) => h === 'STATUS SHIPMENT', 1], ['BU (kode)', (h) => h === 'BU', 2],
+    ['AGING YARD', (h) => h === 'AGING YARD', 1], ['KATEGORI AGING YARD', (h) => h === 'KATEGORI AGING YARD', 1], ['TEUs', (h) => h === 'TEUS', 1],
+    ['Aging POO', (h) => h.indexOf('AGING POO') === 0, 1], ['Aging OTW', (h) => h.indexOf('AGING OTW') === 0, 1], ['AGING POD', (h) => h.indexOf('AGING POD') === 0, 1], ['LEAD TIME', (h) => h.indexOf('LEAD TIME') === 0, 1]];
+  const RDC_FILTER = ['BU NAME', (h) => h === 'BU NAME', 1];
+  function rdcQuery(headers) {
+    const H = (headers || []).map((h) => up(h).replace(/\s+/g, ' '));
+    const find = (c) => { let n = 0; for (let i = 0; i < H.length; i++) if (c[1](H[i]) && ++n === c[2]) return i; return -1; };
+    const idx = RDC_COLS.map(find), f = find(RDC_FILTER);
+    const miss = (f < 0 ? [RDC_FILTER[0]] : []).concat(RDC_COLS.filter((c, i) => idx[i] < 0).map((c) => c[0]));
+    if (miss.length) throw new Error('Kolom ' + miss.join(', ') + ' tidak ditemukan di sheet kontainer.');
+    return 'select ' + idx.map(columnLetter).join(',') + " where " + columnLetter(f) + " contains 'Makassar'";
+  }
+
   // "M/D/YYYY" → "YYYY-MM-DD"; apa pun selain itu → ''
   function usDate(s) {
     const m = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(str(s)); if (!m) return '';
@@ -108,5 +129,5 @@
     return p.day + '/' + p.month + '/' + p.year + ' ' + (p.hour === '24' ? '00' : p.hour) + ':' + p.minute + ' WITA';
   }
 
-  return { OPERATORS, PICS, MPP, STOCK_HEADERS, TRANSIT_HEADERS, toObjects, missingHeaders, columnLetter, usDate, lpnKind, putawayLpns, productivity, PW_SALT, PW_HASH, hashPassword, checkPassword, unlockValid, stampText };
+  return { OPERATORS, PICS, MPP, STOCK_HEADERS, TRANSIT_HEADERS, toObjects, missingHeaders, columnLetter, rdcQuery, usDate, lpnKind, putawayLpns, productivity, PW_SALT, PW_HASH, hashPassword, checkPassword, unlockValid, stampText };
 });

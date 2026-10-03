@@ -588,13 +588,21 @@ function reindex(){
   RDC_BY_SI={};(D.rdc||[]).forEach((r,i)=>{RDC_BY_SI[r.si]=i});
 }
 let loading=null;
+// Sheet kontainer: susunan kolomnya bisa berubah, jadi baca baris judul dulu lalu susun query dari judul kolom (IMMCore.rdcQuery).
+async function gvizRdc(){
+  const q=QUERIES.rdc;if(window.IMM_SNAPSHOT)return gviz(q);
+  let r;try{r=await fetch(gvizUrl({...q,tq:'select * limit 1'}),{cache:'no-store'})}catch(e){throw new Error('Tidak bisa terhubung ke Google Sheets. Cek koneksi internet.')}
+  if(!r.ok)throw new Error(`Sheet kontainer gagal dibaca (HTTP ${r.status}).`);const t=await r.text();
+  if(/^\s*</.test(t))throw new Error('Sheet kontainer tidak bisa dibaca. Pastikan dibagikan "Siapa saja yang memiliki link" sebagai Pelihat.');
+  return gviz({...q,tq:IMMCore.rdcQuery(parseCSV(t)[0]||[])});
+}
 function loadData(manual){
   if(loading)return loading;
   STATUS.state=D?'refreshing':'loading';STATUS.msg='';renderStatus();
   loading=(async()=>{
     try{
       const keys=Object.keys(QUERIES);
-      const res=await Promise.all(keys.map(k=>gviz(QUERIES[k]).catch(e=>{if(k==='rdc')return {__err:e.message};throw e})));
+      const res=await Promise.all(keys.map(k=>(k==='rdc'?gvizRdc():gviz(QUERIES[k])).catch(e=>{if(k==='rdc')return {__err:e.message};throw e})));
       const R=Object.fromEntries(keys.map((k,i)=>[k,res[i]]));
       let rdcErr='';if(R.rdc&&R.rdc.__err){rdcErr=R.rdc.__err;R.rdc=[]}
       D=buildModel(R);D.rdcErr=rdcErr;reindex();SKU_CACHE={};

@@ -64,3 +64,20 @@ test('putaway counts distinct SKUs, not rows', () => {
     ['HCI','MOVE','S2','B','R1','FLR-1','ID9','1','NSPRFPA02','1000','10/01/2026 9:06 AM','10/01/2026','192831','x']];
   const l = C.putawayLpns(C.toObjects(rows).rows, opt)[0]; eq(l.items.length, 3); eq(l.skus, 2); eq(byLpn('ID001').skus, 2);
 });
+
+// ---------- Sheet kontainer (RDC): kolom dicari lewat judul, karena susunan kolomnya pernah berubah ----------
+const RDC_HEAD_A = ['BU', 'SI', 'Vendor', 'Type Armada', 'TUJUAN', 'Stuffing Date', 'Delivery Date', 'Checkout', 'Moda', 'No Container', 'PELAYARAN', 'Nama Kapal', 'POO', 'ETD', 'ATD', 'ETA', 'ATA BY DC (DATE)', 'TGL DOCUMENT DITERIMA', 'REQUEST DOORING (DATE)', 'ACTUAL DOORING (DATE)', 'TANGGAL BONGKAR', 'Position BY NDC-RDC', 'Status Shipment', 'Kode Site', 'BU', 'AGING YARD', 'KATEGORI AGING YARD'];
+const RDC_TAIL = ['BU NAME', 'TERITORI', 'TEUs', 'Aging POO\n(ATD - CHECKOUT)', 'Aging OTW\n(ATA - ATD)', 'AGING POD\n(ATA-RCV)', 'LEAD TIME\n(Ship - RCV)', 'Occupancy 04 Oct 2026', 'SLA UNLOAD', 'SLA Category ', ''];
+test('rdcQuery: current layout (BU NAME in AB)', () => {
+  eq(C.rdcQuery([...RDC_HEAD_A, ...RDC_TAIL]), "select A,B,D,G,H,J,L,M,N,O,P,Q,S,T,U,V,W,Y,Z,AA,AD,AE,AF,AG,AH where AB contains 'Makassar'");
+});
+test('rdcQuery: old layout (8 extra columns before BU NAME) gives the old query', () => {
+  eq(C.rdcQuery([...RDC_HEAD_A, 'x1', 'x2', 'x3', 'x4', 'x5', 'x6', 'x7', 'x8', ...RDC_TAIL]), "select A,B,D,G,H,J,L,M,N,O,P,Q,S,T,U,V,W,Y,Z,AA,AL,AM,AN,AO,AP where AJ contains 'Makassar'");
+});
+test('rdcQuery: a missing column is named in the error', () => {
+  assert.throws(() => C.rdcQuery(RDC_HEAD_A.concat(RDC_TAIL.filter((h) => h !== 'TEUs' && h !== 'BU NAME'))), /Kolom BU NAME, TEUs tidak ditemukan/);
+});
+test('rdcQuery: header spacing and case do not matter', () => {
+  const h = [...RDC_HEAD_A, ...RDC_TAIL].map((x) => '  ' + x.toLowerCase().replace(/ /g, '  ') + ' ');
+  eq(C.rdcQuery(h), "select A,B,D,G,H,J,L,M,N,O,P,Q,S,T,U,V,W,Y,Z,AA,AD,AE,AF,AG,AH where AB contains 'Makassar'");
+});
