@@ -1131,10 +1131,13 @@ function monLpp(){
 function pageSet(){
   const v=currentVersion();const at=D?D.snap.split('T'):null;
   const nCont=D?D.cont.length:0,nLc=D?D.lcs.length+D.un.length:0,nLp=D?D.lp.length:0,nRdc=D?(D.rdc||[]).length:0;
-  const liveOk=!!livePlugin();
+  const liveOk=!!livePlugin();const me=(LS.get('imm.role')||{}).role;const nG=Object.keys(IMMUi.GLOSSARY).length;
   return `
-  <div class="hello" style="--i:0"><h1>Pengaturan</h1><p>Tampilan, data, dan pembaruan aplikasi</p></div>
-  <section class="card" style="--i:2"><div class="ch"><span class="hic">${I.sun}</span><h2>Tampilan</h2></div><div class="cb">
+  <header class="set-head" style="--i:0"><span class="mark">${(document.getElementById('brandMark')||{}).innerHTML||''}</span>
+    <div class="set-id"><h1>Pengaturan</h1><p>IMM · Inbound Mini Monitoring DC Tallo</p></div>
+    <dl class="set-meta"><div><dt>Versi</dt><dd>${esc(v)}</dd></div><div><dt>Role kamu</dt><dd>${me?esc(me):'Belum dipilih'}</dd></div><div><dt>Data</dt><dd>${at?`${at[0]===TODAY?'Hari ini':dshort(at[0])} ${at[1]}`:'–'}</dd></div></dl>
+  </header>
+  <section class="card" style="--i:1"><div class="ch"><span class="hic">${I.sun}</span><h2>Tampilan</h2></div><div class="cb">
     <div style="margin-bottom:12px">${seg('theme',[['auto','Otomatis'],['light','Terang'],['dark','Malam']],S.theme)}</div>
     <div class="set-group">
       <button class="set-row press" data-toggle="calm"><span class="ic">${I.motion}</span><span><div class="t">Kurangi animasi</div><div class="x">Matikan animasi masuk, angka berjalan, dan transisi</div></span><span class="end">${S.calm?tag('Aktif','good'):tag('Mati')}</span></button>
@@ -1149,7 +1152,10 @@ function pageSet(){
     <div class="set-row"><span class="ic">${I.ship}</span><span><div class="t">Monitoring kontainer</div><div class="x">${D&&D.rdcErr?esc(D.rdcErr):`${f0(nRdc)} kontainer BU Makassar`}</div></span><span class="end">${D&&D.rdcErr?tag('Gagal','crit'):tag('OK','good')}</span></div>
     <div class="set-row"><span class="ic">${I.box}</span><span><div class="t">Inbound (stock & transit)</div><div class="x">${inbSourceText()}</div></span><span class="end">${INB.state==='idle'||INB.state==='loading'?tag('–'):(INB.err.stock||INB.err.transit)?tag('Gagal','crit'):tag('OK','good')}</span></div>
   </div></div></section>
-  <section class="card" style="--i:5"><div class="ch"><span class="hic">${I.info}</span><h2>Tentang</h2></div><div class="cb">
+  <section class="card" style="--i:5"><div class="ch"><span class="hic">${I.info}</span><h2>Kamus istilah</h2></div><div class="cb"><div class="set-group">
+    <button class="set-row press" data-gloss=""><span class="ic">${I.doc}</span><span><div class="t">Buka kamus</div><div class="x">${nG} istilah: ${Object.values(IMMUi.GLOSSARY).slice(0,6).map(x=>esc(x.t)).join(', ')}, dan lainnya</div></span><span class="end">${I.chev}</span></button>
+  </div></div></section>
+  <section class="card" style="--i:6"><div class="ch"><span class="hic">${I.star}</span><h2>Tentang</h2></div><div class="cb">
     <dl class="kv"><dt>Aplikasi</dt><dd>IMM – Inbound Mini Monitoring</dd><dt>Lokasi</dt><dd>DC Tallo Makassar</dd><dt>Versi</dt><dd>${esc(v)}</dd><dt>Perangkat</dt><dd>${NATIVE?'Android':'Browser'}</dd></dl>
   </div></section>`;
 }

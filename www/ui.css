@@ -130,3 +130,14 @@ body{word-spacing:.05em}
 .lead .flow{background:color-mix(in srgb,var(--accent-ink) 14%,transparent)}
 .lead-note{margin:0;font-size:12px;line-height:1.4;color:color-mix(in srgb,var(--accent-ink) 70%,var(--accent))}
 #rdcList{scroll-margin-top:calc(var(--sat) + 120px)}
+
+/* ---------- Pengaturan: kepala halaman ---------- */
+.set-head{display:grid;grid-template-columns:52px minmax(0,1fr);gap:14px 14px;align-items:center;background:var(--surface);border-radius:var(--r-lg);box-shadow:var(--shadow);padding:18px}
+.set-head .mark{width:52px;height:52px;border-radius:17px}
+.set-head .mark svg{width:30px;height:30px}
+.set-id h1{margin:0;font-size:22px;font-weight:800;letter-spacing:-.02em;line-height:1.15}
+.set-id p{margin:2px 0 0;font-size:13px;color:var(--ink-3);overflow-wrap:anywhere}
+.set-meta{grid-column:1/-1;margin:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.set-meta>div{background:var(--surface-2);border-radius:14px;padding:10px 12px;min-width:0}
+.set-meta dt{font-size:12px;color:var(--ink-3)}
+.set-meta dd{margin:2px 0 0;font-size:14px;font-weight:700;overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
