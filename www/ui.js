@@ -16,7 +16,7 @@ function lead(o){
     <p class="lead-h">${o.headline}</p>
     ${o.value!=null?`<div class="lead-main"><div class="lead-v">${o.value}${o.unit?`<span class="lead-u">${o.unit}</span>`:''}</div>${o.delta||''}</div>`:''}
     ${o.body||''}
-    ${stats.length?`<div class="lead-stats">${stats.map(s=>`<div><span>${s.dot?`<i class="dot" style="background:${s.dot}"></i>`:''}${s.l}</span><b>${s.v}${s.u?`<small>${s.u}</small>`:''}</b></div>`).join('')}</div>`:''}
+    ${stats.length?`<div class="lead-stats n${stats.length}">${stats.map(s=>`<div><span>${s.dot?`<i class="dot" style="background:${s.dot}"></i>`:''}${s.l}</span><b>${s.v}${s.u?`<small>${s.u}</small>`:''}</b></div>`).join('')}</div>`:''}
     ${o.foot||''}
   </section>`;
 }

@@ -915,15 +915,21 @@ function pageStock(){
   const byBU=BUS.filter(buOK).map(b=>{const rs=R.filter(r=>BUS[r[7]]===b);const v=rs.reduce((a,r)=>a+r[6],0);return {l:buLabel(b),s:`${new Set(rs.map(r=>r[0])).size} LC`,v,pct:pc(v,cbm),color:buCol(b)}});
   if(S.q.dept){const Q=S.q.dept.toUpperCase();dep=dep.filter(d=>D.depts[d.k].toUpperCase().includes(Q))}
   const nd=lim('dept',8);
+  const single=from===to;const when=single?(from===TODAY?'Hari ini':from===addD(TODAY,1)?'Besok':dday(from)):esc(rlabel())+':';
+  const nSku=sumN(R),nDept=new Set(R.map(r=>r[3])).size,planS=X.cont.reduce((a,c)=>a+c.ps,0);
+  const headline=cbm>0?`${when} masuk gudang <b>${f0(nLC)} LC</b> (${f0(teS)} TEUs): ${f0(nSku)} baris SKU dari ${f0(nDept)} dept. Plan ${f1(planS)} CBM.`:`Belum ada barang ke storing ${whenWord()}.`;
+  const buZ=withZeros(byBU,x=>x.v,z=>`${z.length} BU lain belum ada kiriman`);
   return `
-  <div class="hello" style="--i:0"><h1>to Storing</h1><p>Barang masuk gudang stock · ${esc(rlabel())}</p></div>
-  <div style="--i:1">${tiles([{k:'CBM storing',dot:'var(--s-stock)',v:cnt(cbm,1),d:`plan ${f1(X.cont.reduce((a,c)=>a+c.ps,0))}`},{k:'Kontainer',v:cnt(teS),u:'TEUs',d:`${nLC} LC`},{k:'Baris SKU',v:cnt(sumN(R)),d:`${new Set(R.map(r=>r[3])).size} dept`},{k:'Qty',v:cnt(qty),u:'pcs'}])}</div>
+  <div class="hello slim" style="--i:0"><h1>to Storing</h1><p>Barang masuk gudang stock</p></div>
+  ${lead({tone:'stock',empty:!(cbm>0),headline,value:cnt(cbm,1),unit:'CBM',delta:single?dayDelta(from,cbm,0):'',
+    stats:[{l:'LC',v:cnt(nLC)},{l:'Baris SKU',v:cnt(nSku)},{l:'Qty',v:cnt(qty),u:'pcs'},{l:'Kontainer',v:cnt(teS),u:'TEUs'}],
+    foot:weekStrip(IMMUi.weekDays(TODAY).map(d=>({d,v:dayCbm(d,0)})),single?from:'')})}
   <div style="--i:2">${insights('Ringkasan pintar',ins)}</div>
   ${cbm>0?`<div class="grid2" style="--i:3">
-    <section class="card"><div class="ch"><span class="hic">${I.stock}</span><h2>Per dept</h2><span class="hint">${dep.length} dept</span><div class="right" style="flex:1 1 160px;max-width:220px">${searchBox('dept','Cari dept')}</div></div><div class="cb">${dep.length?hbars(dep.slice(0,nd).map(d=>({l:`<span class="mono">${esc(D.depts[d.k])}</span>`,s:`${d.lc.size} LC · ${f0(d.sku)} SKU`,vt:`${f1(d.cbm)}<small>CBM</small>`,pct:pc(d.cbm,cbm),v:d.cbm,color:'var(--s-stock)'}))):emptyState('Dept tidak ditemukan','Coba kata kunci lain.',false,I.search)}${moreBtn('dept',dep.length,nd)}</div></section>
-    <section class="card"><div class="ch"><span class="hic">${I.box}</span><h2>Per BU</h2></div><div class="cb">${hbars(byBU.map(x=>({...x,vt:x.v?`${f1(x.v)}<small>CBM</small>`:'–'})))}</div></section>
+    <section class="card">${secHead({icon:I.stock,title:'Per dept',hint:`${dep.length} dept`,sub:'Volume storing per kelompok barang, dari yang terbesar.',gloss:['dept','cbm','lc']})}<div class="tools">${searchBox('dept','Cari dept')}</div><div class="cb">${dep.length?hbars(dep.slice(0,nd).map(d=>({l:`<span class="mono">${esc(D.depts[d.k])}</span>`,s:`${d.lc.size} LC · ${f0(d.sku)} SKU`,vt:`${f1(d.cbm)}<small>CBM</small>`,pct:pc(d.cbm,cbm),v:d.cbm,color:'var(--s-stock)'}))):emptyState('Dept tidak ditemukan','Coba kata kunci lain.',false,I.search)}${moreBtn('dept',dep.length,nd)}</div></section>
+    <section class="card">${secHead({icon:I.box,title:'Per BU',sub:'Pembagian CBM storing per pemilik barang.',gloss:['bu','cbm']})}<div class="cb">${buZ.rows.length?hbars(buZ.rows.map(x=>({...x,vt:`${f1(x.v)}<small>CBM</small>`})))+buZ.zero:''}</div></section>
   </div>`:''}
-  <section class="card" style="--i:4"><div class="ch"><span class="hic">${I.doc}</span><h2>Daftar No LC</h2><span class="hint">${lcs.length} LC</span><div class="right" style="flex:1 1 180px;max-width:240px">${searchBox('lcS','Cari LC / kontainer')}</div></div><div class="cb" style="padding-top:4px">${lcs.length?lcRows(lcs,'S','lcS'):emptyState(S.q.lcS?'Tidak ditemukan':'Tidak ada storing',S.q.lcS?'Tidak ada LC yang cocok.':`Tidak ada LC ke storing ${whenWord()}.`,!S.q.lcS)}</div></section>`;
+  <section class="card" style="--i:4">${secHead({icon:I.doc,title:'Daftar No LC',hint:`${lcs.length} LC`,sub:'Ketuk LC untuk melihat isinya per tipe inbound.',gloss:['lc','cbm']})}<div class="tools">${searchBox('lcS','Cari LC / kontainer')}</div><div class="cb" style="padding-top:4px">${lcs.length?lcRows(lcs,'S','lcS'):emptyState(S.q.lcS?'Tidak ditemukan':'Tidak ada storing',S.q.lcS?'Tidak ada LC yang cocok.':`Tidak ada LC ke storing ${whenWord()}.`,!S.q.lcS)}</div></section>`;
 }
 function pageOut(){
   const [from,to]=range(),X=slice(from,to);const RA=X.rows.filter(r=>r[1]>0),RS=RA.filter(r=>r[1]===1);
@@ -938,15 +944,22 @@ function pageOut(){
   }
   const byBU=BUS.filter(buOK).map(b=>{const rs=RA.filter(r=>BUS[r[7]]===b);const v=rs.reduce((x,r)=>x+r[6],0);return {l:buLabel(b),s:`${new Set(rs.filter(r=>r[1]===1).map(r=>r[2])).size} store`,v,pct:pc(v,all),color:buCol(b)}});
   const nd=lim('dest',8);
+  const single=from===to;const when=single?(from===TODAY?'Hari ini':from===addD(TODAY,1)?'Besok':dday(from)):esc(rlabel())+':';
+  const nLC=new Set(RA.map(r=>r[0])).size,planO=X.cont.reduce((a,c)=>a+c.pt+c.pc,0);
+  const headline=all>0?`${when} langsung keluar ke <b>${f0(dest.length)} store</b>${cu>0?` dan customer (${pc(cu,all)}% volume)`:''} dari ${f0(nLC)} LC. Plan ${f1(planO)} CBM.`:`Belum ada barang langsung outbound ${whenWord()}.`;
+  const buZ=withZeros(byBU,x=>x.v,z=>`${z.length} BU lain belum ada kiriman`);
   return `
-  <div class="hello" style="--i:0"><h1>to Outbound</h1><p>Langsung ke store dan customer · ${esc(rlabel())}</p></div>
-  <div style="--i:1">${tiles([{k:'CBM outbound',v:cnt(all,1),d:`plan ${f1(X.cont.reduce((a,c)=>a+c.pt+c.pc,0))}`},{k:'ke Store',dot:'var(--s-store)',v:cnt(st,1),d:`${pc(st,all)}% · ${dest.length} store`},{k:'ke Customer',dot:'var(--s-cust)',v:cnt(cu,1),d:`${pc(cu,all)}%`},{k:'Kontainer',v:cnt(teO),u:'TEUs',d:`${new Set(RA.map(r=>r[0])).size} LC`}])}</div>
+  <div class="hello slim" style="--i:0"><h1>to Outbound</h1><p>Langsung ke store dan customer</p></div>
+  ${lead({tone:'out',empty:!(all>0),headline,value:cnt(all,1),unit:'CBM',delta:single?dayDelta(from,all,1):'',
+    body:all>0?`<div class="lead-split" aria-hidden="true">${st>0?`<span style="width:${st/all*100}%;background:var(--s-store)"></span>`:''}${cu>0?`<span style="width:${cu/all*100}%;background:var(--s-cust)"></span>`:''}</div>`:'',
+    stats:[{l:'ke Store',v:cnt(st,1),dot:'var(--s-store)'},{l:'ke Customer',v:cnt(cu,1),dot:'var(--s-cust)'},{l:'LC',v:cnt(nLC)},{l:'Kontainer',v:cnt(teO),u:'TEUs'}],
+    foot:weekStrip(IMMUi.weekDays(TODAY).map(d=>({d,v:dayCbm(d,1)})),single?from:'')})}
   <div style="--i:2">${insights('Ringkasan pintar',ins)}</div>
   ${all>0?`<div class="grid2" style="--i:3">
-    <section class="card"><div class="ch"><span class="hic">${I.out}</span><h2>Per store</h2><span class="hint">${dest.length} store</span></div><div class="cb">${dest.length?hbars(dest.slice(0,nd).map(d=>({l:`<span class="mono">${esc(d.c)}</span> <span style="font-weight:500;color:var(--ink-3)">${esc(nameOf(d.c))}</span>`,s:`${d.lc.size} LC`,vt:`${f1(d.cbm)}<small>CBM</small>`,pct:pc(d.cbm,st),v:d.cbm,color:'var(--s-store)'}))):emptyState('Tidak ada store','Semua outbound di periode ini adalah pesanan customer.',false,I.out)}${moreBtn('dest',dest.length,nd)}</div></section>
-    <section class="card"><div class="ch"><span class="hic">${I.box}</span><h2>Per BU</h2><span class="hint">store + customer</span></div><div class="cb">${hbars(byBU.map(x=>({...x,vt:x.v?`${f1(x.v)}<small>CBM</small>`:'–'})))}</div></section>
+    <section class="card">${secHead({icon:I.out,title:'Per store',hint:`${dest.length} store`,sub:'Volume ke tiap store, dari yang terbesar. Customer tidak ditampilkan.',gloss:['cbm','lc']})}<div class="cb">${dest.length?hbars(dest.slice(0,nd).map(d=>({l:`<span class="mono">${esc(d.c)}</span> <span style="font-weight:500;color:var(--ink-3)">${esc(nameOf(d.c))}</span>`,s:`${d.lc.size} LC`,vt:`${f1(d.cbm)}<small>CBM</small>`,pct:pc(d.cbm,st),v:d.cbm,color:'var(--s-store)'}))):emptyState('Tidak ada store','Semua outbound di periode ini adalah pesanan customer.',false,I.out)}${moreBtn('dest',dest.length,nd)}</div></section>
+    <section class="card">${secHead({icon:I.box,title:'Per BU',hint:'store + customer',sub:'Pembagian CBM outbound per pemilik barang.',gloss:['bu','cbm']})}<div class="cb">${buZ.rows.length?hbars(buZ.rows.map(x=>({...x,vt:`${f1(x.v)}<small>CBM</small>`})))+buZ.zero:''}</div></section>
   </div>`:''}
-  <section class="card" style="--i:4"><div class="ch"><span class="hic">${I.doc}</span><h2>Daftar No LC</h2><span class="hint">${lcs.length} LC</span><div class="right" style="flex:1 1 180px;max-width:240px">${searchBox('lcO','Cari LC / kontainer')}</div></div><div class="cb" style="padding-top:4px">${lcs.length?lcRows(lcs,'O','lcO'):emptyState(S.q.lcO?'Tidak ditemukan':'Tidak ada outbound',S.q.lcO?'Tidak ada LC yang cocok.':`Tidak ada LC ke store atau customer ${whenWord()}.`,!S.q.lcO)}</div></section>`;
+  <section class="card" style="--i:4">${secHead({icon:I.doc,title:'Daftar No LC',hint:`${lcs.length} LC`,sub:'Ketuk LC untuk melihat isinya per tipe inbound.',gloss:['lc','cbm']})}<div class="tools">${searchBox('lcO','Cari LC / kontainer')}</div><div class="cb" style="padding-top:4px">${lcs.length?lcRows(lcs,'O','lcO'):emptyState(S.q.lcO?'Tidak ditemukan':'Tidak ada outbound',S.q.lcO?'Tidak ada LC yang cocok.':`Tidak ada LC ke store atau customer ${whenWord()}.`,!S.q.lcO)}</div></section>`;
 }
 
 // ======================= MONITORING =======================

@@ -27,7 +27,8 @@ small,.tag,.bu,.dchip,.hint,.foot,.lt-chip,.lt-hint,.jr-ends span,.jr-d,.seg3 sp
 .chip,#sync{padding-top:0;padding-bottom:0}
 .btn,.btn.sm{display:inline-flex;align-items:center;justify-content:center;gap:8px}
 .btn.block{display:flex}
-.search input{min-height:40px}
+.search{padding-top:0;padding-bottom:0}
+.search input{min-height:44px}
 .ibtn,.sh .x,.icon-btn,.gloss{width:40px;height:40px}
 .ph-del{width:40px;height:40px;top:-12px;right:-12px;background:none;border:0}
 .ph-del svg{width:28px;height:28px;box-sizing:border-box;padding:6px;border-radius:50%;background:var(--crit);color:#fff;border:2px solid var(--surface)}
@@ -49,6 +50,8 @@ small,.tag,.bu,.dchip,.hint,.foot,.lt-chip,.lt-hint,.jr-ends span,.jr-d,.seg3 sp
 .lead-split{display:flex;gap:3px;height:10px;border-radius:999px;overflow:hidden;background:color-mix(in srgb,var(--accent-ink) 14%,transparent)}
 .lead-split span{display:block;height:100%;border-radius:999px;transform-origin:left;animation:grow .7s var(--ease) both}
 .lead-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(74px,1fr));gap:10px 12px}
+.lead-stats.n4{grid-template-columns:repeat(2,minmax(0,1fr))}
+@media (min-width:520px){.lead-stats.n4{grid-template-columns:repeat(4,minmax(0,1fr))}}
 .lead-stats>div{min-width:0;display:grid;gap:1px}
 .lead-stats>div>span{font-size:12px;color:color-mix(in srgb,var(--accent-ink) 72%,var(--accent));display:flex;align-items:center;gap:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .lead-stats>div>span .dot{flex:none}
@@ -115,3 +118,4 @@ small,.tag,.bu,.dchip,.hint,.foot,.lt-chip,.lt-hint,.jr-ends span,.jr-d,.seg3 sp
 @media (max-width:389px){.nav{left:6px;right:6px}.nav button{letter-spacing:-.035em}}
 
 body{word-spacing:.05em}
+.tools{padding:10px 16px 0;display:grid;gap:8px}
