@@ -54,12 +54,13 @@ for (const gid of ['349104626', '2022396471']) if (!allWww.includes(gid)) fail('
   if (hits.length) fail('kata sandi Inbound tertulis terang di ' + hits.join(', ') + ' (harus hash saja)');
   else ok('kata sandi Inbound tidak tertulis terang (' + words.size + ' kata diperiksa)');
 }
-// Penyimpanan Supabase wajib terisi saat rilis; tanpa itu foto dan TTO tidak jalan di HP pengguna.
+// Supabase: boleh kosong (foto dan TTO nonaktif), tapi tidak boleh setengah terisi atau salah bentuk.
 {
   const store = fs.readFileSync(path.join(ROOT, 'www', 'store.js'), 'utf8');
   const m = store.match(/const SUPA = Object\.assign\(\{ url: '([^']*)', key: '([^']*)' \}/);
   if (!m) fail('baris konfigurasi SUPA di www/store.js tidak ditemukan');
-  else if (!m[1] || !m[2]) { if (process.env.GITHUB_ACTIONS) fail('SUPA.url / SUPA.key di www/store.js masih kosong'); else console.log('! SUPA masih kosong (rilis akan ditolak sampai diisi)'); }
+  else if (!m[1] && !m[2]) console.log('! Supabase belum diisi: fitur foto dan TTO tampil "belum diatur" di rilis ini');
+  else if (!m[1] || !m[2]) fail('SUPA.url dan SUPA.key di www/store.js harus diisi dua-duanya');
   else if (!/^https:\/\/[a-z0-9-]+\.supabase\.co$/.test(m[1])) fail('SUPA.url harus berbentuk https://xxxx.supabase.co');
   else ok('Supabase terisi');
 }
