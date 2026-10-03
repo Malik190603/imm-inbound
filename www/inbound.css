@@ -34,7 +34,7 @@
 @media (min-width:900px){.tiles{grid-template-columns:2fr 1fr 1fr}.tile.wide:not(.row){grid-column:auto;grid-row:span 1}.tile.row{grid-column:1/-1}}
 
 /* ringkasan Putaway di dalam kartu jawaban */
-.lead .put-sum>button{background:color-mix(in srgb,var(--accent-ink) 9%,transparent);color:var(--accent-ink)}
+.lead .put-sum>button{background:rgba(128,134,140,.2);background:color-mix(in srgb,var(--accent-ink) 9%,transparent);color:var(--accent-ink)}
 .lead .put-sum>button>span{color:color-mix(in srgb,var(--accent-ink) 72%,var(--accent))}
 .lead .put-sum>button[aria-pressed="true"]{border-color:var(--accent-ink)}
 .lead .put-sum .crit{background:var(--crit-bg)} .lead .put-sum .warn{background:var(--warn-bg)} .lead .put-sum .good{background:var(--good-bg)}

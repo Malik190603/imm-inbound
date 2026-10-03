@@ -3,7 +3,7 @@
 I.lock='<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="9" width="12" height="8" rx="2"/><path d="M7 9V6.5a3 3 0 0 1 6 0V9M10 12.5v1.5"/></svg>';
 I.cam='<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7.5a1.5 1.5 0 0 1 1.5-1.5H6l1.2-1.8h5.6L14 6h1.5A1.5 1.5 0 0 1 17 7.5v7a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 3 14.5z"/><circle cx="10" cy="11" r="2.8"/></svg>';
 I.plus='<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10 4.5v11M4.5 10h11"/></svg>';
-const INB_ITEMS=[['put','Putaway','LPN yang diputaway ke lokasi FLR',I.box],['tto','TTO/Dokumen','Serah terima dokumen dan barang',I.doc],['prod','Productivity','CBM Receive dan Putaway per operator',I.trend],['mpp','MPP detail','Profil tim inbound',I.users]];
+const INB_ICON={put:I.box,tto:I.doc,prod:I.trend,mpp:I.users};
 const INB_UNLOCK_KEY='imm.inb.unlock';
 let inbPwErr='';
 function inbUnlocked(){return IMMCore.unlockValid(LS.get(INB_UNLOCK_KEY),Date.now())}
@@ -28,12 +28,13 @@ async function inbTryUnlock(){
   else{inbPwErr='Sandi salah. Coba lagi.';buzz(30);render();const n=document.getElementById('inbPw');n&&n.focus()}
 }
 // Angka di kartu daftar selalu untuk hari ini dan semua BU (filter tidak tampil di daftar).
-const TILE={key:'',state:'idle',tto:null,noPh:null,at:0};
+const TILE={key:'',okKey:'',state:'idle',tto:null,noPh:null,at:0};
+function inbTilesStale(){TILE.state='idle'}
 function inbSyncTiles(lpns){
   if(!IMMStore.configured())return;const key=TODAY+'|'+lpns.join('|');
   if(key===TILE.key&&TILE.state!=='idle'&&!(TILE.state==='ok'&&Date.now()-TILE.at>INB_FRESH_MS))return;TILE.key=key;TILE.state='loading';
   Promise.all([IMMStore.listTto({from:TODAY,to:TODAY}),lpns.length?IMMStore.listPutawayPhotos(lpns):[]])
-    .then(([tto,ph])=>{if(TILE.key!==key)return;const has=new Set(ph.map(r=>r.lpn));TILE.tto=tto.length;TILE.noPh=lpns.filter(l=>!has.has(l)).length;TILE.state='ok';TILE.at=Date.now()},()=>{if(TILE.key===key)TILE.state='error'})
+    .then(([tto,ph])=>{if(TILE.key!==key)return;const has=new Set(ph.map(r=>r.lpn));TILE.tto=tto.length;TILE.noPh=lpns.filter(l=>!has.has(l)).length;TILE.state='ok';TILE.okKey=key;TILE.at=Date.now()},()=>{if(TILE.key===key)TILE.state='error'})
     .then(()=>{if(TILE.key===key&&S.page==='inb'&&!S.inb&&inbUnlocked())render()});
 }
 function inbList(){
@@ -43,7 +44,7 @@ function inbList(){
     let lpns=[];
     if(INB.err.stock){put=NONE;putNote='Data putaway belum bisa dibaca'}
     else{const L=IMMCore.putawayLpns(INB.stock,o);lpns=L.map(l=>l.lpn);put=f0(L.length);
-      const d=L.filter(l=>l.kind==='damage').length,m=L.filter(l=>l.mixed).length,seen=cfg&&TILE.state!=='error'&&TILE.at>0&&TILE.key===TODAY+'|'+lpns.join('|');
+      const d=L.filter(l=>l.kind==='damage').length,m=L.filter(l=>l.mixed).length,seen=cfg&&TILE.state!=='error'&&TILE.at>0&&TILE.okKey===TODAY+'|'+lpns.join('|');
       if(seen&&TILE.noPh)putFlags.push(tag(`${f0(TILE.noPh)} belum ada foto`,'warn'));
       if(d)putFlags.push(tag(`${f0(d)} damage`,'crit'));if(m)putFlags.push(tag(`${f0(m)} campur Dept`,'warn'));
       if(!L.length)putNote='Belum ada putaway hari ini';else if(!putFlags.length)putNote=seen?'Semua sudah berfoto, tanpa damage':'Tanpa damage dan campur Dept'}
@@ -52,7 +53,7 @@ function inbList(){
     inbSyncTiles(lpns);
   }
   const tto=!cfg||TILE.state==='error'?NONE:TILE.at>0?f0(TILE.tto):WAIT;
-  const ic=k=>INB_ITEMS.find(x=>x[0]===k)[3],go=`<span class="tile-go">${I.chev}</span>`;
+  const ic=k=>INB_ICON[k],go=`<span class="tile-go">${I.chev}</span>`;
   return `<div class="hello slim" style="--i:0"><h1>Inbound</h1><p>Angka hari ini · ketuk untuk membuka</p></div>
   <div class="tiles" style="--i:1">
     <button class="tile wide press" data-inb="put"><span class="tile-h"><span class="tile-ic">${ic('put')}</span>${go}</span><span class="t">Putaway</span>
@@ -176,7 +177,7 @@ function inbPutaway(){
   const filtered=!!(S.putF||S.putLoc||q);const n=lim('put',20);
   const tile=(k,num,label,tone)=>`<button class="press ${tone||''}" data-putf="${k}" aria-pressed="${(S.putF||'all')===k}"><b>${num}</b><span>${label}</span></button>`;
   const active=[S.putF?F_LABEL[S.putF]:'',S.putLoc?esc(S.putLoc):''].filter(Boolean).join(' · ');
-  const N=PUT_LIST.length,cbm=PUT_LIST.reduce((a,l)=>a+l.cbm,0),qty=PUT_LIST.reduce((a,l)=>a+l.qty,0),nOp=new Set(PUT_LIST.map(l=>l.operator)).size;
+  const N=PUT_LIST.length,cbm=PUT_LIST.reduce((a,l)=>a+l.cbm,0),qty=PUT_LIST.reduce((a,l)=>a+l.qty,0),nOp=new Set(PUT_LIST.map(l=>l.operator).filter(Boolean)).size;
   const flags=[nDmg?`${f0(nDmg)} damage`:'',nMix?`${f0(nMix)} campur Dept`:'',phOk&&nNoPh?`${f0(nNoPh)} belum ada foto`:''].filter(Boolean);
   const say=N?`<b>${f0(N)} LPN</b> masuk lokasi FLR ${inbWhen()}. ${flags.length?`Perlu dicek: ${flags.join(', ')}.`:phOk?'Semua sudah berfoto, tanpa damage maupun campur Dept.':'Tanpa damage maupun campur Dept.'}`:`Belum ada LPN yang diputaway ke lokasi FLR ${inbWhen()}.`;
   return head+lead({tone:'inb',i:1,empty:!N,headline:say,value:cnt(cbm,2),unit:'CBM diputaway',
@@ -328,8 +329,8 @@ function pageInbound(){
   return INB_PAGES[S.inb]();
 }
 // Muat ulang data halaman Inbound yang sedang dibuka (tombol sinkron, tarik-untuk-segarkan, "Coba lagi").
-function inbRefresh(){PH.state='idle';if(S.inb==='tto'){inbSyncTto(true);return Promise.resolve()}return loadInbound(true)}
-function inboundBack(){if(S.page!=='inb'||!S.inb||!inbUnlocked())return false;S.inb='';if(TILE.state==='ok')TILE.at=1;S.more={};render(true);window.scrollTo({top:0});return true}
+function inbRefresh(){PH.state='idle';inbTilesStale();if(S.inb==='tto'){inbSyncTto(true);return Promise.resolve()}return loadInbound(true)}
+function inboundBack(){if(S.page!=='inb'||!S.inb||!inbUnlocked())return false;S.inb='';inbTilesStale();S.more={};render(true);window.scrollTo({top:0});return true}
 function inboundClick(e){
   if(S.page!=='inb')return false;const g=s=>e.target.closest(s);let t;
   if(g('[data-pv-x]')||(e.target&&e.target.id==='photoView')){inboundOverlayBack();return true}

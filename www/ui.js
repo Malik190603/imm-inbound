@@ -27,11 +27,11 @@ function weekStrip(days,selected,fmt){
   const max=Math.max(1e-9,...days.map(x=>x.v||0));fmt=fmt||f0;
   return `<div class="ws" role="group" aria-label="CBM per hari, ketuk untuk pindah tanggal">${days.map((x,i)=>{const dd=pd(x.d);const today=x.d===TODAY;
     return `<button class="ws-d press${today?' today':''}" data-day="${x.d}" aria-pressed="${x.d===selected}" aria-label="${dlong(x.d)}: ${fmt(x.v||0)} CBM${today?' (hari ini)':''}">
-      <span class="ws-n">${x.v>0?(IMMUi.compact(x.v)||fmt(x.v)):'–'}</span><span class="ws-bar"><i style="height:${Math.max(4,(x.v||0)/max*100)}%;animation-delay:${i*45}ms"></i></span><span class="ws-l">${HARI[dd.getDay()]} ${dd.getDate()}</span></button>`}).join('')}</div>`;
+      <span class="ws-n">${x.v>0?(IMMUi.compact(x.v)||(x.v<.5?'<1':fmt(x.v))):'–'}</span><span class="ws-bar"><i style="height:${Math.max(4,(x.v||0)/max*100)}%;animation-delay:${i*45}ms"></i></span><span class="ws-l">${HARI[dd.getDay()]} ${dd.getDate()}</span></button>`}).join('')}</div>`;
 }
 // Perlu perhatian. items=[{n, u, label, sub, tone:'w'|'c', attr}] — attr = atribut data-* supaya bisa diketuk
 function attention(items,i){
-  items=(items||[]).filter(Boolean).slice(0,3);
+  items=(items||[]).filter(Boolean);items=items.filter(x=>x.tone==='c').concat(items.filter(x=>x.tone!=='c')).slice(0,3); // yang merah dulu
   if(!items.length)return `<div class="attn calm" style="--i:${i==null?2:i}">${I.ok}<span>Tidak ada yang perlu ditindak</span></div>`;
   return `<section class="attn" style="--i:${i==null?2:i}" aria-label="Perlu perhatian">${items.map(x=>{const inner=`<span class="attn-n">${x.n}${x.u?`<small>${x.u}</small>`:''}</span><span class="attn-t">${x.label}${x.sub?`<span>${x.sub}</span>`:''}</span>${x.attr?I.chev:'<span></span>'}`;
     return x.attr?`<button class="attn-i ${x.tone||'w'} press" ${x.attr}>${inner}</button>`:`<div class="attn-i ${x.tone||'w'}">${inner}</div>`}).join('')}</section>`;

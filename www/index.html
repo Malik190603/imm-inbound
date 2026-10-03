@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#111820">
 <title>IMM DC Tallo</title>
+<script>try{var t=localStorage.getItem('imm.theme');if(t==='light'||t==='dark')document.documentElement.setAttribute('data-theme',t)}catch(e){}</script>
 <style>
 /* Layout: one calm column of borderless cards on a warm-grey ground; sticky app bar + per-menu filter strip, floating 5-tab bar on phones, inline tabs on wide screens. */
 :root{
@@ -794,7 +795,7 @@ function renderStatus(){
   const il=document.getElementById('introLoad');if(il)il.textContent=STATUS.state==='loading'?'Mengambil data dari spreadsheet…':'';
 }
 function toast(msg){const t=document.createElement('div');t.className='toast';t.textContent=msg;document.body.appendChild(t);setTimeout(()=>{t.style.transition='opacity .35s';t.style.opacity='0';setTimeout(()=>t.remove(),360)},2200)}
-function setPage(p){if(S.page===p&&!(p==='inb'&&S.inb)){window.scrollTo({top:0,behavior:'smooth'});return}S.page=p;if(p==='inb')S.inb='';if(p==='set')loadRoles();S.more={};buzz(6);render(true);window.scrollTo({top:0})}
+function setPage(p){if(S.page===p&&!(p==='inb'&&S.inb)){window.scrollTo({top:0,behavior:'smooth'});return}S.page=p;if(p==='inb'){S.inb='';if(typeof inbTilesStale==='function')inbTilesStale()}if(p==='set')loadRoles();S.more={};buzz(6);render(true);window.scrollTo({top:0})}
 
 // ======================= ROLE (Storing + Outbound) =======================
 function pageRole(){return `<div class="hello slim" style="--i:0"><h1>Role</h1><p>${S.roleTab==='out'?'Barang langsung ke store dan customer':'Barang masuk gudang stock'}</p></div><div style="--i:1">${seg('roleTab',[['stock','to Storing'],['out','to Outbound']],S.roleTab)}</div>`+(S.roleTab==='out'?pageOut():pageStock())}
@@ -925,7 +926,7 @@ function pageOut(){
   const nd=lim('dest',8);
   const single=from===to;const when=single?(from===TODAY?'Hari ini':from===addD(TODAY,1)?'Besok':dday(from)):esc(rlabel())+':';
   const nLC=new Set(RA.map(r=>r[0])).size,planO=X.cont.reduce((a,c)=>a+c.pt+c.pc,0);
-  const headline=all>0?`${when} langsung keluar ke <b>${f0(dest.length)} store</b>${cu>0?` dan customer (${pc(cu,all)}% volume)`:''} dari ${f0(nLC)} LC.${Math.abs(planO-all)>Math.max(.5,all*.01)?` Plan kontainer ${f1(planO)} CBM, selisih ${f1(Math.abs(planO-all))}.`:''}`:`Belum ada barang langsung outbound ${whenWord()}.`;
+  const headline=all>0?`${when} langsung keluar ke ${dest.length?`<b>${f0(dest.length)} store</b>${cu>0?` dan customer (${pc(cu,all)}% volume)`:''}`:'<b>customer</b>'} dari ${f0(nLC)} LC.${Math.abs(planO-all)>Math.max(.5,all*.01)?` Plan kontainer ${f1(planO)} CBM, selisih ${f1(Math.abs(planO-all))}.`:''}`:`Belum ada barang langsung outbound ${whenWord()}.`;
   const buZ=withZeros(byBU,x=>x.v,z=>`${z.length} BU lain belum ada kiriman`);
   return `
   ${lead({tone:'out',empty:!(all>0),headline,value:cnt(all,1),unit:'CBM',delta:single?dayDelta(from,all,1):'',
@@ -1021,7 +1022,6 @@ function monKont(){
   const maxOrg=Math.max(1,...orgV.map(z=>hasLegs?z.lg.reduce((a,b)=>a+(b||0),0):z.v),...(hasLegs?[]:[0]));
   // ---- kartu jawaban + perlu perhatian ----
   const tA=teu(act),ysK=yard.filter(r=>!CONT_BY_LC[r.si]),oldK=yard.filter(r=>(r.ag||0)>3),pooOld=poo.filter(r=>startOf(r)&&diff(startOf(r),TODAY)>7);
-  const parts=[[teu(yard),'di Yard'],[teu(grp[3]),'dooring'],[teu(sail),'berlayar'],[teu(poo),'menunggu kapal']].filter(x=>x[0]>0).map(x=>`${f0(x[0])} ${x[1]}`);
   const topS=[2,3,1,0].map(i=>[i,teu(grp[i])]).sort((a,b)=>b[1]-a[1])[0];const SAY=['masih menunggu kapal di pelabuhan asal','sedang berlayar ke Makassar','sudah di pelabuhan Makassar, menunggu diantar ke DC','sedang diantar ke DC'];
   const headline=tA>0?`Paling banyak di <b>${STAGES[topS[0]][0]}</b>: ${f0(topS[1])} TEUs ${SAY[topS[0]]}.`:'Tidak ada kontainer dalam perjalanan. Semua sudah dibongkar.';
   const attn=[];
@@ -1192,7 +1192,6 @@ function rolesBlock(){
   if(!ROLE_FORM.id)return `<div class="set-group" style="margin-top:14px">${mine}</div>`;
   if(!R||R.err)return `<div class="set-group" style="margin-top:14px">${mine}</div><p class="foot" style="padding:8px 0 0">${R&&R.err?'Data role belum bisa dibaca: '+esc(R.err):'Memuat data role…'}</p>`;
   const list=ROLES.map(([r])=>({k:r,v:R.cnt[r]||0})).concat(Object.keys(R.cnt).filter(k=>!ROLES.some(x=>x[0]===k)).map(k=>({k,v:R.cnt[k]}))).filter(x=>x.v).sort((a,b)=>b.v-a.v);
-  const mx=Math.max(1,...list.map(x=>x.v));
   return `<div class="lt-sec">Per role <span>${f0(R.n)} HP menjawab</span></div>
     ${list.length?`<div class="uv rl">${list.map(x=>`<div class="uv-r"><span class="uv-v">${esc(x.k)}</span><div class="uv-b"><div class="seg3" style="width:${Math.max(12,x.v/Math.max(1,R.n)*100)}%"><span style="flex:1;--c:var(--lg2);--o:var(--on2)">${x.v}</span></div></div><span class="uv-n">${pc(x.v,R.n)}%</span></div>`).join('')}</div>`:'<p class="foot" style="padding:0">Belum ada jawaban.</p>'}
     <div class="set-group" style="margin-top:10px">${mine}</div>`;
