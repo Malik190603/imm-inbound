@@ -41,7 +41,10 @@
   function lpnKind(id) { const p = up(id).slice(0, 2); return p === 'ID' ? 'good' : p === 'RC' ? 'damage' : 'other'; }
   const operatorOf = (v) => { const s = str(v); return OPERATORS.find((o) => s.indexOf(o.id) === 0) || null; };
   const inRange = (d, o) => d && d >= o.from && d <= o.to;
-  const buOk = (v, o) => !o.bu || o.bu === 'ALL' || up(v) === up(o.bu);
+  // o.bu: 'ALL', satu kode BU, atau daftar kode BU
+  const buOk = (v, o) => !o.bu || o.bu === 'ALL' || (Array.isArray(o.bu) ? o.bu.map(up).indexOf(up(v)) >= 0 : up(v) === up(o.bu));
+  // indeks kolom (0 = A) → huruf kolom spreadsheet
+  function columnLetter(i) { let s = ''; i += 1; while (i > 0) { const m = (i - 1) % 26; s = String.fromCharCode(65 + m) + s; i = (i - m - 1) / 26; } return s; }
 
   function putawayLpns(rows, o) {
     const map = new Map();
@@ -104,5 +107,5 @@
     return p.day + '/' + p.month + '/' + p.year + ' ' + (p.hour === '24' ? '00' : p.hour) + ':' + p.minute + ' WITA';
   }
 
-  return { OPERATORS, PICS, MPP, STOCK_HEADERS, TRANSIT_HEADERS, toObjects, missingHeaders, usDate, lpnKind, putawayLpns, productivity, checkPassword, unlockValid, stampText };
+  return { OPERATORS, PICS, MPP, STOCK_HEADERS, TRANSIT_HEADERS, toObjects, missingHeaders, columnLetter, usDate, lpnKind, putawayLpns, productivity, checkPassword, unlockValid, stampText };
 });

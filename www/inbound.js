@@ -36,9 +36,78 @@ function inbMpp(){
   return inbHead('MPP detail',`${IMMCore.MPP.length} orang · tim inbound DC Tallo`)+groups.map((g,i)=>`<section class="card" style="--i:${i+1}"><div class="ch"><span class="hic">${I.users}</span><h2>${esc(g.title)}</h2><span class="hint">${g.people.length} orang</span></div><div class="cb"><div class="mpp">${g.people.map(p=>`<div class="mpp-p"><span class="mpp-av">${ini(p.name)}</span><span><div class="mpp-n">${esc(p.name)}</div><div class="mpp-b">${esc(p.bu)}</div></span></div>`).join('')}</div></div></section>`).join('');
 }
 function inbSoon(title){return inbHead(title,'')+`<section class="card" style="--i:1">${emptyState('Sedang disiapkan','Halaman ini belum tersedia.',false,I.box)}</section>`}
-const INB_PAGES={mpp:inbMpp,put:()=>inbSoon('Putaway'),tto:()=>inbSoon('TTO/Dokumen'),prod:()=>inbSoon('Productivity')};
+
+// ---------- Data sheet inbound (stock + transit), dimuat saat menu Inbound dibuka ----------
+const DOC_INB='1crYUpCJSYHrfBbZ99aUee3v4hRJrxWw4XRIryl9rong',GID_STOCK='349104626',GID_TRANSIT='2022396471';
+const INB={state:'idle',stock:[],transit:[],err:{},at:0};
+let inbLoading=null;
+// Kolom dicari lewat judulnya: baca baris judul dulu, lalu ambil hanya kolom yang dipakai.
+async function inbFetchSheet(gid,needed,label){
+  const get=async tq=>{let r;try{r=await fetch(gvizUrl({doc:DOC_INB,gid,csv:true,h:1,tq}),{cache:'no-store'})}catch(e){throw new Error('Tidak bisa terhubung ke Google Sheets. Cek koneksi internet.')}
+    if(!r.ok)throw new Error(`Sheet ${label} gagal dibaca (HTTP ${r.status}).`);const t=await r.text();
+    if(/^\s*</.test(t))throw new Error(`Sheet ${label} tidak bisa dibaca. Pastikan dibagikan "Siapa saja yang memiliki link".`);return parseCSV(t)};
+  const head=(await get('select * limit 1'))[0]||[];const headers=head.map(h=>String(h).trim());
+  const miss=IMMCore.missingHeaders(headers,needed);
+  if(miss.length)throw new Error(`Kolom ${miss.join(', ')} tidak ditemukan di sheet ${label}.`);
+  const cols=needed.map(h=>IMMCore.columnLetter(headers.indexOf(h)));
+  const o=IMMCore.toObjects(await get('select '+cols.join(',')));
+  const miss2=IMMCore.missingHeaders(o.headers,needed);
+  if(miss2.length)throw new Error(`Kolom ${miss2.join(', ')} tidak ditemukan di sheet ${label}.`);
+  return o.rows;
+}
+function loadInbound(force){
+  if(inbLoading)return inbLoading;
+  if(!force&&INB.state==='ok'&&Date.now()-INB.at<5*60e3)return Promise.resolve();
+  INB.state=INB.at?'refreshing':'loading';
+  inbLoading=(async()=>{
+    const [st,tr]=await Promise.allSettled([inbFetchSheet(GID_STOCK,IMMCore.STOCK_HEADERS,'stock'),inbFetchSheet(GID_TRANSIT,IMMCore.TRANSIT_HEADERS,'transit')]);
+    INB.err={};
+    if(st.status==='fulfilled')INB.stock=st.value;else INB.err.stock=st.reason.message||String(st.reason);
+    if(tr.status==='fulfilled')INB.transit=tr.value;else INB.err.transit=tr.reason.message||String(tr.reason);
+    INB.state=(INB.err.stock&&INB.err.transit)?'error':'ok';INB.at=Date.now();inbLoading=null;
+    if(S.page==='inb')render();
+  })();
+  return inbLoading;
+}
+const inbBusy=()=>INB.state==='idle'||INB.state==='loading';
+const inbSkeleton=()=>`<div class="sk" style="height:84px"></div><div class="sk" style="height:120px"></div><div class="sk" style="height:120px"></div>`;
+const inbErrCard=(title,msg,i=1)=>`<section class="card" style="--i:${i}">${emptyState(title,esc(msg),false,I.crit)}<div class="empty" style="padding-top:0"><button class="btn press" data-inb-reload>Coba lagi</button></div></section>`;
+const inbOpt=()=>{const [from,to]=range();return {from,to,bu:allBU()?'ALL':[...F().bus]}};
+
+// ---------- Putaway ----------
+let PUT_LIST=[];
+const lpnTag=l=>l.kind==='damage'?tag('Damage','crit'):'';
+function inbPutaway(){
+  const head=inbHead('Putaway',`LPN ke lokasi FLR · ${esc(rlabel())}`);
+  if(inbBusy())return head+inbSkeleton();
+  if(INB.err.stock)return head+inbErrCard('Data putaway belum bisa dibaca',INB.err.stock);
+  PUT_LIST=IMMCore.putawayLpns(INB.stock,inbOpt());
+  const q=(S.q.put||'').toUpperCase().replace(/\s+/g,'');
+  const fl=q?PUT_LIST.filter(l=>(l.lpn+' '+l.tolocs.join(' ')).toUpperCase().replace(/\s+/g,'').includes(q)):PUT_LIST;
+  const nDmg=PUT_LIST.filter(l=>l.kind==='damage').length,nMix=PUT_LIST.filter(l=>l.mixed).length;const n=lim('put',20);
+  return head+`<section class="card pad" style="--i:1"><div class="put-sum">
+      <div><b>${cnt(PUT_LIST.length)}</b><span>LPN</span></div><div class="${nDmg?'crit':''}"><b>${cnt(nDmg)}</b><span>damage</span></div><div class="${nMix?'warn':''}"><b>${cnt(nMix)}</b><span>campur Dept</span></div>
+    </div></section>
+    <section class="card" style="--i:2"><div class="ch"><span class="hic">${I.box}</span><h2>Daftar LPN</h2><span class="hint">${f0(fl.length)} LPN</span><div class="right" style="flex:1 1 170px;max-width:230px">${searchBox('put','Cari LPN / lokasi')}</div></div>
+    <div class="cb" style="padding-top:6px">${fl.length?`<div class="lpns">${fl.slice(0,n).map(l=>`<button class="lpn press${l.kind==='damage'?' dmg':''}" data-lpn="${esc(l.lpn)}">
+        <div class="lpn-top"><span class="mono lpn-id">${esc(l.lpn)}</span>${lpnTag(l)}<span class="lpn-time">${l.date!==TODAY?dshort(l.date)+' ':''}${esc(l.time)}</span></div>
+        <div class="lpn-loc">${I.port}<span>${l.tolocs.map(esc).join(', ')}</span></div>
+        <div class="lpn-meta"><span>${l.items.length} SKU</span><span>${f0(l.qty)} qty</span><span>${f2(l.cbm)} CBM</span>${buTag(l.bu||'-')}<span>${esc(l.operator)}</span></div>
+        ${l.mixed?`<div class="lpn-warn">${I.warn}<span><b>Campur Dept</b> · ${l.depts.map(esc).join(', ')}</span></div>`:''}
+      </button>`).join('')}</div>${moreBtn('put',fl.length,n)}`:emptyState(q?'Tidak ditemukan':'Belum ada putaway',q?'Tidak ada LPN atau lokasi yang cocok.':`Tidak ada LPN yang diputaway ke lokasi FLR ${esc(rlabel())}.`,!q,I.box)}</div></section>`;
+}
+function openLpn(id){
+  const l=PUT_LIST.find(x=>x.lpn===id);if(!l)return;
+  const depts=groupBy(l.items,i=>i.dept,k=>({k,qty:0,n:0}),(g,i)=>{g.qty+=i.qty;g.n++});
+  sheet(sHead(esc(l.lpn),`<span><b>${dlong(l.date)}</b> ${esc(l.time)}</span>${buTag(l.bu||'-')}<span>${esc(l.operator)}</span>`,lpnTag(l)),
+    `<div class="lpn-loc big">${I.port}<span>${l.tolocs.map(esc).join(', ')}</span></div>
+     ${l.mixed?`<div class="lpn-warn">${I.warn}<span><b>Campur Dept</b> · LPN ini berisi ${l.depts.length} Dept: ${depts.map(d=>`${esc(d.k)} (${d.n} SKU)`).join(', ')}</span></div>`:''}
+     <div><h4>Isi LPN · ${l.items.length} SKU · ${f0(l.qty)} qty · ${f2(l.cbm)} CBM</h4><div class="list">${l.items.map(i=>`<div class="row"><span class="a" style="font-size:13px;white-space:normal">${esc(i.desc||'-')}</span><span class="b" style="white-space:normal"><span class="mono">${esc(i.sku)}</span> · Dept ${esc(i.dept)}${l.tolocs.length>1?' · '+esc(i.toloc):''}</span><span class="v">${f0(i.qty)}<small>qty</small></span></div>`).join('')}</div></div>`);
+}
+const INB_PAGES={mpp:inbMpp,put:inbPutaway,tto:()=>inbSoon('TTO/Dokumen'),prod:()=>inbSoon('Productivity')};
 function pageInbound(){
   if(!inbUnlocked())return inbLock();
+  loadInbound();
   if(!S.inb||!INB_PAGES[S.inb])return inbList();
   return INB_PAGES[S.inb]();
 }
@@ -47,6 +116,9 @@ function inboundClick(e){
   if(S.page!=='inb')return false;const g=s=>e.target.closest(s);let t;
   if(g('#inbGo')){inbTryUnlock();return true}
   if(g('[data-inb-back]')){inboundBack();return true}
+  if(!inbUnlocked())return false;
+  if(g('#sync')||g('[data-inb-reload]')){buzz(6);loadInbound(true);render();return true}
+  if(t=g('[data-lpn]')){openLpn(t.dataset.lpn);return true}
   if(t=g('[data-inb]')){if(!inbUnlocked()){render();return true}S.inb=t.dataset.inb;S.more={};buzz(6);render(true);window.scrollTo({top:0});return true}
   return false;
 }

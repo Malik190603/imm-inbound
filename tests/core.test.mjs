@@ -47,3 +47,8 @@ test('productivity: BU filter and per-day totals', () => {
 test('password', async () => { eq(await C.checkPassword('<sandi>'), true); eq(await C.checkPassword('inbound78'), false); eq(await C.checkPassword(''), false); });
 test('unlockValid', () => { const H = 3600e3; eq(C.unlockValid(1000, 1000 + 2 * H - 1), true); eq(C.unlockValid(1000, 1000 + 2 * H), false); eq(C.unlockValid(5000, 1000), false); eq(C.unlockValid(0, 1000), false); eq(C.unlockValid(null, 1000), false); });
 test('stampText', () => { eq(C.stampText(new Date('2026-10-03T12:05:00Z')), '03/10/2026 20:05 WITA'); });
+test('bu option accepts a list of BUs', () => {
+  eq(C.putawayLpns(stock, { from: D, to: D, bu: ['AHI', 'TGI'] }).length, 1); eq(C.putawayLpns(stock, { from: D, to: D, bu: ['HCI', 'AHI'] }).length, 3);
+  eq(C.productivity(stock, transit, { from: D, to: D, bu: ['AHI'] }).team.put, 0.5);
+});
+test('columnLetter', () => { eq(C.columnLetter(0), 'A'); eq(C.columnLetter(25), 'Z'); eq(C.columnLetter(26), 'AA'); eq(C.columnLetter(33), 'AH'); });

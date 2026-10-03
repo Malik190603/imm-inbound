@@ -1380,7 +1380,7 @@ try{PL.App&&PL.App.addListener&&PL.App.addListener('backButton',()=>{const rg=do
 (function(){const ptr=document.getElementById('ptr');let y0=null,dy=0;
   addEventListener('touchstart',e=>{if(scrollY<=0&&!document.querySelector('.sheet'))y0=e.touches[0].clientY;else y0=null},{passive:true});
   addEventListener('touchmove',e=>{if(y0==null)return;dy=e.touches[0].clientY-y0;if(dy>0){ptr.style.transition='none';ptr.style.transform=`translateY(${Math.min(dy*.5,70)-70}px) rotate(${dy*2}deg)`}},{passive:true});
-  addEventListener('touchend',()=>{if(y0==null)return;ptr.style.transition='';if(dy>110){ptr.style.transform='translateY(0)';ptr.classList.add('spin');buzz(10);loadData(true).finally(()=>{ptr.classList.remove('spin');ptr.style.transform=''})}else ptr.style.transform='';y0=null;dy=0})})();
+  addEventListener('touchend',()=>{if(y0==null)return;ptr.style.transition='';if(dy>110){ptr.style.transform='translateY(0)';ptr.classList.add('spin');buzz(10);(S.page==='inb'&&inbUnlocked()?loadInbound(true):loadData(true)).finally(()=>{ptr.classList.remove('spin');ptr.style.transform=''})}else ptr.style.transform='';y0=null;dy=0})})();
 
 // ======================= RENDER =======================
 function render(anim){
