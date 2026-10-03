@@ -682,7 +682,7 @@ const STAGE_COL=['var(--p1)','var(--p2)','var(--p3)','var(--p4)','var(--p5)'];
 // ======================= STATE =======================
 const DEFAULTS={home:'today',inb:'today',stock:'tomorrow',out:'tomorrow',mon:'last30'};
 const newF=p=>({bus:new Set(BUS),preset:DEFAULTS[p],month:TODAY.slice(0,7),from:TODAY,to:TODAY});
-const S={page:'home',monTab:'kont',roleTab:'stock',inb:'',f:{home:newF('home'),inb:newF('inb'),stock:newF('stock'),out:newF('out'),mon:newF('mon')},q:{},stage:2,ltm:'avg',dayPick:'',more:{},theme:LS.get('imm.theme.v')||'auto',calm:!!LS.get('imm.calm'),upd:null};
+const S={page:'home',monTab:'kont',roleTab:'stock',inb:'',putF:'',putLoc:'',f:{home:newF('home'),inb:newF('inb'),stock:newF('stock'),out:newF('out'),mon:newF('mon')},q:{},stage:2,ltm:'avg',dayPick:'',more:{},theme:LS.get('imm.theme.v')||'auto',calm:!!LS.get('imm.calm'),upd:null};
 {const h=location.hash.slice(1);if(['home','inb','role','mon','set'].includes(h))S.page=h}
 const F=()=>S.page==='role'?S.f[S.roleTab]:(S.f[S.page]||S.f.home);
 const allBU=()=>F().bus.size===BUS.length;

@@ -125,20 +125,32 @@ function inbPutaway(){
   if(inbBusy())return head+inbSkeleton();
   if(INB.err.stock)return head+inbErrCard('Data putaway belum bisa dibaca',INB.err.stock);
   PUT_LIST=IMMCore.putawayLpns(INB.stock,inbOpt());inbSyncPhotos();
-  const phOk=IMMStore.configured()&&PH.state==='ok',nNoPh=phOk?PUT_LIST.filter(l=>!phRows(l.lpn).length).length:0;
+  const cfg=IMMStore.configured(),phOk=cfg&&PH.state==='ok';
+  const noPh=l=>!phRows(l.lpn).length;
+  const nNoPh=phOk?PUT_LIST.filter(noPh).length:0,nDmg=PUT_LIST.filter(l=>l.kind==='damage').length,nMix=PUT_LIST.filter(l=>l.mixed).length;
+  // filter: kartu ringkasan (S.putF) + lokasi (S.putLoc) + kata cari
+  const locs=[...new Set(PUT_LIST.flatMap(l=>l.tolocs))].sort((x,y)=>x.localeCompare(y));
+  if(S.putLoc&&!locs.includes(S.putLoc))S.putLoc='';
+  if(S.putF==='noph'&&!cfg)S.putF='';
+  const F_LABEL={dmg:'Damage',mix:'Campur Dept',noph:'Belum ada foto'};
+  const byF={dmg:l=>l.kind==='damage',mix:l=>l.mixed,noph:l=>!phOk||noPh(l)}[S.putF];
   const q=(S.q.put||'').toUpperCase().replace(/\s+/g,'');
-  const fl=q?PUT_LIST.filter(l=>(l.lpn+' '+l.tolocs.join(' ')).toUpperCase().replace(/\s+/g,'').includes(q)):PUT_LIST;
-  const nDmg=PUT_LIST.filter(l=>l.kind==='damage').length,nMix=PUT_LIST.filter(l=>l.mixed).length;const n=lim('put',20);
+  let fl=PUT_LIST;if(byF)fl=fl.filter(byF);if(S.putLoc)fl=fl.filter(l=>l.tolocs.includes(S.putLoc));
+  if(q)fl=fl.filter(l=>(l.lpn+' '+l.tolocs.join(' ')).toUpperCase().replace(/\s+/g,'').includes(q));
+  const filtered=!!(S.putF||S.putLoc||q);const n=lim('put',20);
+  const tile=(k,num,label,tone)=>`<button class="press ${tone||''}" data-putf="${k}" aria-pressed="${(S.putF||'all')===k}"><b>${num}</b><span>${label}</span></button>`;
+  const active=[S.putF?F_LABEL[S.putF]:'',S.putLoc?esc(S.putLoc):''].filter(Boolean).join(' · ');
   return head+`<section class="card pad" style="--i:1"><div class="put-sum">
-      <div><b>${cnt(PUT_LIST.length)}</b><span>LPN</span></div><div class="${nDmg?'crit':''}"><b>${cnt(nDmg)}</b><span>damage</span></div><div class="${nMix?'warn':''}"><b>${cnt(nMix)}</b><span>campur Dept</span></div>${phOk?`<div class="${nNoPh?'':'good'}"><b>${cnt(nNoPh)}</b><span>belum ada foto</span></div>`:''}
-    </div></section>
-    <section class="card" style="--i:2"><div class="ch"><span class="hic">${I.box}</span><h2>Daftar LPN</h2><span class="hint">${f0(fl.length)} LPN</span><div class="right" style="flex:1 1 170px;max-width:230px">${searchBox('put','Cari LPN / lokasi')}</div></div>
+      ${tile('all',cnt(PUT_LIST.length),'LPN')}${tile('dmg',cnt(nDmg),'damage',nDmg?'crit':'')}${tile('mix',cnt(nMix),'campur Dept',nMix?'warn':'')}${cfg?tile('noph',phOk?cnt(nNoPh):'…','belum ada foto',phOk?(nNoPh?'warn':'good'):''):''}
+    </div><p class="foot" style="padding:8px 0 0">Ketuk kartu untuk menampilkan LPN-nya saja.</p></section>
+    <section class="card" style="--i:2"><div class="ch put-list-head"><span class="hic">${I.box}</span><h2>${active||'Daftar LPN'}</h2><span class="hint">${f0(fl.length)} LPN</span>${filtered?`<button class="btn ghost sm press right" data-put-reset>Hapus filter</button>`:''}</div>
+    <div class="put-tools">${searchBox('put','Cari LPN / lokasi')}<label class="put-loc"><span class="sr">Filter lokasi</span><select id="putLoc" aria-label="Filter lokasi"><option value="">Semua lokasi</option>${locs.map(x=>`<option value="${esc(x)}" ${S.putLoc===x?'selected':''}>${esc(x)}</option>`).join('')}</select></label></div>
     <div class="cb" style="padding-top:6px">${fl.length?`<div class="lpns">${fl.slice(0,n).map(l=>`<button class="lpn press${l.kind==='damage'?' dmg':''}" data-lpn="${esc(l.lpn)}">
         <div class="lpn-top"><span class="mono lpn-id">${esc(l.lpn)}</span>${lpnTag(l)}${phRows(l.lpn).length?`<span class="lpn-cam">${I.cam}${phRows(l.lpn).length}</span>`:''}<span class="lpn-time">${l.date!==TODAY?dshort(l.date)+' ':''}${esc(l.time)}</span></div>
         <div class="lpn-loc">${I.port}<span>${l.tolocs.map(esc).join(', ')}</span></div>
         <div class="lpn-meta"><span>${l.skus} SKU</span><span>${f0(l.qty)} qty</span><span>${f2(l.cbm)} CBM</span>${buTag(l.bu||'-')}<span>${esc(l.operator)}</span></div>
         ${l.mixed?`<div class="lpn-warn">${I.warn}<span><b>Campur Dept</b> · ${l.depts.map(esc).join(', ')}</span></div>`:''}
-      </button>`).join('')}</div>${moreBtn('put',fl.length,n)}`:emptyState(q?'Tidak ditemukan':'Belum ada putaway',q?'Tidak ada LPN atau lokasi yang cocok.':`Tidak ada LPN yang diputaway ke lokasi FLR ${esc(rlabel())}.`,!q,I.box)}</div></section>`;
+      </button>`).join('')}</div>${moreBtn('put',fl.length,n)}`:emptyState(filtered?'Tidak ada LPN':'Belum ada putaway',filtered?'Tidak ada LPN yang cocok dengan filter ini.':`Tidak ada LPN yang diputaway ke lokasi FLR ${esc(rlabel())}.`,!filtered,I.box)}</div></section>`;
 }
 function openLpn(id){
   const l=PUT_LIST.find(x=>x.lpn===id);if(!l)return;
@@ -285,6 +297,8 @@ function inboundClick(e){
   if(g('[data-inb-back]')){inboundBack();return true}
   if(!inbUnlocked())return false;
   if(g('#sync')||g('[data-inb-reload]')){buzz(6);inbRefresh();render();return true}
+  if(t=g('[data-putf]')){const k=t.dataset.putf;S.putF=(k==='all'||S.putF===k)?'':k;S.more.put=0;buzz(5);render();return true}
+  if(g('[data-put-reset]')){S.putF='';S.putLoc='';S.q.put='';S.more.put=0;buzz(5);render();return true}
   if(t=g('[data-photo-add]')){const el=document.getElementById(t.dataset.photoAdd==='cam'?'phCam':'phGal');el&&el.click();return true}
   if(t=g('[data-photo-view]')){photoView(t.dataset.photoView);return true}
   if(t=g('[data-photo-del]')){phDel(t.dataset.photoDel);return true}
@@ -303,3 +317,4 @@ document.addEventListener('change',e=>{const el=e.target;if(!el||!el.matches||!e
 document.addEventListener('change',e=>{const el=e.target;if(!el||!el.matches||!el.matches('[data-tto-input]'))return;const f=el.files&&el.files[0];el.value='';ttoPick(f)});
 document.addEventListener('submit',e=>{if(e.target&&e.target.id==='ttoForm'){e.preventDefault();ttoSave()}});
 document.addEventListener('input',e=>{const f=e.target&&e.target.closest&&e.target.closest('#ttoForm .inb-field.bad');if(f){f.classList.remove('bad');f.querySelector('.inb-msg').textContent=''}});
+document.addEventListener('change',e=>{if(e.target&&e.target.id==='putLoc'){S.putLoc=e.target.value;S.more.put=0;buzz(5);render()}});

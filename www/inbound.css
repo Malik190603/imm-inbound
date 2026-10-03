@@ -24,9 +24,10 @@
 .icon-btn{width:40px;height:40px;border-radius:50%;border:0;background:var(--surface);box-shadow:var(--shadow);display:grid;place-items:center;color:var(--ink);padding:0}
 .icon-btn svg{width:18px;height:18px}
 .put-sum{display:grid;grid-template-columns:repeat(auto-fit,minmax(72px,1fr));gap:8px}
-.put-sum>div{background:var(--surface-2);border-radius:14px;padding:10px 12px;display:grid;line-height:1.25;min-width:0}
+.put-sum>button{background:var(--surface-2);border:1.5px solid transparent;border-radius:14px;padding:10px 12px;display:grid;line-height:1.25;min-width:0;text-align:left;font:inherit;color:inherit}
+.put-sum>button[aria-pressed="true"]{border-color:var(--accent)}
 .put-sum b{font-size:22px;font-weight:800;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
-.put-sum>div>span{font-size:11.5px;color:var(--ink-3)}
+.put-sum>button>span{font-size:11.5px;color:var(--ink-3)}
 .put-sum .crit{background:var(--crit-bg)} .put-sum .crit b,.put-sum .crit>span{color:var(--crit)}
 .put-sum .warn{background:var(--warn-bg)} .put-sum .warn b,.put-sum .warn>span{color:var(--warn)}
 .put-sum .good{background:var(--good-bg)} .put-sum .good b,.put-sum .good>span{color:var(--good)}
@@ -110,3 +111,8 @@ span.ph-thumb{display:block}
 .ug-card .btn{padding:14px 18px;font-size:15px}
 .ug-card .btn:disabled{opacity:.5}
 .prod-share{font-size:12px;font-weight:800;color:var(--ink-2);background:var(--sunk);border-radius:999px;padding:2px 8px;font-variant-numeric:tabular-nums}
+.put-tools{margin-top:10px;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,.8fr);gap:8px;padding:0 16px 4px}
+.put-loc{display:block;min-width:0}
+.put-loc select{width:100%;height:100%;min-height:38px;border:0;background:var(--sunk);color:var(--ink);border-radius:999px;padding:9px 12px;font:inherit;font-size:13px;font-weight:600;outline:none;min-width:0}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+.put-list-head h2{min-width:0;overflow-wrap:anywhere}
