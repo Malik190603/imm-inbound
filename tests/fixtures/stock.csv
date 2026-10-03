@@ -1,0 +1,15 @@
+No,Storerkey,Trantype,SKU,Description,Sku Group,Lot,Fromloc,Fromid,Toloc,Toid,Sourcekey,Qty,Adddate,Addwho,Username,Extern,Doc No,Expired date,Source type,Trans No,CM3,Tanggal (WITA),Date,Jam (WITA),Rentang Jam,Kategori,Kategori Brand,Fromid=Toid?,Hitung Produktivitas?,Id Operator,Username Operator,Unreceive?,CM3 (Final)
+1,HCI,MOVE,S1,BARANG S1,R110,,,,FLR-A01,ID001,,12,,192831.mfikri,,,,,NSPRFPA02,,1000000,10/01/2026 9:15 AM,10/01/2026,9,08:00-10:00,Putaway,Lainnya,Tidak,Ya,192831,mfikri,Tidak,1000000
+2,HCI,MOVE,S2,BARANG S2,R110,,,,FLR-A01,ID001,,8,,192831.mfikri,,,,,NSPRFPA02,,500000,10/01/2026 9:40 AM,10/01/2026,9,08:00-10:00,Putaway,Lainnya,Tidak,Ya,192831,mfikri,Tidak,500000
+3,AHI,Move,S3,BARANG S3,R200,,,,FLR-B02,RC001,,2,,148453.akmal,,,,,NSPRFPA02,,300000,10/01/2026 1:05 PM,10/01/2026,9,08:00-10:00,Putaway,Lainnya,Tidak,Ya,148453,akmal,Tidak,300000
+4,AHI,Move,S4,BARANG S4,R300,,,,FLR-B02,RC001,,1,,148453.akmal,,,,,NSPRFPA02,,200000,10/01/2026 1:10 PM,10/01/2026,9,08:00-10:00,Putaway,Lainnya,Tidak,Ya,148453,akmal,Tidak,200000
+5,HCI,MOVE,S5,BARANG S5,R110,,,,STAGE,ID009,,3,,192831.mfikri,,,,,NSPRFPA02,,100000,10/01/2026 9:15 AM,10/01/2026,9,08:00-10:00,Putaway,Lainnya,Tidak,Tidak,192831,mfikri,Tidak,100000
+6,HCI,MOVE,S6,BARANG S6,R110,,,,FLR-C01,ID010,,3,,192831.mfikri,,,,,OTHER01,,100000,10/01/2026 9:15 AM,10/01/2026,9,08:00-10:00,Putaway,Lainnya,Tidak,Tidak,192831,mfikri,Tidak,100000
+7,HCI,move,S7,BARANG S7,R120,,,, flr-01 ,ID002,,5,,192831.mfikri,,,,,nsprfpa02,,1500000,10/01/2026 10:30 AM,10/01/2026,9,08:00-10:00,Putaway,Lainnya,Tidak,Ya,192831,mfikri,Tidak,1500000
+8,HCI,MOVE,S8,BARANG S8,R110,,,,FLR-D01,,,4,,192831.mfikri,,,,,NSPRFPA02,,100000,10/01/2026 9:15 AM,10/01/2026,9,08:00-10:00,Putaway,Lainnya,Tidak,Tidak,192831,mfikri,Tidak,100000
+9,HCI,RECEIVING,S1,BARANG S1,R110,,,,STAGE,ID001,,12,,192831.mfikri,,,,,ntrReceiptDetailAdd,,2000000,10/01/2026 9:15 AM,10/01/2026,9,08:00-10:00,Receiving,Lainnya,Tidak,Ya,192831,mfikri,Tidak,0
+10,HCI,RECEIVING,S2,BARANG S2,R110,,,,STAGE,ID001,,8,,192831.mfikri,,,,,ntrReceiptDetailAdd,,9000000,10/01/2026 9:15 AM,10/01/2026,9,08:00-10:00,Receiving,Lainnya,Tidak,Tidak,192831,mfikri,Tidak,0
+11,HCI,RECEIVING,S3,BARANG S3,R110,,,,STAGE,ID011,,8,,999999.lain,,,,,ntrReceiptDetailAdd,,4000000,10/01/2026 9:15 AM,10/01/2026,9,08:00-10:00,Receiving,Lainnya,Tidak,Ya,999999,lain,Tidak,0
+12,HCI,RECEIVING,S4,BARANG S4,R110,,,,STAGE,ID012,,8,,192831.mfikri,,,,,ntrReceiptDetailAdd,,7000000,,,9,08:00-10:00,Receiving,Lainnya,Tidak,Ya,192831,mfikri,Tidak,0
+13,HCI,MOVE,S9,BARANG S9,R110,,,,STAGE,ID013,,1,,148453.akmal,,,,,OTHER01,,800000,10/01/2026 9:15 AM,10/01/2026,9,08:00-10:00,Putaway,Lainnya,Tidak,Ya,148453,akmal,Tidak,100000
+14,HCI,RECEIVING,S5,BARANG S5,R110,,,,STAGE,ID014,,1,,148453.akmal,,,,,ntrReceiptDetailAdd,,1000000,10/02/2026 9:15 AM,10/02/2026,9,08:00-10:00,Receiving,Lainnya,Tidak,Ya,148453,akmal,Tidak,0
