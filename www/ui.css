@@ -119,3 +119,14 @@ small,.tag,.bu,.dchip,.hint,.foot,.lt-chip,.lt-hint,.jr-ends span,.jr-d,.seg3 sp
 
 body{word-spacing:.05em}
 .tools{padding:10px 16px 0;display:grid;gap:8px}
+
+/* ---------- Monitoring: alur posisi di dalam kartu jawaban ---------- */
+.lead .pipe{gap:5px}
+.lead .stage{background:color-mix(in srgb,var(--accent-ink) 9%,transparent);color:var(--accent-ink);border:1.5px solid transparent;padding:10px 4px 9px;min-width:0}
+.lead .stage[aria-pressed="true"]{border-color:var(--accent-ink);background:color-mix(in srgb,var(--accent-ink) 18%,transparent)}
+.lead .stage .l{color:var(--accent-ink);font-weight:700;white-space:nowrap}
+.lead .stage .x{color:color-mix(in srgb,var(--accent-ink) 70%,var(--accent));line-height:1.25;text-wrap:balance}
+@media (max-width:560px){.lead .pipe{margin-inline:-6px;gap:4px}.lead .stage{padding:9px 1px 8px}.lead .stage .l{letter-spacing:-.02em}.lead .stage .x{display:none}}
+.lead .flow{background:color-mix(in srgb,var(--accent-ink) 14%,transparent)}
+.lead-note{margin:0;font-size:12px;line-height:1.4;color:color-mix(in srgb,var(--accent-ink) 70%,var(--accent))}
+#rdcList{scroll-margin-top:calc(var(--sat) + 120px)}
