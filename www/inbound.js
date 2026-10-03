@@ -74,6 +74,47 @@ const inbSkeleton=()=>`<div class="sk" style="height:84px"></div><div class="sk"
 const inbErrCard=(title,msg,i=1)=>`<section class="card" style="--i:${i}">${emptyState(title,esc(msg),false,I.crit)}<div class="empty" style="padding-top:0"><button class="btn press" data-inb-reload>Coba lagi</button></div></section>`;
 const inbOpt=()=>{const [from,to]=range();return {from,to,bu:allBU()?'ALL':[...F().bus]}};
 
+// ---------- Foto putaway (Supabase) ----------
+const PH={map:new Map(),key:'',state:'idle',busy:false};
+const phRows=lpn=>PH.map.get(lpn)||[];
+function phSet(rows){PH.map=new Map();rows.forEach(r=>{if(!PH.map.has(r.lpn))PH.map.set(r.lpn,[]);PH.map.get(r.lpn).push(r)})}
+function inbSyncPhotos(){
+  if(!IMMStore.configured())return;const key=PUT_LIST.map(l=>l.lpn).join('|');
+  if(key===PH.key&&PH.state!=='idle')return;PH.key=key;PH.state='loading';
+  IMMStore.listPutawayPhotos(PUT_LIST.map(l=>l.lpn)).then(rows=>{if(PH.key!==key)return;phSet(rows);PH.state='ok'},()=>{if(PH.key===key)PH.state='error'})
+    .then(()=>{if(PH.key!==key)return;phRefresh();if(S.page==='inb'&&S.inb==='put')render()});
+}
+function lpnPhotosHtml(l){
+  if(!IMMStore.configured())return `<h4>Foto</h4><p class="foot" style="padding:0">Penyimpanan foto belum diatur.</p>`;
+  const rows=phRows(l.lpn),n=rows.length,max=IMMStore.MAX_PHOTOS,dis=(n>=max||PH.busy)?'disabled':'';
+  const note=PH.busy?'Mengunggah foto…':PH.state==='error'?'Foto belum bisa dimuat. Cek koneksi internet.':PH.state==='loading'?'Memuat foto…':n>=max?`Sudah ${max} foto. Hapus salah satu untuk mengganti.`:'Foto barang di lokasi tujuan. Cap waktu ditambahkan otomatis.';
+  return `<h4>Foto (${n}/${max})</h4>
+    ${n?`<div class="ph-grid">${rows.map(r=>`<div class="ph-item"><button class="ph-thumb press" data-photo-view="${esc(r.path)}" aria-label="Lihat foto"><img loading="lazy" src="${esc(IMMStore.photoUrl(r.path))}" alt="Foto LPN ${esc(l.lpn)}"></button><button class="ph-del press" data-photo-del="${r.id}" aria-label="Hapus foto">${I.trash}</button></div>`).join('')}</div>`:''}
+    <div class="ph-actions"><button class="btn ghost press" data-photo-add="cam" ${dis}>${I.cam}Kamera</button><button class="btn ghost press" data-photo-add="gal" ${dis}>${I.doc}Galeri</button></div>
+    <p class="foot" style="padding:6px 0 0">${note}</p>
+    <input id="phCam" type="file" accept="image/*" capture="environment" data-photo-input hidden><input id="phGal" type="file" accept="image/*" data-photo-input hidden>`;
+}
+function phRefresh(){const box=document.getElementById('lpnPhotos');if(!box)return;const l=PUT_LIST.find(x=>x.lpn===box.dataset.lpn);if(l)box.innerHTML=lpnPhotosHtml(l)}
+function phErrToast(e,what){const m=e&&e.message;toast(m==='BADIMAGE'?'File ini bukan foto yang bisa dibaca':m==='NOCONFIG'?'Penyimpanan foto belum diatur':what)}
+async function phAdd(file){
+  const box=document.getElementById('lpnPhotos');if(!box||!file||PH.busy)return;const lpn=box.dataset.lpn;const l=PUT_LIST.find(x=>x.lpn===lpn);if(!l)return;
+  PH.busy=true;phRefresh();
+  try{const blob=await IMMStore.preparePhoto(file,[IMMCore.stampText(new Date()),l.lpn+' → '+l.tolocs.join(', ')]);
+    const row=await IMMStore.addPutawayPhoto(l.lpn,l.tolocs[0]||'',blob,deviceId());
+    if(!PH.map.has(lpn))PH.map.set(lpn,[]);PH.map.get(lpn).push(row);buzz(12);toast('Foto tersimpan')}
+  catch(e){if(e&&e.message==='MAX'){toast(`LPN ini sudah ${IMMStore.MAX_PHOTOS} foto`);try{PH.map.set(lpn,await IMMStore.listPutawayPhotos([lpn]))}catch(_){}}
+    else phErrToast(e,'Foto gagal diunggah. Coba lagi.')}
+  PH.busy=false;phRefresh();if(S.page==='inb'&&S.inb==='put')render();
+}
+async function phDel(id){
+  const box=document.getElementById('lpnPhotos');if(!box)return;const lpn=box.dataset.lpn;const row=phRows(lpn).find(r=>String(r.id)===String(id));if(!row)return;
+  if(!confirm('Hapus foto ini? Foto yang dihapus tidak bisa dikembalikan.'))return;
+  try{await IMMStore.removePutawayPhoto(row);PH.map.set(lpn,phRows(lpn).filter(r=>r!==row));toast('Foto dihapus')}catch(e){phErrToast(e,'Foto gagal dihapus. Coba lagi.')}
+  phRefresh();if(S.page==='inb'&&S.inb==='put')render();
+}
+function photoView(path){const el=document.createElement('div');el.id='photoView';el.innerHTML=`<button class="icon-btn press" data-pv-x aria-label="Tutup">${I.x}</button><img src="${esc(IMMStore.photoUrl(path))}" alt="Foto">`;document.body.appendChild(el)}
+function inboundOverlayBack(){const pv=document.getElementById('photoView');if(pv){pv.remove();return true}return false}
+
 // ---------- Putaway ----------
 let PUT_LIST=[];
 const lpnTag=l=>l.kind==='damage'?tag('Damage','crit'):'';
@@ -81,16 +122,17 @@ function inbPutaway(){
   const head=inbHead('Putaway',`LPN ke lokasi FLR · ${esc(rlabel())}`);
   if(inbBusy())return head+inbSkeleton();
   if(INB.err.stock)return head+inbErrCard('Data putaway belum bisa dibaca',INB.err.stock);
-  PUT_LIST=IMMCore.putawayLpns(INB.stock,inbOpt());
+  PUT_LIST=IMMCore.putawayLpns(INB.stock,inbOpt());inbSyncPhotos();
+  const phOk=IMMStore.configured()&&PH.state==='ok',nNoPh=phOk?PUT_LIST.filter(l=>!phRows(l.lpn).length).length:0;
   const q=(S.q.put||'').toUpperCase().replace(/\s+/g,'');
   const fl=q?PUT_LIST.filter(l=>(l.lpn+' '+l.tolocs.join(' ')).toUpperCase().replace(/\s+/g,'').includes(q)):PUT_LIST;
   const nDmg=PUT_LIST.filter(l=>l.kind==='damage').length,nMix=PUT_LIST.filter(l=>l.mixed).length;const n=lim('put',20);
   return head+`<section class="card pad" style="--i:1"><div class="put-sum">
-      <div><b>${cnt(PUT_LIST.length)}</b><span>LPN</span></div><div class="${nDmg?'crit':''}"><b>${cnt(nDmg)}</b><span>damage</span></div><div class="${nMix?'warn':''}"><b>${cnt(nMix)}</b><span>campur Dept</span></div>
+      <div><b>${cnt(PUT_LIST.length)}</b><span>LPN</span></div><div class="${nDmg?'crit':''}"><b>${cnt(nDmg)}</b><span>damage</span></div><div class="${nMix?'warn':''}"><b>${cnt(nMix)}</b><span>campur Dept</span></div>${phOk?`<div class="${nNoPh?'':'good'}"><b>${cnt(nNoPh)}</b><span>belum ada foto</span></div>`:''}
     </div></section>
     <section class="card" style="--i:2"><div class="ch"><span class="hic">${I.box}</span><h2>Daftar LPN</h2><span class="hint">${f0(fl.length)} LPN</span><div class="right" style="flex:1 1 170px;max-width:230px">${searchBox('put','Cari LPN / lokasi')}</div></div>
     <div class="cb" style="padding-top:6px">${fl.length?`<div class="lpns">${fl.slice(0,n).map(l=>`<button class="lpn press${l.kind==='damage'?' dmg':''}" data-lpn="${esc(l.lpn)}">
-        <div class="lpn-top"><span class="mono lpn-id">${esc(l.lpn)}</span>${lpnTag(l)}<span class="lpn-time">${l.date!==TODAY?dshort(l.date)+' ':''}${esc(l.time)}</span></div>
+        <div class="lpn-top"><span class="mono lpn-id">${esc(l.lpn)}</span>${lpnTag(l)}${phRows(l.lpn).length?`<span class="lpn-cam">${I.cam}${phRows(l.lpn).length}</span>`:''}<span class="lpn-time">${l.date!==TODAY?dshort(l.date)+' ':''}${esc(l.time)}</span></div>
         <div class="lpn-loc">${I.port}<span>${l.tolocs.map(esc).join(', ')}</span></div>
         <div class="lpn-meta"><span>${l.items.length} SKU</span><span>${f0(l.qty)} qty</span><span>${f2(l.cbm)} CBM</span>${buTag(l.bu||'-')}<span>${esc(l.operator)}</span></div>
         ${l.mixed?`<div class="lpn-warn">${I.warn}<span><b>Campur Dept</b> · ${l.depts.map(esc).join(', ')}</span></div>`:''}
@@ -102,7 +144,8 @@ function openLpn(id){
   sheet(sHead(esc(l.lpn),`<span><b>${dlong(l.date)}</b> ${esc(l.time)}</span>${buTag(l.bu||'-')}<span>${esc(l.operator)}</span>`,lpnTag(l)),
     `<div class="lpn-loc big">${I.port}<span>${l.tolocs.map(esc).join(', ')}</span></div>
      ${l.mixed?`<div class="lpn-warn">${I.warn}<span><b>Campur Dept</b> · LPN ini berisi ${l.depts.length} Dept: ${depts.map(d=>`${esc(d.k)} (${d.n} SKU)`).join(', ')}</span></div>`:''}
-     <div><h4>Isi LPN · ${l.items.length} SKU · ${f0(l.qty)} qty · ${f2(l.cbm)} CBM</h4><div class="list">${l.items.map(i=>`<div class="row"><span class="a" style="font-size:13px;white-space:normal">${esc(i.desc||'-')}</span><span class="b" style="white-space:normal"><span class="mono">${esc(i.sku)}</span> · Dept ${esc(i.dept)}${l.tolocs.length>1?' · '+esc(i.toloc):''}</span><span class="v">${f0(i.qty)}<small>qty</small></span></div>`).join('')}</div></div>`);
+     <div><h4>Isi LPN · ${l.items.length} SKU · ${f0(l.qty)} qty · ${f2(l.cbm)} CBM</h4><div class="list">${l.items.map(i=>`<div class="row"><span class="a" style="font-size:13px;white-space:normal">${esc(i.desc||'-')}</span><span class="b" style="white-space:normal"><span class="mono">${esc(i.sku)}</span> · Dept ${esc(i.dept)}${l.tolocs.length>1?' · '+esc(i.toloc):''}</span><span class="v">${f0(i.qty)}<small>qty</small></span></div>`).join('')}</div></div>
+     <div id="lpnPhotos" data-lpn="${esc(l.lpn)}">${lpnPhotosHtml(l)}</div>`);
 }
 // ---------- Productivity ----------
 function inbProd(){
@@ -148,12 +191,17 @@ function pageInbound(){
 function inboundBack(){if(S.page!=='inb'||!S.inb||!inbUnlocked())return false;S.inb='';S.more={};render(true);window.scrollTo({top:0});return true}
 function inboundClick(e){
   if(S.page!=='inb')return false;const g=s=>e.target.closest(s);let t;
+  if(g('[data-pv-x]')||(e.target&&e.target.id==='photoView')){inboundOverlayBack();return true}
   if(g('#inbGo')){inbTryUnlock();return true}
   if(g('[data-inb-back]')){inboundBack();return true}
   if(!inbUnlocked())return false;
-  if(g('#sync')||g('[data-inb-reload]')){buzz(6);loadInbound(true);render();return true}
+  if(g('#sync')||g('[data-inb-reload]')){buzz(6);PH.key='';PH.state='idle';loadInbound(true);render();return true}
+  if(t=g('[data-photo-add]')){const el=document.getElementById(t.dataset.photoAdd==='cam'?'phCam':'phGal');el&&el.click();return true}
+  if(t=g('[data-photo-view]')){photoView(t.dataset.photoView);return true}
+  if(t=g('[data-photo-del]')){phDel(t.dataset.photoDel);return true}
   if(t=g('[data-lpn]')){openLpn(t.dataset.lpn);return true}
   if(t=g('[data-inb]')){if(!inbUnlocked()){render();return true}S.inb=t.dataset.inb;S.more={};buzz(6);render(true);window.scrollTo({top:0});return true}
   return false;
 }
 document.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target&&e.target.id==='inbPw'){e.preventDefault();inbTryUnlock()}});
+document.addEventListener('change',e=>{const el=e.target;if(!el||!el.matches||!el.matches('[data-photo-input]'))return;const f=el.files&&el.files[0];el.value='';if(f&&el.closest('#lpnPhotos'))phAdd(f)});
