@@ -36,7 +36,7 @@ small,.tag,.bu,.dchip,.hint,.foot,.lt-chip,.lt-hint,.jr-ends span,.jr-d,.seg3 sp
 
 /* ---------- kartu jawaban ---------- */
 .lead{--tone:var(--mark);background:var(--accent);color:var(--accent-ink);border-radius:var(--r-lg);padding:18px 18px 16px;display:grid;gap:14px;position:relative;overflow:hidden;box-shadow:var(--shadow);min-width:0}
-.lead[data-tone="stock"]{--tone:var(--s-stock)} .lead[data-tone="out"]{--tone:var(--s-store)} .lead[data-tone="mon"]{--tone:var(--s-cust)}
+.lead[data-tone="inb"]{--tone:var(--mark)} .lead[data-tone="stock"]{--tone:var(--s-stock)} .lead[data-tone="out"]{--tone:var(--s-store)} .lead[data-tone="mon"]{--tone:var(--s-cust)}
 .lead::after{content:"";position:absolute;right:-70px;top:-90px;width:260px;height:260px;border-radius:50%;background:radial-gradient(circle,color-mix(in srgb,var(--tone) 55%,transparent),transparent 68%);opacity:.5;pointer-events:none}
 .lead>*{position:relative;z-index:1;min-width:0}
 .lead-h{margin:0;font-size:15px;line-height:1.45;font-weight:500;color:color-mix(in srgb,var(--accent-ink) 82%,var(--accent));text-wrap:pretty;overflow-wrap:anywhere}
@@ -160,3 +160,4 @@ body{word-spacing:.05em}
 }
 .ins-wrap.one .ins-nav,.ins-wrap.one .ins-idx,.ins-wrap.one .dots,.ins-wrap.one .count{display:none}
 .ins-wrap.one .ins{grid-auto-columns:100%}
+.lead :focus-visible{outline-color:var(--accent-ink)}

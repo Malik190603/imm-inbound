@@ -124,29 +124,12 @@ main>*,.ins-wrap{min-width:0}
 .grid2{display:grid;gap:16px;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);align-items:start}
 @media (max-width:860px){.grid2{grid-template-columns:minmax(0,1fr)}}
 
-/* hero */
-.hero{background:var(--accent);color:var(--accent-ink);border-radius:var(--r-lg);padding:18px 18px 16px;display:grid;gap:14px;position:relative;overflow:hidden;box-shadow:var(--shadow)}
-.hero::after{content:"";position:absolute;right:-50px;top:-60px;width:200px;height:200px;border-radius:50%;background:radial-gradient(circle,color-mix(in srgb,var(--mark) 45%,transparent),transparent 70%);opacity:.45;pointer-events:none}
-.hero .lbl{font-size:12px;letter-spacing:.06em;text-transform:uppercase;opacity:.7;font-weight:600}
-.hero .big{font-size:44px;font-weight:800;letter-spacing:-.03em;line-height:1;font-variant-numeric:tabular-nums}
-.hero .big small{font-size:16px;font-weight:600;opacity:.65;margin-left:6px;letter-spacing:0}
 .split{display:flex;height:10px;border-radius:999px;overflow:hidden;gap:3px;background:color-mix(in srgb,var(--accent-ink) 14%,transparent)}
 .split span{display:block;height:100%;transform-origin:left;animation:grow 1s .25s var(--ease) both}
 @keyframes grow{from{transform:scaleX(0)}}
-.hero-row{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px}
-.hero-row div{min-width:0}
-.hero-row .k{font-size:12px;opacity:.65;display:flex;align-items:center;gap:6px;white-space:nowrap}
-.hero-row .v{font-size:19px;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:-.01em}
 .dot{width:9px;height:9px;border-radius:3px;display:inline-block;flex:none}
 
 /* tiles */
-.tiles{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
-@media (max-width:720px){.tiles{grid-template-columns:repeat(2,minmax(0,1fr))}}
-.tile{background:var(--surface);border:1px solid var(--card-border);box-shadow:var(--shadow);border-radius:var(--r);padding:13px 14px;min-width:0}
-.tile .k{font-size:12px;color:var(--ink-3);display:flex;align-items:center;gap:6px;font-weight:600}
-.tile .v{font-size:24px;font-weight:800;letter-spacing:-.02em;margin-top:2px;font-variant-numeric:tabular-nums;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.tile .v small{font-size:13px;font-weight:600;color:var(--ink-3);margin-left:3px}
-.tile .d{font-size:12px;color:var(--ink-3);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
 /* insights */
 .ins-wrap{display:grid;gap:8px}
@@ -735,7 +718,6 @@ const buTag=b=>`<span class="bu" style="--c:${buCol(b)}">${esc(b)}</span>`;
 const nameOf=c=>D.names[c]||'';
 const big=v=>Math.abs(v)>=1e6?`<span class="num">${nf1.format(v/1e6)} jt</span>`:null;
 const cnt=(v,dec=0)=>big(v)||`<span class="num" data-count="${v}" data-dec="${dec}">${dec?(dec===1?f1(v):f2(v)):f0(v)}</span>`;
-function tiles(items){return `<div class="tiles">${items.map(t=>`<div class="tile"><div class="k">${t.dot?`<i class="dot" style="background:${t.dot}"></i>`:''}${t.k}</div><div class="v">${t.v}${t.u?`<small>${t.u}</small>`:''}</div><div class="d">${t.d||'&nbsp;'}</div></div>`).join('')}</div>`}
 const TONE_IC={h:I.spark,w:I.warn,c:I.crit,g:I.ok,'':I.trend};
 function insights(title,items){
   if(!items.length)return '';const id='ins'+Math.random().toString(36).slice(2,7);setTimeout(()=>bindCarousel(id,items.length),0);
