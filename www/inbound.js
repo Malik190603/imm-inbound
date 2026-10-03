@@ -42,7 +42,7 @@ const INB={state:'idle',stock:[],transit:[],err:{},at:0};
 let inbLoading=null;
 // Kolom dicari lewat judulnya: baca baris judul dulu, lalu ambil hanya kolom yang dipakai.
 async function inbFetchSheet(gid,needed,label){
-  const get=async tq=>{let r;try{r=await fetch(gvizUrl({doc:DOC_INB,gid,csv:true,h:1,tq}),{cache:'no-store'})}catch(e){throw new Error('Tidak bisa terhubung ke Google Sheets. Cek koneksi internet.')}
+  const get=async tq=>{if(window.IMM_SNAPSHOT)return parseCSV(String(window.IMM_SNAPSHOT[gid===GID_STOCK?'INB_STOCK':'INB_TRANSIT']||''));let r;try{r=await fetch(gvizUrl({doc:DOC_INB,gid,csv:true,h:1,tq}),{cache:'no-store'})}catch(e){throw new Error('Tidak bisa terhubung ke Google Sheets. Cek koneksi internet.')}
     if(!r.ok)throw new Error(`Sheet ${label} gagal dibaca (HTTP ${r.status}).`);const t=await r.text();
     if(/^\s*</.test(t))throw new Error(`Sheet ${label} tidak bisa dibaca. Pastikan dibagikan "Siapa saja yang memiliki link".`);return parseCSV(t)};
   const head=(await get('select * limit 1'))[0]||[];const headers=head.map(h=>String(h).trim());
@@ -56,7 +56,8 @@ async function inbFetchSheet(gid,needed,label){
 }
 function loadInbound(force){
   if(inbLoading)return inbLoading;
-  if(!force&&INB.state==='ok'&&Date.now()-INB.at<5*60e3)return Promise.resolve();
+  // Tanpa 'force', jangan memuat lagi dalam 5 menit sejak percobaan terakhir, berhasil ataupun gagal (mencegah pengulangan tanpa henti saat offline).
+  if(!force&&INB.at&&Date.now()-INB.at<5*60e3)return Promise.resolve();
   INB.state=INB.at?'refreshing':'loading';
   inbLoading=(async()=>{
     const [st,tr]=await Promise.allSettled([inbFetchSheet(GID_STOCK,IMMCore.STOCK_HEADERS,'stock'),inbFetchSheet(GID_TRANSIT,IMMCore.TRANSIT_HEADERS,'transit')]);

@@ -56,6 +56,9 @@ jobs:
         # Sintaks skrip, konfigurasi, dan kunci rahasia. Gagal = tidak ada rilis.
         run: npm run check
 
+      - name: Tes logika (unit)
+        run: npm test
+
       - name: Tulis versi aplikasi (www/config.js)
         env:
           VERSION_CODE: ${{ github.run_number }}
