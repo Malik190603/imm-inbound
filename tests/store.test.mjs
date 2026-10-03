@@ -46,3 +46,24 @@ test('failed insert removes the uploaded object', async () => { fake.failInsert 
 test('LPN with unsafe characters gets a safe storage path', async () => { const r = await S.addPutawayPhoto('ID 0/1?', 'FLR-01', blob); match(r.path, /^putaway\/ID_0_1_\//); });
 test('removePutawayPhoto deletes the row, then the object', async () => { await S.removePutawayPhoto({ id: 7, path: 'putaway/ID001/a.jpg' }); deepEq(fake.order, ['delrow', 'remove']); match(fake.rowsDeleted[0], /putaway_photos\?id=eq\.7$/); deepEq(fake.deleted, ['putaway/ID001/a.jpg']); });
 test('calls reject with NOCONFIG when Supabase is not set', async () => { S._config('', ''); await rejects(S.listPutawayPhotos(['ID001']), /NOCONFIG/); });
+
+// ---------- TTO ----------
+const entry = { tgl: '2026-10-03', no_tto: 'TTO/001/X', barang: 'Dokumen retur', koli: 3, pic: 'Malik', penerima: 'Budi' };
+test('addTto uploads each photo, then inserts once with their paths', async () => {
+  const r = await S.addTto(entry, [blob, blob], 'dev1');
+  eq(fake.uploads, 2); deepEq(fake.order, ['upload', 'upload', 'insert']); eq(fake.inserted.length, 1); eq(fake.inserted[0].table, 'tto');
+  eq(r.photos.length, 2); match(r.photos[0], /^tto\/TTO_001_X\/\d+-0-[a-z0-9]+\.jpg$/); match(r.photos[1], /-1-[a-z0-9]+\.jpg$/);
+  eq(r.no_tto, 'TTO/001/X'); eq(r.koli, 3); eq(r.device, 'dev1'); eq(r.tgl, '2026-10-03');
+});
+test('addTto without photos inserts with an empty list', async () => { const r = await S.addTto(entry, []); eq(fake.uploads, 0); deepEq(r.photos, []); });
+test('addTto: failed insert deletes every uploaded photo', async () => { fake.failInsert = true; await rejects(S.addTto(entry, [blob, blob])); eq(fake.deleted.length, 2); });
+test('addTto: a failed upload deletes the photos already uploaded and inserts nothing', async () => {
+  let n = 0; const orig = fake.fetch; S._setFetch(async (u, o = {}) => { if ((o.method || 'GET') === 'POST' && u.includes('/storage/') && ++n === 2) return { ok: false, status: 500, json: async () => ({}) }; return orig(u, o); });
+  await rejects(S.addTto(entry, [blob, blob, blob])); eq(fake.inserted.length, 0); eq(fake.deleted.length, 1);
+});
+test('addTto with 5 photos rejects MAX before uploading', async () => { await rejects(S.addTto(entry, [blob, blob, blob, blob, blob]), /MAX/); eq(fake.uploads, 0); });
+test('addTto rejects INVALID for a missing field or koli < 1', async () => {
+  await rejects(S.addTto({ ...entry, no_tto: ' ' }, []), /INVALID/); await rejects(S.addTto({ ...entry, koli: 0 }, []), /INVALID/); await rejects(S.addTto({ ...entry, koli: 1.5 }, []), /INVALID/); await rejects(S.addTto({ ...entry, tgl: '03/10/2026' }, []), /INVALID/); eq(fake.urls.length, 0);
+});
+test('listTto filters by date range, newest first', async () => { await S.listTto({ from: '2026-10-01', to: '2026-10-03' }); match(fake.urls[0], /tto\?select=\*&tgl=gte\.2026-10-01&tgl=lte\.2026-10-03&order=tgl\.desc,created_at\.desc$/); });
+test('removeTto deletes the row, then its photos', async () => { await S.removeTto({ id: 5, photos: ['tto/a/1.jpg', 'tto/a/2.jpg'] }); deepEq(fake.order, ['delrow', 'remove', 'remove']); match(fake.rowsDeleted[0], /tto\?id=eq\.5$/); });

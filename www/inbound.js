@@ -35,7 +35,6 @@ function inbMpp(){
   const ini=n=>n.replace(/[^A-Za-z ]/g,'').split(/\s+/).filter(Boolean).slice(0,2).map(w=>w[0].toUpperCase()).join('');
   return inbHead('MPP detail',`${IMMCore.MPP.length} orang · tim inbound DC Tallo`)+groups.map((g,i)=>`<section class="card" style="--i:${i+1}"><div class="ch"><span class="hic">${I.users}</span><h2>${esc(g.title)}</h2><span class="hint">${g.people.length} orang</span></div><div class="cb"><div class="mpp">${g.people.map(p=>`<div class="mpp-p"><span class="mpp-av">${ini(p.name)}</span><span><div class="mpp-n">${esc(p.name)}</div><div class="mpp-b">${esc(p.bu)}</div></span></div>`).join('')}</div></div></section>`).join('');
 }
-function inbSoon(title){return inbHead(title,'')+`<section class="card" style="--i:1">${emptyState('Sedang disiapkan','Halaman ini belum tersedia.',false,I.box)}</section>`}
 
 // ---------- Data sheet inbound (stock + transit), dimuat saat menu Inbound dibuka ----------
 const DOC_INB='1crYUpCJSYHrfBbZ99aUee3v4hRJrxWw4XRIryl9rong',GID_STOCK='349104626',GID_TRANSIT='2022396471';
@@ -181,7 +180,92 @@ function inbProd(){
   <section class="card" style="--i:3"><div class="ch"><span class="hic">${I.users}</span><h2>Per operator</h2><span class="hint">urut dari tertinggi</span></div><div class="cb">${teamTot>0?'':`<p class="foot" style="padding:0 0 8px">Belum ada transaksi yang dihitung ${esc(rlabel())}.</p>`}<div class="prod-ops">${P.ops.map((x,i)=>`<div class="prod-op"><div class="prod-top"><span class="rank${i===0&&tot(x)>0?' first':''}">${i+1}</span><span class="prod-n">${esc(x.name)}</span><span class="prod-id mono">${x.id}</span></div>${bar('Receive',x.rcv,x.rcvStock,x.rcvTransit,'var(--lg2)')}${bar('Putaway',x.put,x.putStock,x.putTransit,'var(--lg3)')}</div>`).join('')}</div></div></section>
   ${multi&&bks.length?`<section class="card" style="--i:4"><div class="ch"><span class="hic">${I.trend}</span><h2>CBM per ${bks[0].mode==='m'?'bulan':bks[0].mode==='w'?'minggu':'hari'}</h2><span class="hint">tim</span></div><div class="cb"><div class="legend">${SER.map(s=>`<span><i class="dot" style="background:${s.color}"></i>${s.name}</span>`).join('')}</div>${stackChart('cProd',bks,SER,{unit:'CBM',fmt:f2})}</div></section>`:''}`;
 }
-const INB_PAGES={mpp:inbMpp,put:inbPutaway,tto:()=>inbSoon('TTO/Dokumen'),prod:inbProd};
+// ---------- TTO / Dokumen ----------
+const TTO={rows:[],key:'',state:'idle'};
+let TTO_DRAFT=null; // {photos:[{file,url,at}],saving}
+function inbSyncTto(force){
+  if(!IMMStore.configured())return;const [from,to]=range();const key=from+'|'+to;
+  if(!force&&key===TTO.key&&TTO.state!=='idle')return;TTO.key=key;TTO.state=TTO.rows.length&&force?'refreshing':'loading';
+  IMMStore.listTto({from,to}).then(rows=>{if(TTO.key!==key)return;TTO.rows=rows;TTO.state='ok'},()=>{if(TTO.key===key)TTO.state='error'})
+    .then(()=>{if(TTO.key===key&&S.page==='inb'&&S.inb==='tto')render()});
+}
+function inbTto(){
+  const head=inbHead('TTO/Dokumen',`Serah terima · ${esc(rlabel())}`);
+  if(!IMMStore.configured())return head+`<section class="card" style="--i:1">${emptyState('Penyimpanan belum diatur','Data TTO disimpan di server. Fitur ini aktif setelah penyimpanan diatur.',false,I.doc)}</section>`;
+  inbSyncTto();
+  const add=`<button class="btn block press tto-add" id="ttoAdd" style="--i:1">Tambah TTO</button>`;
+  if(TTO.state==='loading'||TTO.state==='idle')return head+add+inbSkeleton();
+  if(TTO.state==='error')return head+add+inbErrCard('Data TTO belum bisa dibaca','Cek koneksi internet, lalu coba lagi.',2);
+  const q=(S.q.tto||'').toLowerCase().trim();
+  const fl=q?TTO.rows.filter(r=>(r.no_tto+' '+r.barang+' '+r.penerima+' '+r.pic).toLowerCase().includes(q)):TTO.rows;const n=lim('tto',20);
+  const koli=TTO.rows.reduce((a,r)=>a+(+r.koli||0),0);
+  return head+add+`<section class="card" style="--i:2"><div class="ch"><span class="hic">${I.doc}</span><h2>Daftar TTO</h2><span class="hint">${f0(TTO.rows.length)} TTO · ${f0(koli)} koli</span><div class="right" style="flex:1 1 170px;max-width:230px">${searchBox('tto','Cari No TTO / barang')}</div></div>
+    <div class="cb" style="padding-top:4px">${fl.length?`<div class="list">${fl.slice(0,n).map(r=>`<button class="tto-row press" data-tto="${r.id}"><div class="tto-top"><span class="mono tto-no">${esc(r.no_tto)}</span>${(r.photos||[]).length?`<span class="lpn-cam">${I.cam}${r.photos.length}</span>`:''}<span class="lpn-time">${dshort(r.tgl)}</span></div><div class="tto-b">${esc(r.barang)}</div><div class="tto-m"><span>${f0(r.koli)} koli</span><span>${esc(r.pic)} → ${esc(r.penerima)}</span></div></button>`).join('')}</div>${moreBtn('tto',fl.length,n)}`
+      :emptyState(q?'Tidak ditemukan':'Belum ada TTO',q?'Tidak ada TTO yang cocok.':`Belum ada serah terima yang dicatat ${esc(rlabel())}.`,!q,I.doc)}</div></section>`;
+}
+function ttoPhotosHtml(){
+  const ph=TTO_DRAFT.photos,max=IMMStore.MAX_PHOTOS,dis=(ph.length>=max||TTO_DRAFT.saving)?'disabled':'';
+  return `<h4>Dokumentasi (${ph.length}/${max})</h4>
+    ${ph.length?`<div class="ph-grid">${ph.map((p,i)=>`<div class="ph-item"><span class="ph-thumb"><img src="${p.url}" alt="Foto ${i+1}"></span><button type="button" class="ph-del press" data-tto-unphoto="${i}" aria-label="Buang foto">${I.x}</button></div>`).join('')}</div>`:''}
+    <div class="ph-actions"><button type="button" class="btn ghost press" data-tto-photo="cam" ${dis}>${I.cam}Kamera</button><button type="button" class="btn ghost press" data-tto-photo="gal" ${dis}>${I.doc}Galeri</button></div>
+    <p class="foot" style="padding:6px 0 0">Opsional, maksimal ${max} foto. Cap waktu dan No TTO ditambahkan otomatis.</p>
+    <input id="ttoCam" type="file" accept="image/*" capture="environment" data-tto-input hidden><input id="ttoGal" type="file" accept="image/*" data-tto-input hidden>`;
+}
+function ttoDraftClear(){if(TTO_DRAFT)TTO_DRAFT.photos.forEach(p=>{try{URL.revokeObjectURL(p.url)}catch(e){}});TTO_DRAFT=null}
+function openTtoForm(){
+  ttoDraftClear();TTO_DRAFT={photos:[],saving:false};
+  const fld=(id,label,html)=>`<label class="inb-field" data-f="${id}"><span>${label}</span>${html}<em class="inb-msg"></em></label>`;
+  sheet(sHead('Tambah TTO','Serah terima dokumen atau barang','',false),
+    `<form id="ttoForm" class="tto-form" novalidate>
+      ${fld('ttoTgl','Tanggal serah terima',`<input id="ttoTgl" type="date" value="${TODAY}">`)}
+      ${fld('ttoNo','No TTO',`<input id="ttoNo" type="text" autocomplete="off" autocapitalize="characters" maxlength="60">`)}
+      ${fld('ttoBarang','Nama barang',`<input id="ttoBarang" type="text" autocomplete="off" maxlength="120">`)}
+      ${fld('ttoKoli','Jumlah koli',`<input id="ttoKoli" type="number" inputmode="numeric" min="1" step="1">`)}
+      ${fld('ttoPic','PIC yang menyerahkan',`<select id="ttoPic"><option value="">Pilih PIC</option>${IMMCore.PICS.map(p=>`<option>${esc(p)}</option>`).join('')}</select>`)}
+      ${fld('ttoPenerima','Penerima',`<input id="ttoPenerima" type="text" autocomplete="off" maxlength="60">`)}
+      <div id="ttoPhotos">${ttoPhotosHtml()}</div>
+      <button type="button" class="btn block press" id="ttoSave">Simpan TTO</button>
+    </form>`);
+}
+function ttoRead(){const v=id=>{const e=document.getElementById(id);return e?String(e.value).trim():''};return {tgl:v('ttoTgl'),no_tto:v('ttoNo'),barang:v('ttoBarang'),koli:v('ttoKoli'),pic:v('ttoPic'),penerima:v('ttoPenerima')}}
+function ttoValidate(e){
+  const bad={};const k=Number(e.koli);
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(e.tgl))bad.ttoTgl='Pilih tanggal';
+  if(!e.no_tto)bad.ttoNo='Wajib diisi';if(!e.barang)bad.ttoBarang='Wajib diisi';
+  if(e.koli===''||!Number.isInteger(k)||k<1)bad.ttoKoli='Isi angka bulat, minimal 1';
+  if(!e.pic)bad.ttoPic='Pilih PIC';if(!e.penerima)bad.ttoPenerima='Wajib diisi';
+  document.querySelectorAll('#ttoForm .inb-field').forEach(f=>{const m=bad[f.dataset.f]||'';f.classList.toggle('bad',!!m);f.querySelector('.inb-msg').textContent=m});
+  return !Object.keys(bad).length;
+}
+async function ttoSave(){
+  if(!TTO_DRAFT||TTO_DRAFT.saving)return;const e=ttoRead();
+  if(!ttoValidate(e)){buzz(30);const f=document.querySelector('#ttoForm .inb-field.bad input,#ttoForm .inb-field.bad select');f&&f.focus();return}
+  const btn=document.getElementById('ttoSave');TTO_DRAFT.saving=true;btn.disabled=true;btn.textContent='Menyimpan…';
+  try{const blobs=[];for(const p of TTO_DRAFT.photos)blobs.push(await IMMStore.preparePhoto(p.file,[IMMCore.stampText(p.at),'TTO '+e.no_tto]));
+    const row=await IMMStore.addTto({...e,koli:Number(e.koli)},blobs,deviceId());
+    ttoDraftClear();closeSheet();buzz(12);toast('TTO tersimpan');
+    const [from,to]=range();if(row&&row.tgl>=from&&row.tgl<=to){TTO.rows.unshift(row);TTO.rows.sort((a,b)=>(b.tgl+(b.created_at||'')).localeCompare(a.tgl+(a.created_at||'')))}
+    if(S.page==='inb'&&S.inb==='tto')render()}
+  catch(err){TTO_DRAFT.saving=false;const b=document.getElementById('ttoSave');if(b){b.disabled=false;b.textContent='Simpan TTO'}phErrToast(err,'TTO gagal disimpan. Coba lagi.')}
+}
+function ttoPick(file){
+  if(!TTO_DRAFT||!file||TTO_DRAFT.photos.length>=IMMStore.MAX_PHOTOS)return;
+  if(!/^image\//.test(file.type||'')){toast('File ini bukan foto');return}
+  TTO_DRAFT.photos.push({file,url:URL.createObjectURL(file),at:new Date()});const box=document.getElementById('ttoPhotos');if(box)box.innerHTML=ttoPhotosHtml();
+}
+function openTto(id){
+  const r=TTO.rows.find(x=>String(x.id)===String(id));if(!r)return;const ph=r.photos||[];
+  sheet(sHead(esc(r.no_tto),`<span><b>${dlong(r.tgl)}</b></span><span>${f0(r.koli)} koli</span>`),
+    `<dl class="kv"><dt>Nama barang</dt><dd>${esc(r.barang)}</dd><dt>Jumlah koli</dt><dd>${f0(r.koli)} koli</dd><dt>Yang menyerahkan</dt><dd>${esc(r.pic)}</dd><dt>Penerima</dt><dd>${esc(r.penerima)}</dd><dt>Tanggal</dt><dd>${dlong(r.tgl)}</dd></dl>
+     <div><h4>Dokumentasi (${ph.length})</h4>${ph.length?`<div class="ph-grid">${ph.map(p=>`<div class="ph-item"><button class="ph-thumb press" data-photo-view="${esc(p)}" aria-label="Lihat foto"><img loading="lazy" src="${esc(IMMStore.photoUrl(p))}" alt="Foto TTO ${esc(r.no_tto)}"></button></div>`).join('')}</div>`:'<p class="foot" style="padding:0">Tidak ada foto.</p>'}</div>
+     <button class="btn ghost block press tto-del" id="ttoDel" data-id="${r.id}">${I.trash}Hapus TTO</button>`);
+}
+async function ttoDelete(id){
+  const r=TTO.rows.find(x=>String(x.id)===String(id));if(!r)return;
+  if(!confirm(`Hapus TTO ${r.no_tto}? Data dan fotonya tidak bisa dikembalikan.`))return;
+  try{await IMMStore.removeTto(r);TTO.rows=TTO.rows.filter(x=>x!==r);closeSheet();toast('TTO dihapus');if(S.page==='inb'&&S.inb==='tto')render()}catch(e){phErrToast(e,'TTO gagal dihapus. Coba lagi.')}
+}
+const INB_PAGES={mpp:inbMpp,put:inbPutaway,tto:inbTto,prod:inbProd};
 function pageInbound(){
   if(!inbUnlocked())return inbLock();
   loadInbound();
@@ -195,13 +279,22 @@ function inboundClick(e){
   if(g('#inbGo')){inbTryUnlock();return true}
   if(g('[data-inb-back]')){inboundBack();return true}
   if(!inbUnlocked())return false;
-  if(g('#sync')||g('[data-inb-reload]')){buzz(6);PH.key='';PH.state='idle';loadInbound(true);render();return true}
+  if(g('#sync')||g('[data-inb-reload]')){buzz(6);PH.key='';PH.state='idle';if(S.inb==='tto')inbSyncTto(true);else loadInbound(true);render();return true}
   if(t=g('[data-photo-add]')){const el=document.getElementById(t.dataset.photoAdd==='cam'?'phCam':'phGal');el&&el.click();return true}
   if(t=g('[data-photo-view]')){photoView(t.dataset.photoView);return true}
   if(t=g('[data-photo-del]')){phDel(t.dataset.photoDel);return true}
   if(t=g('[data-lpn]')){openLpn(t.dataset.lpn);return true}
+  if(g('#ttoAdd')){openTtoForm();return true}
+  if(g('#ttoSave')){ttoSave();return true}
+  if(t=g('[data-tto-photo]')){const el=document.getElementById(t.dataset.ttoPhoto==='cam'?'ttoCam':'ttoGal');el&&el.click();return true}
+  if(t=g('[data-tto-unphoto]')){if(TTO_DRAFT&&!TTO_DRAFT.saving){const p=TTO_DRAFT.photos.splice(+t.dataset.ttoUnphoto,1)[0];if(p)try{URL.revokeObjectURL(p.url)}catch(_){}document.getElementById('ttoPhotos').innerHTML=ttoPhotosHtml()}return true}
+  if(g('#ttoDel')){ttoDelete(g('#ttoDel').dataset.id);return true}
+  if(t=g('[data-tto]')){openTto(t.dataset.tto);return true}
   if(t=g('[data-inb]')){if(!inbUnlocked()){render();return true}S.inb=t.dataset.inb;S.more={};buzz(6);render(true);window.scrollTo({top:0});return true}
   return false;
 }
 document.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target&&e.target.id==='inbPw'){e.preventDefault();inbTryUnlock()}});
 document.addEventListener('change',e=>{const el=e.target;if(!el||!el.matches||!el.matches('[data-photo-input]'))return;const f=el.files&&el.files[0];el.value='';if(f&&el.closest('#lpnPhotos'))phAdd(f)});
+document.addEventListener('change',e=>{const el=e.target;if(!el||!el.matches||!el.matches('[data-tto-input]'))return;const f=el.files&&el.files[0];el.value='';ttoPick(f)});
+document.addEventListener('submit',e=>{if(e.target&&e.target.id==='ttoForm'){e.preventDefault();ttoSave()}});
+document.addEventListener('input',e=>{const f=e.target&&e.target.closest&&e.target.closest('#ttoForm .inb-field.bad');if(f){f.classList.remove('bad');f.querySelector('.inb-msg').textContent=''}});

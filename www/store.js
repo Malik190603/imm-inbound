@@ -51,6 +51,32 @@
     try { await removeObject(row.path); } catch (_) { /* baris sudah terhapus; objek yatim tidak tampil di aplikasi */ }
   }
 
+  // ---------- TTO / dokumen ----------
+  function validTto(e) {
+    const t = (v) => String(v == null ? '' : v).trim(); const koli = Number(e && e.koli);
+    return !!e && /^\d{4}-\d{2}-\d{2}$/.test(t(e.tgl)) && !!t(e.no_tto) && !!t(e.barang) && !!t(e.pic) && !!t(e.penerima) && Number.isInteger(koli) && koli >= 1;
+  }
+  async function listTto(o) {
+    need(); const f = o && o.from, t = o && o.to;
+    const q = 'tto?select=*' + (f && f > '1000' ? '&tgl=gte.' + f : '') + (t && t < '9000' ? '&tgl=lte.' + t : '') + '&order=tgl.desc,created_at.desc';
+    return (await rest(q, { headers: headers() })).json();
+  }
+  async function addTto(entry, blobs, device) {
+    need(); blobs = blobs || [];
+    if (!validTto(entry)) throw new Error('INVALID');
+    if (blobs.length > MAX_PHOTOS) throw new Error('MAX');
+    const t = (v) => String(v).trim(); const dir = 'tto/' + safe(entry.no_tto) + '/' + Date.now() + '-'; const paths = [];
+    const undo = async () => { for (const p of paths) { try { await removeObject(p); } catch (_) { /* objek yatim dibiarkan */ } } };
+    try {
+      for (let i = 0; i < blobs.length; i++) { const p = dir + i + '-' + rand() + '.jpg'; await upload(p, blobs[i]); paths.push(p); }
+      return await insert('tto', { tgl: t(entry.tgl), no_tto: t(entry.no_tto), barang: t(entry.barang), koli: Number(entry.koli), pic: t(entry.pic), penerima: t(entry.penerima), photos: paths, device: device || '' });
+    } catch (e) { await undo(); throw e; }
+  }
+  async function removeTto(row) {
+    need(); await rest('tto?id=eq.' + encodeURIComponent(row.id), { method: 'DELETE', headers: headers() });
+    for (const p of row.photos || []) { try { await removeObject(p); } catch (_) { /* baris sudah terhapus */ } }
+  }
+
   // ---------- penyiapan foto (hanya di browser) ----------
   async function preparePhoto(file, lines) {
     const MAXS = 1280;
@@ -71,7 +97,7 @@
   }
 
   return {
-    configured, photoUrl, listPutawayPhotos, addPutawayPhoto, removePutawayPhoto, preparePhoto, MAX_PHOTOS,
+    configured, photoUrl, listPutawayPhotos, addPutawayPhoto, removePutawayPhoto, listTto, addTto, removeTto, validTto, preparePhoto, MAX_PHOTOS,
     _setFetch(f) { fetchImpl = f; }, _config(url, key) { SUPA.url = url; SUPA.key = key; },
     _internals: { rest, upload, removeObject, insert, headers, safe, rand, need },
   };

@@ -793,8 +793,8 @@ function renderShell(){
   document.getElementById('tabsTop').innerHTML=`<span class="pill"></span>`+TABS.map(([k,l])=>`<button role="tab" aria-selected="${S.page===k}" data-tab="${k}">${l}${badge(k)}</button>`).join('');
   const strip=document.getElementById('strip');
   if(S.page==='set'||(S.page==='inb'&&!inbShowsFilter())){strip.innerHTML='';strip.hidden=true}
-  else{strip.hidden=false;strip.innerHTML=`<button class="chip period press" data-open="period">${I.cal}<span>${esc(plabel())}</span><span class="rng">${esc(rlabel())}</span></button><span class="vsep"></span>`+
-    `<button class="chip press" data-bu="ALL" aria-pressed="${allBU()}">Semua BU</button>`+BUS.map(b=>`<button class="chip press" data-bu="${b}" aria-pressed="${!allBU()&&F().bus.has(b)}"><i class="bd" style="background:${buCol(b)}"></i>${b}</button>`).join('')}
+  else{strip.hidden=false;strip.innerHTML=`<button class="chip period press" data-open="period">${I.cal}<span>${esc(plabel())}</span><span class="rng">${esc(rlabel())}</span></button>${S.page==='inb'&&S.inb==='tto'?'':'<span class="vsep"></span>'}`+
+    (S.page==='inb'&&S.inb==='tto'?'':`<button class="chip press" data-bu="ALL" aria-pressed="${allBU()}">Semua BU</button>`+BUS.map(b=>`<button class="chip press" data-bu="${b}" aria-pressed="${!allBU()&&F().bus.has(b)}"><i class="bd" style="background:${buCol(b)}"></i>${b}</button>`).join(''))}
   placePills();requestAnimationFrame(placePills);renderStatus();
 }
 function placePills(){['nav','tabsTop'].forEach(id=>{const n=document.getElementById(id);const b=n.querySelector('[aria-selected="true"]');const p=n.querySelector('.pill');if(b&&p){p.style.left=b.offsetLeft+'px';p.style.width=b.offsetWidth+'px'}})}
