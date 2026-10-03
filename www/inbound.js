@@ -96,10 +96,10 @@ function lpnPhotosHtml(l){
     <p class="foot" style="padding:6px 0 0">${note}</p>
     <input id="phCam" type="file" accept="image/*" capture="environment" data-photo-input hidden><input id="phGal" type="file" accept="image/*" data-photo-input hidden>`;
 }
-function phRefresh(){const box=document.getElementById('lpnPhotos');if(!box)return;const l=PUT_LIST.find(x=>x.lpn===box.dataset.lpn);if(l)box.innerHTML=lpnPhotosHtml(l)}
+function phRefresh(){const box=document.getElementById('lpnPhotos');if(!box)return;const l=PUT_LIST.find(x=>x.lpn===box.dataset.photosFor);if(l)box.innerHTML=lpnPhotosHtml(l)}
 function phErrToast(e,what){const m=e&&e.message;toast(m==='BADIMAGE'?'File ini bukan foto yang bisa dibaca':m==='NOCONFIG'?'Penyimpanan foto belum diatur':what)}
 async function phAdd(file){
-  const box=document.getElementById('lpnPhotos');if(!box||!file||PH.busy)return;const lpn=box.dataset.lpn;const l=PUT_LIST.find(x=>x.lpn===lpn);if(!l)return;
+  const box=document.getElementById('lpnPhotos');if(!box||!file||PH.busy)return;const lpn=box.dataset.photosFor;const l=PUT_LIST.find(x=>x.lpn===lpn);if(!l)return;
   PH.busy=true;phRefresh();
   try{const blob=await IMMStore.preparePhoto(file,[IMMCore.stampText(new Date()),l.lpn+' → '+l.tolocs.join(', ')]);
     const row=await IMMStore.addPutawayPhoto(l.lpn,l.tolocs[0]||'',blob,deviceId());
@@ -109,7 +109,7 @@ async function phAdd(file){
   PH.busy=false;phRefresh();if(S.page==='inb'&&S.inb==='put')render();
 }
 async function phDel(id){
-  const box=document.getElementById('lpnPhotos');if(!box)return;const lpn=box.dataset.lpn;const row=phRows(lpn).find(r=>String(r.id)===String(id));if(!row)return;
+  const box=document.getElementById('lpnPhotos');if(!box)return;const lpn=box.dataset.photosFor;const row=phRows(lpn).find(r=>String(r.id)===String(id));if(!row)return;
   if(!confirm('Hapus foto ini? Foto yang dihapus tidak bisa dikembalikan.'))return;
   try{await IMMStore.removePutawayPhoto(row);PH.map.set(lpn,phRows(lpn).filter(r=>r!==row));toast('Foto dihapus')}catch(e){phErrToast(e,'Foto gagal dihapus. Coba lagi.')}
   phRefresh();if(S.page==='inb'&&S.inb==='put')render();
@@ -159,7 +159,7 @@ function openLpn(id){
     `<div class="lpn-loc big">${I.port}<span>${l.tolocs.map(esc).join(', ')}</span></div>
      ${l.mixed?`<div class="lpn-warn">${I.warn}<span><b>Campur Dept</b> · LPN ini berisi ${l.depts.length} Dept: ${depts.map(d=>`${esc(d.k)} (${d.n} SKU)`).join(', ')}</span></div>`:''}
      <div><h4>Isi LPN · ${l.skus} SKU · ${f0(l.qty)} qty · ${f2(l.cbm)} CBM</h4><div class="list">${l.items.map(i=>`<div class="row"><span class="a" style="font-size:13px;white-space:normal">${esc(i.desc||'-')}</span><span class="b" style="white-space:normal"><span class="mono">${esc(i.sku)}</span> · Dept ${esc(i.dept)}${l.tolocs.length>1?' · '+esc(i.toloc):''}</span><span class="v">${f0(i.qty)}<small>qty</small></span></div>`).join('')}</div></div>
-     <div id="lpnPhotos" data-lpn="${esc(l.lpn)}">${lpnPhotosHtml(l)}</div>`);
+     <div id="lpnPhotos" data-photos-for="${esc(l.lpn)}">${lpnPhotosHtml(l)}</div>`);
 }
 // ---------- Productivity ----------
 function inbProd(){
