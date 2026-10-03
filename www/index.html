@@ -5,10 +5,6 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#111820">
 <title>IMM DC Tallo</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600&display=swap">
-<script>try{var t=localStorage.getItem('imm.theme');if(t==='light'||t==='dark')document.documentElement.setAttribute('data-theme',t)}catch(e){}</script>
 <style>
 /* Layout: one calm column of borderless cards on a warm-grey ground; sticky app bar + per-menu filter strip, floating 5-tab bar on phones, inline tabs on wide screens. */
 :root{
@@ -742,12 +738,12 @@ function tiles(items){return `<div class="tiles">${items.map(t=>`<div class="til
 const TONE_IC={h:I.spark,w:I.warn,c:I.crit,g:I.ok,'':I.trend};
 function insights(title,items){
   if(!items.length)return '';const id='ins'+Math.random().toString(36).slice(2,7);setTimeout(()=>bindCarousel(id,items.length),0);
-  return `<section class="ins-wrap"><div class="ins-head"><h2>${title}</h2><span class="count">${items.length} temuan</span><div class="ins-nav"><button class="ibtn press" data-car="${id}" data-dir="-1" aria-label="Sebelumnya">${I.left}</button><button class="ibtn press" data-car="${id}" data-dir="1" aria-label="Berikutnya">${I.chev}</button></div></div>
+  return `<section class="ins-wrap"><div class="ins-head"><h2>${title}</h2><span class="count">${items.length} temuan</span><span class="ins-idx" id="${id}-i">1/${items.length}</span><div class="ins-nav"><button class="ibtn press" data-car="${id}" data-dir="-1" aria-label="Sebelumnya">${I.left}</button><button class="ibtn press" data-car="${id}" data-dir="1" aria-label="Berikutnya">${I.chev}</button></div></div>
   <div class="ins" id="${id}">${items.map(i=>`<article class="icard ${i.c||''}"><div class="ic">${TONE_IC[i.c||'']}</div><div>${i.h?`<div class="t">${i.h}</div>`:''}${i.t}</div></article>`).join('')}</div>
   <div class="dots" id="${id}-d">${items.map((_,k)=>`<i class="${k?'':'on'}"></i>`).join('')}</div></section>`;
 }
 function bindCarousel(id,n){const el=document.getElementById(id);if(!el)return;const dots=document.querySelectorAll(`#${id}-d i`);
-  el.addEventListener('scroll',()=>{const w=el.firstElementChild?el.firstElementChild.offsetWidth+10:1;const k=Math.min(n-1,Math.round(el.scrollLeft/w));dots.forEach((d,j)=>d.classList.toggle('on',j===k))},{passive:true})}
+  el.addEventListener('scroll',()=>{const w=el.firstElementChild?el.firstElementChild.offsetWidth+10:1;const k=Math.min(n-1,Math.round(el.scrollLeft/w));dots.forEach((d,j)=>d.classList.toggle('on',j===k));const ix=document.getElementById(id+'-i');if(ix)ix.textContent=(k+1)+'/'+n},{passive:true})}
 function emptyState(title,msg,acts=true,icon=I.box){const cur=F().preset;return `<div class="empty"><div class="art">${icon}</div><div class="e1">${title}</div><div>${msg}</div>${acts?`<div class="acts">${[['today','Hari ini'],['tomorrow','Besok'],['next7','7 hari ke depan'],['last30','30 hari terakhir']].filter(x=>x[0]!==cur).map(([k,l])=>`<button class="btn ghost sm press" data-qp="${k}">${l}</button>`).join('')}</div>`:''}</div>`}
 function hbars(items){const max=Math.max(1e-9,...items.map(x=>x.segs?x.segs.reduce((a,s)=>a+s[0],0):x.v));
   return `<div class="hbars">${items.map((x,i)=>{const segs=x.segs||[[x.v,x.color||'var(--s-stock)']];const tr=`<div class="track">${segs.filter(s=>s[0]>0).map(s=>`<span style="width:${s[0]/max*100}%;background:${s[1]};animation-delay:${i*45}ms"></span>`).join('')}</div>`;return `<div class="hb ${x.click?'click press':''}" ${x.click||''}><div class="top"><span class="l">${x.l}</span>${x.s?`<span class="s">${x.s}</span>`:''}<span class="v">${x.vt}</span></div>${x.pct!=null?`<div class="trow">${tr}<span class="pct">${x.pct}%</span></div>`:tr}</div>`}).join('')}</div>`}
@@ -820,6 +816,14 @@ function setPage(p){if(S.page===p&&!(p==='inb'&&S.inb)){window.scrollTo({top:0,b
 // ======================= ROLE (Storing + Outbound) =======================
 function pageRole(){return `<div style="--i:0">${seg('roleTab',[['stock','Storing'],['out','Outbound']],S.roleTab)}</div>`+(S.roleTab==='out'?pageOut():pageStock())}
 
+// ======================= PEMBANTU KARTU JAWABAN =======================
+// Total CBM terjadwal untuk satu tanggal (mengikuti filter BU halaman yang sedang dibuka)
+function dayCbm(d,dest){const t=sumRows(slice(d,d).rows);return dest==null?t[0]+t[1]+t[2]:dest===0?t[0]:t[1]+t[2]}
+// Pindah ke satu tanggal (dari strip minggu)
+function setDay(d){const f=F();if(d===TODAY)f.preset='today';else if(d===addD(TODAY,1))f.preset='tomorrow';else{f.preset='range';f.from=d;f.to=d}S.more={};buzz(5);render(true)}
+// Pembanding: nilai satu hari terhadap rata-rata 7 hari sebelumnya yang ada datanya
+function dayDelta(d,cur,dest){const prev=[];for(let k=1;k<=7;k++){const v=dayCbm(addD(d,-k),dest);if(v>0)prev.push(v)}if(prev.length<3)return '';return leadDelta(IMMUi.deltaInfo(cur,prev.reduce((a,b)=>a+b,0)/prev.length),'rata-rata 7 hari')}
+
 // ======================= BERANDA =======================
 function pageHome(){
   const [from,to]=range(),X=slice(from,to);
@@ -848,32 +852,44 @@ function pageHome(){
   const SER=[{name:'Storing',color:'var(--s-stock)'},{name:'Outbound store',color:'var(--s-store)'},{name:'Outbound customer',color:'var(--s-cust)'}];
   const single=from===to;
   const buckets=single?[]:bucketize(from,to,X.rows,r=>D.lcd[r[0]],r=>{const v=[0,0,0];v[r[1]]=r[6];return v},3,b=>{const e=bucketEnd(b);b.extra=['TEUs',teu(X.cont.filter(c=>c.d>=b.key&&c.d<=e))]});
-  const al=[];
-  if(miss.length)al.push(`<button class="alert c press" data-open="miss"><div class="ic">${I.crit}</div><div><div class="t">${f0(teu(miss))} TEUs belum terhitung</div><div class="x">No LC kosong atau tidak ada di MASTER_LC</div></div><span class="go">${I.chev}</span></button>`);
-  if(mism.length)al.push(`<button class="alert w press" data-lc="${esc(mism[0].c.lc)}"><div class="ic">${I.warn}</div><div><div class="t">${mism.length} LC selisih plan vs LC</div><div class="x">Terbesar ${esc(mism[0].c.lc)}: plan ${f1(mism[0].plan)}, LC ${f1(mism[0].lc)}</div></div><span class="go">${I.chev}</span></button>`);
-  if(badKont.length)al.push(`<div class="alert w"><div class="ic">${I.warn}</div><div><div class="t">${badKont.length} no. kontainer tidak seragam</div><div class="x">Ada spasi/tanda hubung, mis. ${esc(badKont[0].k)}</div></div><span></span></div>`);
-  al.push(`<button class="alert ${uns.length?'w':'g'} press" data-open="uns"><div class="ic">${uns.length?I.warn:I.ok}</div><div><div class="t">${f0(uns.length)} LC belum dijadwalkan</div><div class="x">${f1(unsC)} CBM ada di MASTER_LC, belum di MASTER_PLAN</div></div><span class="go">${I.chev}</span></button>`);
   const byD=groupBy(X.cont.slice().sort((a,b)=>(a.d+a.j).localeCompare(b.d+b.j)),c=>c.d,d=>({d,cs:[]}),(g,c)=>g.cs.push(c));
   if(!byD.find(g=>g.d===S.dayPick))S.dayPick=(byD.find(g=>g.d>=TODAY)||byD[0]||{}).d||'';
   const dg=byD.find(g=>g.d===S.dayPick);
   const buRows=BUS.filter(buOK).map(b=>{const rs=X.rows.filter(r=>BUS[r[7]]===b);const t=sumRows(rs);return {b,te:teu(X.cont.filter(c=>c.bu===b)),v:t[0]+t[1]+t[2]}});
+  // ---- kartu jawaban ----
+  const when=single?(from===TODAY?'Hari ini':from===addD(TODAY,1)?'Besok':dday(from)):'';
+  const outAll=tot[1]+tot[2];
+  const dir=all<=0?'':outAll<=0?'semuanya ke storing':tot[0]<=0?'semuanya langsung outbound':`${pc(tot[0],all)}% ke storing, ${pc(outAll,all)}% langsung outbound`;
+  const headline=!X.cont.length?`Belum ada jadwal bongkar ${whenWord()}.`
+    :single?`${when} masuk <b>${f0(teus)} TEUs</b> dari ${f0(X.cont.length)} kontainer${dir?`, ${dir}`:''}.`
+    :`${esc(rlabel())}: <b>${f0(teus)} TEUs</b> dari ${f0(X.cont.length)} kontainer dijadwalkan bongkar${dir?`, ${dir}`:''}.`;
+  const leadHtml=lead({tone:'mark',empty:!X.cont.length,headline,value:cnt(all,1),unit:'CBM',delta:single?dayDelta(from,all):'',
+    body:all>0?`<div class="lead-split" aria-hidden="true">${[0,1,2].filter(j=>tot[j]>0).map(j=>`<span style="width:${tot[j]/all*100}%;background:${SER[j].color}"></span>`).join('')}</div>`:'',
+    stats:[{l:'Storing',v:cnt(tot[0],1),dot:'var(--s-stock)'},{l:'Outbound',v:cnt(outAll,1),dot:'var(--s-store)'},{l:'Kontainer',v:cnt(teus),u:'TEUs'}],
+    foot:weekStrip(IMMUi.weekDays(TODAY).map(d=>({d,v:dayCbm(d)})),single?from:'')});
+  // ---- perlu perhatian (paling banyak 3, urut dari yang paling mendesak) ----
+  const attn=[];
+  if(miss.length)attn.push({tone:'c',n:f0(teu(miss)),u:'TEUs',label:'belum terhitung',sub:'No LC kosong atau tidak ada di MASTER_LC',attr:'data-open="miss"'});
+  if(mism.length)attn.push({n:f0(mism.length),u:'LC',label:'selisih plan dan LC',sub:`Terbesar ${esc(mism[0].c.lc)}: plan ${f1(mism[0].plan)}, LC ${f1(mism[0].lc)} CBM`,attr:`data-lc="${esc(mism[0].c.lc)}"`});
+  if(uns.length)attn.push({n:f0(uns.length),u:'LC',label:'LC belum dijadwalkan',sub:`${f1(unsC)} CBM ada di MASTER_LC, belum di MASTER_PLAN`,attr:'data-open="uns"'});
+  if(badKont.length)attn.push({n:f0(badKont.length),label:'no. kontainer tidak seragam',sub:`Ada spasi atau tanda hubung, misalnya ${esc(badKont[0].k)}`});
+  // ---- jadwal bongkar: garis waktu per jam ----
+  const slots=dg?groupBy(dg.cs,c=>c.j||'',j=>({j,cs:[]}),(g,c)=>g.cs.push(c)).sort((x,y)=>x.j.localeCompare(y.j)):[];
+  const contRow=c=>{const has=c.lc&&LCSET.has(c.lc);const t=has?LCTOT[LCI[c.lc]]:null;return `<button class="row press" data-cont="${D.cont.indexOf(c)}"><span class="a"><span class="mono">${esc(c.k||'—')}</span>${buTag(c.bu)}${has?'':tag('belum di LC','crit')}</span><span class="b">${esc(c.lc||'tanpa LC')} · ${f0(c.te)} TEU</span><span class="v">${t?f1(t[0]+t[1]+t[2]):'–'}<small>CBM</small></span></button>`};
+  const buZ=withZeros(buRows,r=>r.v+r.te,z=>`${z.length} BU lain belum ada kiriman`);
   return `
-  <div class="hello" style="--i:0"><h1>${greet} RDC Tallo</h1><p>${dlong(TODAY)}</p></div>
-  <section class="hero" style="--i:1">
-    <div><div class="lbl">CBM masuk · ${esc(plabel().toLowerCase())}</div><div class="big">${cnt(all,1)}<small>CBM</small></div></div>
-    <div class="split" aria-hidden="true">${all>0?[0,1,2].filter(j=>tot[j]>0).map(j=>`<span style="width:${tot[j]/all*100}%;background:${SER[j].color}"></span>`).join(''):''}</div>
-    <div class="hero-row"><div><div class="k"><i class="dot" style="background:var(--s-stock)"></i>Storing</div><div class="v">${cnt(tot[0],1)}</div></div><div><div class="k"><i class="dot" style="background:var(--s-store)"></i>Outbound</div><div class="v">${cnt(tot[1]+tot[2],1)}</div></div><div><div class="k">Kontainer</div><div class="v">${cnt(teus)} <span style="font-size:12px;opacity:.6;font-weight:600">TEUs</span></div></div></div>
-  </section>
-  <div style="--i:2">${insights('Ringkasan pintar',ins)}</div>
-  <div class="grid2" style="--i:3">
-    <section class="card"><div class="ch"><span class="hic">${I.cal}</span><h2>Jadwal bongkar</h2><span class="hint">${f0(teus)} TEUs</span></div><div class="cb">
-      ${byD.length?`${byD.length>1?`<div class="days">${byD.map(g=>{const d=pd(g.d);return `<button class="dayc press" data-day="${g.d}" aria-pressed="${g.d===S.dayPick}"><span class="dn">${g.d===TODAY?'Hari ini':HARI[d.getDay()]}</span><span class="dd">${d.getDate()}</span><span class="dc">${f0(teu(g.cs))} TEUs</span></button>`}).join('')}</div>`:''}
-      <div class="list">${dg?dg.cs.map(c=>{const has=c.lc&&LCSET.has(c.lc);const t=has?LCTOT[LCI[c.lc]]:null;return `<button class="row press" data-cont="${D.cont.indexOf(c)}"><span class="a"><span class="mono">${esc(c.k||'—')}</span>${buTag(c.bu)}${has?'':tag('belum di LC','crit')}</span><span class="b">${c.j||'--:--'} · ${esc(c.lc||'tanpa LC')} · ${f0(c.te)} TEU</span><span class="v">${t?f1(t[0]+t[1]+t[2]):'–'}<small>CBM</small></span></button>`}).join(''):''}</div>`:emptyState('Tidak ada jadwal',`Tidak ada kontainer dijadwalkan bongkar ${whenWord()}.`)}
+  <div class="hello slim" style="--i:0"><h1>${greet} RDC Tallo</h1><p>${dlong(TODAY)}</p></div>
+  ${leadHtml}
+  ${attention(attn,2)}
+  <div style="--i:3">${insights('Ringkasan pintar',ins)}</div>
+  <div class="grid2" style="--i:4">
+    <section class="card">${secHead({icon:I.cal,title:'Jadwal bongkar',sub:'Kontainer yang dibongkar, urut jam. Ketuk untuk melihat isinya.',hint:`${f0(teus)} TEUs`,gloss:['teus','lc','cbm']})}<div class="cb">
+      ${byD.length?`${byD.length>1?`<div class="days">${byD.map(g=>{const d=pd(g.d);return `<button class="dayc press" data-daypick="${g.d}" aria-pressed="${g.d===S.dayPick}"><span class="dn">${g.d===TODAY?'Hari ini':HARI[d.getDay()]}</span><span class="dd">${d.getDate()}</span><span class="dc">${f0(teu(g.cs))} TEUs</span></button>`}).join('')}</div>`:''}
+      <div class="tl">${slots.map(sl=>`<div class="tl-slot"><div class="tl-time">${sl.j||'--:--'}</div><div class="tl-items list">${sl.cs.map(contRow).join('')}</div></div>`).join('')}</div>`:emptyState('Tidak ada jadwal',`Tidak ada kontainer dijadwalkan bongkar ${whenWord()}.`)}
     </div></section>
-    <section class="card"><div class="ch"><span class="hic">${I.warn}</span><h2>Perlu dicek</h2></div><div class="cb" style="padding-top:4px">${al.join('')}</div></section>
+    <section class="card">${secHead({icon:I.box,title:'Per BU',sub:'Pembagian CBM dan kontainer per pemilik barang.',gloss:['bu','cbm','teus']})}<div class="cb">${buZ.rows.length?hbars(buZ.rows.map(r=>({l:buLabel(r.b),s:`${f0(r.te)} TEUs`,vt:r.v?`${f1(r.v)}<small>CBM</small>`:'–',pct:pc(r.v,all),v:r.v,color:buCol(r.b)})))+buZ.zero:`<p class="foot" style="padding:0">Belum ada kiriman ${whenWord()}.</p>`}</div></section>
   </div>
-  ${buckets.length?`<section class="card" style="--i:4"><div class="ch"><span class="hic">${I.trend}</span><h2>CBM per ${buckets[0].mode==='w'?'minggu':buckets[0].mode==='m'?'bulan':'hari'}</h2><span class="hint">ketuk batang untuk detail</span></div><div class="cb">${all>0?`<div class="legend">${SER.map(s=>`<span><i class="dot" style="background:${s.color}"></i>${s.name}</span>`).join('')}</div>${stackChart('cHome',buckets,SER)}`:emptyState('Belum ada CBM','Tidak ada LC terjadwal yang cocok dengan MASTER_LC di periode ini.')}</div></section>`:''}
-  <section class="card" style="--i:5"><div class="ch"><span class="hic">${I.box}</span><h2>Per BU</h2><span class="hint">CBM · TEUs</span></div><div class="cb">${hbars(buRows.map(r=>({l:buLabel(r.b),s:`${f0(r.te)} TEUs`,vt:r.v?`${f1(r.v)}<small>CBM</small>`:'–',pct:pc(r.v,all),v:r.v,color:buCol(r.b)})))}</div></section>`;
+  ${buckets.length?`<section class="card" style="--i:5">${secHead({icon:I.trend,title:`CBM per ${buckets[0].mode==='w'?'minggu':buckets[0].mode==='m'?'bulan':'hari'}`,sub:'Ketuk batang untuk melihat rinciannya.'})}<div class="cb">${all>0?`<div class="legend">${SER.map(s=>`<span><i class="dot" style="background:${s.color}"></i>${s.name}</span>`).join('')}</div>${stackChart('cHome',buckets,SER)}`:emptyState('Belum ada CBM','Tidak ada LC terjadwal yang cocok dengan MASTER_LC di periode ini.')}</div></section>`:''}`;
 }
 
 // ======================= STORING / OUTBOUND =======================
@@ -1335,7 +1351,8 @@ document.addEventListener('click',e=>{
   if(t=g('[data-segv]')){const s=t.closest('[data-seg]').dataset.seg;S[s]=t.dataset.segv;buzz(5);if(s==='theme'){applyTheme();render();return}S.more={};render(s==='monTab'||s==='roleTab');return}
   if(t=g('[data-toggle="calm"]')){S.calm=!S.calm;LS.set('imm.calm',S.calm);applyTheme();render();return}
   if(t=g('[data-stage]')){S.stage=+t.dataset.stage;S.more.rdc=0;buzz(5);render();return}
-  if(t=g('[data-day]')){S.dayPick=t.dataset.day;buzz(5);render();return}
+  if(t=g('[data-daypick]')){S.dayPick=t.dataset.daypick;buzz(5);render();return}
+  if(t=g('[data-day]')){setDay(t.dataset.day);return}
   if(t=g('[data-more]')){S.more[t.dataset.more]=(S.more[t.dataset.more]||0)+20;render();return}
   if(t=g('[data-car]')){const el=document.getElementById(t.dataset.car);if(el){const w=el.firstElementChild.offsetWidth+10;el.scrollBy({left:w*+t.dataset.dir,behavior:'smooth'})}return}
   if(t=g('[data-lq]')){S.q.lpp=t.dataset.lq;render();setTimeout(()=>document.querySelector('[data-q="lpp"]')?.scrollIntoView({behavior:'smooth',block:'center'}),50);return}

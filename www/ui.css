@@ -1,6 +1,10 @@
 /* Lapisan desain v1.4: "jawaban dulu, rincian kemudian".
    Dimuat setelah gaya di index.html dan inbound.css; isinya penyesuaian token, aturan keterbacaan, dan komponen bersama. */
 
+/* ---------- huruf dibawa aplikasi (tidak bergantung internet); lisensi OFL di www/fonts/ ---------- */
+@font-face{font-family:"Plus Jakarta Sans";font-style:normal;font-weight:200 800;font-display:swap;src:url(fonts/plus-jakarta-sans.woff2) format("woff2")}
+@font-face{font-family:"JetBrains Mono";font-style:normal;font-weight:100 800;font-display:swap;src:url(fonts/jetbrains-mono.woff2) format("woff2")}
+
 /* ---------- token: kontras teks keterangan minimal 4,5:1 ---------- */
 :root{--ink-3:#5E6870}
 @media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--ink-3:#8D9AA2}}
@@ -15,7 +19,7 @@ input,textarea,select{caret-color:var(--ink);accent-color:var(--accent)}
 /* ---------- aturan keterbacaan: teks paling kecil 12 px ---------- */
 small,.tag,.bu,.dchip,.hint,.foot,.lt-chip,.lt-hint,.jr-ends span,.jr-d,.seg3 span,.popt small,.prod-id,.prod-l small,.prod-s,.stage .l,.stage .x,.hero-row .k,.nav button,.put-sum>button>span,.lpn-time,.inb-msg,.mpp-b,.kv dt,.uv-v,.row .b,.cont .m,.alert .x,.set-row .x,.ax{font-size:12px}
 .brand small,.v small,.row .v small,.cont small,.big small{font-size:12px}
-.nav button{font-weight:600;letter-spacing:-.01em;gap:3px}
+.nav button{font-weight:600;letter-spacing:-.025em;gap:3px;min-width:0;white-space:nowrap}
 .hint,.foot{line-height:1.4}
 
 /* ---------- target sentuh: 44 px (tombol ikon 40 px) ---------- */
@@ -46,8 +50,8 @@ small,.tag,.bu,.dchip,.hint,.foot,.lt-chip,.lt-hint,.jr-ends span,.jr-d,.seg3 sp
 .lead-split span{display:block;height:100%;border-radius:999px;transform-origin:left;animation:grow .7s var(--ease) both}
 .lead-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(74px,1fr));gap:10px 12px}
 .lead-stats>div{min-width:0;display:grid;gap:1px}
-.lead-stats span{font-size:12px;color:color-mix(in srgb,var(--accent-ink) 72%,var(--accent));display:flex;align-items:center;gap:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.lead-stats span .dot{flex:none}
+.lead-stats>div>span{font-size:12px;color:color-mix(in srgb,var(--accent-ink) 72%,var(--accent));display:flex;align-items:center;gap:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.lead-stats>div>span .dot{flex:none}
 .lead-stats b{font-size:19px;font-weight:800;letter-spacing:-.01em;line-height:1.15;overflow-wrap:anywhere}
 .lead-stats b small{font-weight:600;color:color-mix(in srgb,var(--accent-ink) 70%,var(--accent));margin-left:3px}
 .lead-empty .lead-v{color:color-mix(in srgb,var(--accent-ink) 55%,var(--accent))}
@@ -79,6 +83,7 @@ small,.tag,.bu,.dchip,.hint,.foot,.lt-chip,.lt-hint,.jr-ends span,.jr-d,.seg3 sp
 
 /* ---------- judul bagian yang menjelaskan ---------- */
 .ch-t{min-width:0;flex:1 1 150px}
+.ch-r{display:flex;align-items:baseline;gap:4px 10px;flex-wrap:wrap}
 .ch-t h2{margin:0}
 .ch-s{margin:2px 0 0;font-size:12.5px;line-height:1.4;color:var(--ink-3);text-wrap:pretty}
 .gloss{flex:none;border:0;border-radius:50%;background:none;color:var(--ink-3);display:grid;place-items:center;padding:0;margin:-6px -8px -6px 0}
@@ -94,3 +99,19 @@ small,.tag,.bu,.dchip,.hint,.foot,.lt-chip,.lt-hint,.jr-ends span,.jr-d,.seg3 sp
 .ins-idx{font-size:12px;font-weight:700;color:var(--ink-3);font-variant-numeric:tabular-nums}
 
 @media (prefers-reduced-motion: reduce){.lead-split span,.ws-bar i{animation:none}}
+
+/* ---------- Beranda ---------- */
+.hello.slim{display:flex;align-items:baseline;gap:4px 12px;flex-wrap:wrap;padding-top:2px}
+.hello.slim h1{font-size:21px}
+.hello.slim p{margin:0}
+/* garis waktu jadwal bongkar */
+.tl{display:grid;gap:4px}
+.tl-slot{display:grid;grid-template-columns:54px minmax(0,1fr);gap:0 10px;position:relative}
+.tl-time{font-family:var(--f-mono);font-size:13px;font-weight:600;color:var(--ink-2);padding-top:14px;position:relative}
+.tl-slot::before{content:"";position:absolute;left:49px;top:0;bottom:0;width:2px;border-radius:2px;background:var(--line)}
+.tl-slot::after{content:"";position:absolute;left:45px;top:18px;width:10px;height:10px;border-radius:50%;background:var(--mark);box-shadow:0 0 0 3px var(--surface)}
+.tl-items{min-width:0;padding-left:8px}
+.tl-items .row:last-child{border-bottom:0}
+@media (max-width:389px){.nav{left:6px;right:6px}.nav button{letter-spacing:-.035em}}
+
+body{word-spacing:.05em}

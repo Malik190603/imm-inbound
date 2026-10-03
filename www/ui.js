@@ -25,7 +25,7 @@ function weekStrip(days,selected,fmt){
   const max=Math.max(1e-9,...days.map(x=>x.v||0));fmt=fmt||f0;
   return `<div class="ws" role="group" aria-label="CBM per hari, ketuk untuk pindah tanggal">${days.map((x,i)=>{const dd=pd(x.d);const today=x.d===TODAY;
     return `<button class="ws-d press${today?' today':''}" data-day="${x.d}" aria-pressed="${x.d===selected}" aria-label="${dlong(x.d)}: ${fmt(x.v||0)} CBM${today?' (hari ini)':''}">
-      <span class="ws-n">${x.v>0?fmt(x.v):'–'}</span><span class="ws-bar"><i style="height:${Math.max(4,(x.v||0)/max*100)}%;animation-delay:${i*45}ms"></i></span><span class="ws-l">${today?'Hari ini':HARI[dd.getDay()]+' '+dd.getDate()}</span></button>`}).join('')}</div>`;
+      <span class="ws-n">${x.v>0?fmt(x.v):'–'}</span><span class="ws-bar"><i style="height:${Math.max(4,(x.v||0)/max*100)}%;animation-delay:${i*45}ms"></i></span><span class="ws-l">${HARI[dd.getDay()]} ${dd.getDate()}</span></button>`}).join('')}</div>`;
 }
 // Perlu perhatian. items=[{n, u, label, sub, tone:'w'|'c', attr}] — attr = atribut data-* supaya bisa diketuk
 function attention(items,i){
@@ -38,7 +38,7 @@ const zeroLine=text=>`<p class="zero-line">${text}</p>`;
 const glossBtn=keys=>`<button class="gloss press" data-gloss="${keys.join(',')}" aria-label="Arti istilah di bagian ini">${I.info}</button>`;
 // Judul bagian. o = {icon, title, sub, hint, gloss:[kunci], right, cls}
 function secHead(o){
-  return `<div class="ch ${o.cls||''}">${o.icon?`<span class="hic">${o.icon}</span>`:''}<div class="ch-t"><h2>${o.title}</h2>${o.sub?`<p class="ch-s">${o.sub}</p>`:''}</div>${o.hint?`<span class="hint">${o.hint}</span>`:''}${o.gloss?glossBtn(o.gloss):''}${o.right||''}</div>`;
+  return `<div class="ch ${o.cls||''}">${o.icon?`<span class="hic">${o.icon}</span>`:''}<div class="ch-t"><div class="ch-r"><h2>${o.title}</h2>${o.hint?`<span class="hint">${o.hint}</span>`:''}</div>${o.sub?`<p class="ch-s">${o.sub}</p>`:''}</div>${o.gloss?glossBtn(o.gloss):''}${o.right||''}</div>`;
 }
 function openGloss(keys){
   const all=!keys||!keys.length;const ks=(all?Object.keys(IMMUi.GLOSSARY):keys).filter(k=>IMMUi.GLOSSARY[k]);
