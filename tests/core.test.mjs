@@ -44,7 +44,12 @@ test('productivity: BU filter and per-day totals', () => {
   eq(C.productivity(stock, transit, { from: D, to: D, bu: 'AHI' }).team.put, 0.5);
   const p = C.productivity(stock, transit, { from: D, to: '2026-10-02', bu: 'ALL' }); deepEq(p.days.map((d) => d.d), [D, '2026-10-02']); eq(p.days[1].rcv, 3); eq(p.days[1].put, 2);
 });
-test('password', async () => { eq(await C.checkPassword('<sandi>'), true); eq(await C.checkPassword('inbound78'), false); eq(await C.checkPassword(''), false); });
+test('password: only the salted hash is stored, and it gates checkPassword', async () => {
+  assert.match(C.PW_HASH, /^[0-9a-f]{64}$/);
+  const h = await C.hashPassword('rahasia-uji'); assert.match(h, /^[0-9a-f]{64}$/); assert.notEqual(h, await C.hashPassword('Rahasia-uji'));
+  eq(await C.checkPassword('rahasia-uji', h), true); eq(await C.checkPassword('rahasia-ujI', h), false); eq(await C.checkPassword('', h), false);
+  eq(await C.checkPassword('rahasia-uji'), false); eq(await C.checkPassword(''), false);
+});
 test('unlockValid', () => { const H = 3600e3; eq(C.unlockValid(1000, 1000 + 2 * H - 1), true); eq(C.unlockValid(1000, 1000 + 2 * H), false); eq(C.unlockValid(5000, 1000), false); eq(C.unlockValid(0, 1000), false); eq(C.unlockValid(null, 1000), false); });
 test('stampText', () => { eq(C.stampText(new Date('2026-10-03T12:05:00Z')), '03/10/2026 20:05 WITA'); });
 test('bu option accepts a list of BUs', () => {
@@ -52,3 +57,10 @@ test('bu option accepts a list of BUs', () => {
   eq(C.productivity(stock, transit, { from: D, to: D, bu: ['AHI'] }).team.put, 0.5);
 });
 test('columnLetter', () => { eq(C.columnLetter(0), 'A'); eq(C.columnLetter(25), 'Z'); eq(C.columnLetter(26), 'AA'); eq(C.columnLetter(33), 'AH'); });
+test('putaway counts distinct SKUs, not rows', () => {
+  const rows = [['Storerkey','Trantype','SKU','Description','Sku Group','Toloc','Toid','Qty','Source type','CM3','Tanggal (WITA)','Date','Id Operator','Username Operator'],
+    ['HCI','MOVE','S1','A','R1','FLR-1','ID9','2','NSPRFPA02','1000','10/01/2026 9:00 AM','10/01/2026','192831','x'],
+    ['HCI','MOVE','S1','A','R1','FLR-1','ID9','3','NSPRFPA02','1000','10/01/2026 9:05 AM','10/01/2026','192831','x'],
+    ['HCI','MOVE','S2','B','R1','FLR-1','ID9','1','NSPRFPA02','1000','10/01/2026 9:06 AM','10/01/2026','192831','x']];
+  const l = C.putawayLpns(C.toObjects(rows).rows, opt)[0]; eq(l.items.length, 3); eq(l.skus, 2); eq(byLpn('ID001').skus, 2);
+});

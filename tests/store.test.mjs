@@ -43,6 +43,11 @@ test('addPutawayPhoto uploads then inserts', async () => {
 });
 test('failed upload inserts nothing', async () => { fake.failUpload = true; await rejects(S.addPutawayPhoto('ID001', 'FLR-01', blob)); eq(fake.inserted.length, 0); eq(fake.deleted.length, 0); });
 test('failed insert removes the uploaded object', async () => { fake.failInsert = true; await rejects(S.addPutawayPhoto('ID001', 'FLR-01', blob)); eq(fake.deleted.length, 1); eq(fake.deleted[0], fake.lastUpload.path); });
+test('insert rejected because another phone filled the LPN meanwhile → MAX, object removed', async () => {
+  fake.count = 3; const orig = fake.fetch; let gets = 0;
+  S._setFetch(async (u, o = {}) => { const m = (o.method || 'GET'); if (m === 'GET' && ++gets === 2) fake.count = 4; if (m === 'POST' && u.includes('/rest/v1/')) { fake.order.push('insert'); return { ok: false, status: 400, json: async () => ({}) }; } return orig(u, o); });
+  await rejects(S.addPutawayPhoto('ID001', 'FLR-01', blob), /MAX/); eq(fake.deleted.length, 1); deepEq(fake.order, ['count', 'upload', 'insert', 'remove', 'count']);
+});
 test('LPN with unsafe characters gets a safe storage path', async () => { const r = await S.addPutawayPhoto('ID 0/1?', 'FLR-01', blob); match(r.path, /^putaway\/ID_0_1_\//); });
 test('removePutawayPhoto deletes the row, then the object', async () => { await S.removePutawayPhoto({ id: 7, path: 'putaway/ID001/a.jpg' }); deepEq(fake.order, ['delrow', 'remove']); match(fake.rowsDeleted[0], /putaway_photos\?id=eq\.7$/); deepEq(fake.deleted, ['putaway/ID001/a.jpg']); });
 test('calls reject with NOCONFIG when Supabase is not set', async () => { S._config('', ''); await rejects(S.listPutawayPhotos(['ID001']), /NOCONFIG/); });

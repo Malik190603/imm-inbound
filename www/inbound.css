@@ -109,3 +109,4 @@ span.ph-thumb{display:block}
 .ug-card .prog{width:100%;background:var(--sunk)}
 .ug-card .btn{padding:14px 18px;font-size:15px}
 .ug-card .btn:disabled{opacity:.5}
+.prod-share{font-size:12px;font-weight:800;color:var(--ink-2);background:var(--sunk);border-radius:999px;padding:2px 8px;font-variant-numeric:tabular-nums}

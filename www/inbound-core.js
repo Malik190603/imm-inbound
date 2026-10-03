@@ -54,7 +54,7 @@
       const lpn = up(r['Toid']); if (!lpn) continue;
       const date = usDate(r['Date']); if (!inRange(date, o) || !buOk(r['Storerkey'], o)) continue;
       let g = map.get(lpn);
-      if (!g) { g = { lpn, kind: lpnKind(lpn), tolocs: [], depts: [], mixed: false, qty: 0, cbm: 0, date: '', time: '', operator: '', bu: up(r['Storerkey']), items: [] }; map.set(lpn, g); }
+      if (!g) { g = { lpn, kind: lpnKind(lpn), tolocs: [], depts: [], mixed: false, skus: 0, qty: 0, cbm: 0, date: '', time: '', operator: '', bu: up(r['Storerkey']), items: [] }; map.set(lpn, g); }
       const dept = str(r['Sku Group']) || '-', qty = num(r['Qty']), time = clock(r['Tanggal (WITA)']);
       if (g.tolocs.indexOf(toloc) < 0) g.tolocs.push(toloc);
       if (g.depts.indexOf(dept) < 0) g.depts.push(dept);
@@ -62,7 +62,7 @@
       if (date + time >= g.date + g.time) { g.date = date; g.time = time; const op = operatorOf(r['Id Operator']); g.operator = op ? op.name : str(r['Username Operator']); }
       g.items.push({ sku: str(r['SKU']), desc: str(r['Description']), dept, qty, toloc });
     }
-    const out = Array.from(map.values()); out.forEach((g) => { g.mixed = g.depts.length > 1; });
+    const out = Array.from(map.values()); out.forEach((g) => { g.mixed = g.depts.length > 1; g.skus = new Set(g.items.map((i) => i.sku)).size; });
     return out.sort((a, b) => (b.date + b.time).localeCompare(a.date + a.time) || a.lpn.localeCompare(b.lpn));
   }
 
@@ -99,7 +99,8 @@
     const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));
     return Array.from(new Uint8Array(buf)).map((b) => b.toString(16).padStart(2, '0')).join('');
   }
-  async function checkPassword(pw) { return !!pw && (await sha256Hex(PW_SALT + pw)) === PW_HASH; }
+  const hashPassword = (pw) => sha256Hex(PW_SALT + pw);
+  async function checkPassword(pw, hash) { return !!pw && (await hashPassword(pw)) === (hash || PW_HASH); }
   function unlockValid(ts, now) { ts = Number(ts) || 0; return ts > 0 && now >= ts && now - ts < UNLOCK_MS; }
 
   function stampText(d) {
@@ -107,5 +108,5 @@
     return p.day + '/' + p.month + '/' + p.year + ' ' + (p.hour === '24' ? '00' : p.hour) + ':' + p.minute + ' WITA';
   }
 
-  return { OPERATORS, PICS, MPP, STOCK_HEADERS, TRANSIT_HEADERS, toObjects, missingHeaders, columnLetter, usDate, lpnKind, putawayLpns, productivity, checkPassword, unlockValid, stampText };
+  return { OPERATORS, PICS, MPP, STOCK_HEADERS, TRANSIT_HEADERS, toObjects, missingHeaders, columnLetter, usDate, lpnKind, putawayLpns, productivity, PW_SALT, PW_HASH, hashPassword, checkPassword, unlockValid, stampText };
 });

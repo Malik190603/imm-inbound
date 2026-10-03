@@ -3,9 +3,13 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import vm from 'node:vm';
+import crypto from 'node:crypto';
+import { execSync } from 'node:child_process';
+import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const require = createRequire(import.meta.url);
 let bad = 0;
 const fail = (m) => { bad++; console.error('✗ ' + m); };
 const ok = (m) => console.log('✓ ' + m);
@@ -34,8 +38,37 @@ for (const f of ['inbound-core.js', 'store.js', 'inbound.js', 'inbound.css']) {
 }
 const allWww = fs.readdirSync(path.join(ROOT, 'www')).filter((f) => /\.(js|css|html)$/.test(f)).map((f) => fs.readFileSync(path.join(ROOT, 'www', f), 'utf8')).join('\n');
 for (const gid of ['349104626', '2022396471']) if (!allWww.includes(gid)) fail('sheet inbound gid ' + gid + ' tidak dibaca aplikasi');
-if (/<sandi>/.test(allWww)) fail('kata sandi Inbound tertulis terang di www/ (harus hash saja)');
-else ok('kata sandi Inbound tidak tertulis terang');
+// Kata sandi Inbound tidak boleh tertulis terang di file mana pun yang ikut ke repo: tiap kata dicocokkan dengan hash-nya.
+{
+  const core = require(path.join(ROOT, 'www', 'inbound-core.js'));
+  let tracked = [];
+  try { tracked = execSync('git ls-files', { cwd: ROOT }).toString().split('\n').filter(Boolean); } catch { tracked = []; }
+  const texty = (f) => /\.(js|mjs|json|html|css|md|sql|yml|yaml|xml|gradle|txt|csv|properties)$/i.test(f) && f !== 'package-lock.json';
+  const words = new Map();
+  for (const f of tracked.filter(texty)) {
+    let t = ''; try { t = fs.readFileSync(path.join(ROOT, f), 'utf8'); } catch { continue; }
+    for (const w of t.match(/[A-Za-z0-9!@#$%^&*_+=.-]{4,32}/g) || []) if (!words.has(w)) words.set(w, f);
+  }
+  const hits = [];
+  for (const [w, f] of words) if (crypto.createHash('sha256').update(core.PW_SALT + w).digest('hex') === core.PW_HASH) hits.push(f);
+  if (hits.length) fail('kata sandi Inbound tertulis terang di ' + hits.join(', ') + ' (harus hash saja)');
+  else ok('kata sandi Inbound tidak tertulis terang (' + words.size + ' kata diperiksa)');
+}
+// Penyimpanan Supabase wajib terisi saat rilis; tanpa itu foto dan TTO tidak jalan di HP pengguna.
+{
+  const store = fs.readFileSync(path.join(ROOT, 'www', 'store.js'), 'utf8');
+  const m = store.match(/const SUPA = Object\.assign\(\{ url: '([^']*)', key: '([^']*)' \}/);
+  if (!m) fail('baris konfigurasi SUPA di www/store.js tidak ditemukan');
+  else if (!m[1] || !m[2]) { if (process.env.GITHUB_ACTIONS) fail('SUPA.url / SUPA.key di www/store.js masih kosong'); else console.log('! SUPA masih kosong (rilis akan ditolak sampai diisi)'); }
+  else if (!/^https:\/\/[a-z0-9-]+\.supabase\.co$/.test(m[1])) fail('SUPA.url harus berbentuk https://xxxx.supabase.co');
+  else ok('Supabase terisi');
+}
+// Tombol Kamera butuh <queries> IMAGE_CAPTURE (Android 11+), kalau tidak Capacitor hanya membuka pemilih berkas.
+{
+  const mf = fs.readFileSync(path.join(ROOT, 'android/app/src/main/AndroidManifest.xml'), 'utf8');
+  if (!/<queries>[\s\S]*android\.media\.action\.IMAGE_CAPTURE[\s\S]*<\/queries>/.test(mf)) fail('AndroidManifest.xml tidak punya <queries> IMAGE_CAPTURE (tombol Kamera tidak akan membuka kamera)');
+  else ok('kamera: <queries> IMAGE_CAPTURE');
+}
 for (const s of ['MASTER_PLAN', 'MASTER_LC', 'LOGIC', 'LPPBDO_HCI', 'LPPBDO_AHI', 'RDC']) {
   if (!html.includes("'" + s + "'")) fail('sheet ' + s + ' tidak dibaca aplikasi');
 }
@@ -49,7 +82,7 @@ const cu = (cap.plugins || {}).CapacitorUpdater;
 if (!cu || cu.autoUpdate !== false || cu.statsUrl !== '' || cu.updateUrl !== '' || cu.channelUrl !== '') fail('CapacitorUpdater harus mode manual tanpa server pihak ketiga'); else ok('update kilat: mode manual, tanpa statistik pihak ketiga');
 if (!fs.existsSync(path.join(ROOT, 'www', 'config.js'))) fail('www/config.js tidak ada'); else ok('config.js');
 if (!fs.readFileSync(path.join(ROOT, 'android/app/src/main/AndroidManifest.xml'), 'utf8').includes('REQUEST_INSTALL_PACKAGES')) fail('izin REQUEST_INSTALL_PACKAGES tidak ada'); else ok('izin pasang update');
-const PATTERNS = [[/-----BEGIN (?:RSA )?PRIVATE KEY-----/, 'private key'], [/AIza[0-9A-Za-z_-]{30,}/, 'Google API key'], [/ghp_[0-9A-Za-z]{30,}/, 'GitHub token']];
+const PATTERNS = [[/-----BEGIN (?:RSA )?PRIVATE KEY-----/, 'private key'], [/AIza[0-9A-Za-z_-]{30,}/, 'Google API key'], [/ghp_[0-9A-Za-z]{30,}/, 'GitHub token'], [/sb_secret_[0-9A-Za-z_-]{10,}/, 'Supabase secret key']];
 for (const [p, name] of PATTERNS) if (p.test(allWww)) fail('kunci rahasia ikut ke aplikasi: ' + name);
 // Kunci Supabase service_role (JWT dengan role service_role) tidak boleh ada di aplikasi; yang boleh hanya anon.
 for (const m of allWww.matchAll(/eyJ[A-Za-z0-9_-]+\.(eyJ[A-Za-z0-9_-]+)\.[A-Za-z0-9_-]+/g)) {

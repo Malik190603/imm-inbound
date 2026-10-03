@@ -44,7 +44,13 @@
     const path = 'putaway/' + safe(lpn) + '/' + Date.now() + '-' + rand() + '.jpg';
     await upload(path, blob);
     try { return await insert('putaway_photos', { lpn, toloc: toloc || '', path, device: device || '' }); }
-    catch (e) { try { await removeObject(path); } catch (_) { /* objek yatim dibiarkan */ } throw e; }
+    catch (e) {
+      try { await removeObject(path); } catch (_) { /* objek yatim dibiarkan */ }
+      // Server menolak foto ke-5 (trigger di schema.sql): HP lain mengisi LPN ini saat foto sedang diunggah.
+      let n = -1; try { n = (await (await rest('putaway_photos?select=id&lpn=eq.' + encodeURIComponent(lpn), { headers: headers() })).json()).length; } catch (_) { /* pakai galat asli */ }
+      if (n >= MAX_PHOTOS) throw new Error('MAX');
+      throw e;
+    }
   }
   async function removePutawayPhoto(row) {
     need(); await rest('putaway_photos?id=eq.' + encodeURIComponent(row.id), { method: 'DELETE', headers: headers() });
@@ -86,6 +92,7 @@
     const k = Math.min(1, MAXS / Math.max(sw, sh)); const w = Math.max(1, Math.round(sw * k)), h = Math.max(1, Math.round(sh * k));
     const c = document.createElement('canvas'); c.width = w; c.height = h; const g = c.getContext('2d');
     g.drawImage(src, 0, 0, w, h);
+    if (src.close) src.close(); else if (src.src) { try { URL.revokeObjectURL(src.src); } catch (_) { /* abaikan */ } } // lepas memori foto asli (bisa belasan MB)
     const txt = (lines || []).filter(Boolean); 
     if (txt.length) {
       const fs = Math.max(13, Math.round(Math.min(w, h) * 0.04)), pad = Math.round(fs * 0.6), lh = Math.round(fs * 1.3), sH = pad * 2 + lh * txt.length;

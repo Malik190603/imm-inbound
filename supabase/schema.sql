@@ -20,11 +20,23 @@ create table if not exists public.tto (
   koli integer not null check (koli > 0),
   pic text not null,
   penerima text not null,
-  photos text[] not null default '{}',
+  photos text[] not null default '{}' check (coalesce(array_length(photos, 1), 0) <= 4),
   device text,
   created_at timestamptz not null default now()
 );
 create index if not exists tto_tgl_idx on public.tto (tgl);
+
+-- Maksimal 4 foto per LPN, dijaga di server supaya dua HP yang mengunggah bersamaan tidak bisa melewati batas.
+create or replace function public.imm_limit_putaway_photos() returns trigger language plpgsql as $$
+begin
+  perform pg_advisory_xact_lock(hashtext(new.lpn));
+  if (select count(*) from public.putaway_photos where lpn = new.lpn) >= 4 then
+    raise exception 'IMM_MAX_PHOTOS: LPN % sudah punya 4 foto', new.lpn using errcode = 'check_violation';
+  end if;
+  return new;
+end $$;
+drop trigger if exists imm_limit_putaway_photos on public.putaway_photos;
+create trigger imm_limit_putaway_photos before insert on public.putaway_photos for each row execute function public.imm_limit_putaway_photos();
 
 alter table public.putaway_photos enable row level security;
 alter table public.tto enable row level security;

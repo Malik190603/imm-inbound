@@ -76,13 +76,14 @@ const inbErrCard=(title,msg,i=1)=>`<section class="card" style="--i:${i}">${empt
 const inbOpt=()=>{const [from,to]=range();return {from,to,bu:allBU()?'ALL':[...F().bus]}};
 
 // ---------- Foto putaway (Supabase) ----------
-const PH={map:new Map(),key:'',state:'idle',busy:false};
+const INB_FRESH_MS=5*60e3; // data dari HP lain (foto, TTO) dimuat ulang paling lama tiap 5 menit, dan tiap masuk halaman
+const PH={map:new Map(),key:'',state:'idle',busy:false,at:0};
 const phRows=lpn=>PH.map.get(lpn)||[];
 function phSet(rows){PH.map=new Map();rows.forEach(r=>{if(!PH.map.has(r.lpn))PH.map.set(r.lpn,[]);PH.map.get(r.lpn).push(r)})}
 function inbSyncPhotos(){
   if(!IMMStore.configured())return;const key=PUT_LIST.map(l=>l.lpn).join('|');
-  if(key===PH.key&&PH.state!=='idle')return;PH.key=key;PH.state='loading';
-  IMMStore.listPutawayPhotos(PUT_LIST.map(l=>l.lpn)).then(rows=>{if(PH.key!==key)return;phSet(rows);PH.state='ok'},()=>{if(PH.key===key)PH.state='error'})
+  if(key===PH.key&&PH.state!=='idle'&&!(PH.state==='ok'&&Date.now()-PH.at>INB_FRESH_MS))return;PH.key=key;PH.state='loading';
+  IMMStore.listPutawayPhotos(PUT_LIST.map(l=>l.lpn)).then(rows=>{if(PH.key!==key)return;phSet(rows);PH.state='ok';PH.at=Date.now()},()=>{if(PH.key===key)PH.state='error'})
     .then(()=>{if(PH.key!==key)return;phRefresh();if(S.page==='inb'&&S.inb==='put')render()});
 }
 function lpnPhotosHtml(l){
@@ -135,7 +136,7 @@ function inbPutaway(){
     <div class="cb" style="padding-top:6px">${fl.length?`<div class="lpns">${fl.slice(0,n).map(l=>`<button class="lpn press${l.kind==='damage'?' dmg':''}" data-lpn="${esc(l.lpn)}">
         <div class="lpn-top"><span class="mono lpn-id">${esc(l.lpn)}</span>${lpnTag(l)}${phRows(l.lpn).length?`<span class="lpn-cam">${I.cam}${phRows(l.lpn).length}</span>`:''}<span class="lpn-time">${l.date!==TODAY?dshort(l.date)+' ':''}${esc(l.time)}</span></div>
         <div class="lpn-loc">${I.port}<span>${l.tolocs.map(esc).join(', ')}</span></div>
-        <div class="lpn-meta"><span>${l.items.length} SKU</span><span>${f0(l.qty)} qty</span><span>${f2(l.cbm)} CBM</span>${buTag(l.bu||'-')}<span>${esc(l.operator)}</span></div>
+        <div class="lpn-meta"><span>${l.skus} SKU</span><span>${f0(l.qty)} qty</span><span>${f2(l.cbm)} CBM</span>${buTag(l.bu||'-')}<span>${esc(l.operator)}</span></div>
         ${l.mixed?`<div class="lpn-warn">${I.warn}<span><b>Campur Dept</b> · ${l.depts.map(esc).join(', ')}</span></div>`:''}
       </button>`).join('')}</div>${moreBtn('put',fl.length,n)}`:emptyState(q?'Tidak ditemukan':'Belum ada putaway',q?'Tidak ada LPN atau lokasi yang cocok.':`Tidak ada LPN yang diputaway ke lokasi FLR ${esc(rlabel())}.`,!q,I.box)}</div></section>`;
 }
@@ -145,7 +146,7 @@ function openLpn(id){
   sheet(sHead(esc(l.lpn),`<span><b>${dlong(l.date)}</b> ${esc(l.time)}</span>${buTag(l.bu||'-')}<span>${esc(l.operator)}</span>`,lpnTag(l)),
     `<div class="lpn-loc big">${I.port}<span>${l.tolocs.map(esc).join(', ')}</span></div>
      ${l.mixed?`<div class="lpn-warn">${I.warn}<span><b>Campur Dept</b> · LPN ini berisi ${l.depts.length} Dept: ${depts.map(d=>`${esc(d.k)} (${d.n} SKU)`).join(', ')}</span></div>`:''}
-     <div><h4>Isi LPN · ${l.items.length} SKU · ${f0(l.qty)} qty · ${f2(l.cbm)} CBM</h4><div class="list">${l.items.map(i=>`<div class="row"><span class="a" style="font-size:13px;white-space:normal">${esc(i.desc||'-')}</span><span class="b" style="white-space:normal"><span class="mono">${esc(i.sku)}</span> · Dept ${esc(i.dept)}${l.tolocs.length>1?' · '+esc(i.toloc):''}</span><span class="v">${f0(i.qty)}<small>qty</small></span></div>`).join('')}</div></div>
+     <div><h4>Isi LPN · ${l.skus} SKU · ${f0(l.qty)} qty · ${f2(l.cbm)} CBM</h4><div class="list">${l.items.map(i=>`<div class="row"><span class="a" style="font-size:13px;white-space:normal">${esc(i.desc||'-')}</span><span class="b" style="white-space:normal"><span class="mono">${esc(i.sku)}</span> · Dept ${esc(i.dept)}${l.tolocs.length>1?' · '+esc(i.toloc):''}</span><span class="v">${f0(i.qty)}<small>qty</small></span></div>`).join('')}</div></div>
      <div id="lpnPhotos" data-lpn="${esc(l.lpn)}">${lpnPhotosHtml(l)}</div>`);
 }
 // ---------- Productivity ----------
@@ -179,16 +180,16 @@ function inbProd(){
     <div><span>Receive</span><b>${cnt(P.team.rcv,2)}</b><small>CBM · tim</small></div><div><span>Putaway</span><b>${cnt(P.team.put,2)}</b><small>CBM · tim</small></div>
   </div></section>
   <div style="--i:2">${insights('Ringkasan pintar',ins)}</div>
-  <section class="card" style="--i:3"><div class="ch"><span class="hic">${I.users}</span><h2>Per operator</h2><span class="hint">urut dari tertinggi</span></div><div class="cb">${teamTot>0?'':`<p class="foot" style="padding:0 0 8px">Belum ada transaksi yang dihitung ${esc(rlabel())}.</p>`}<div class="prod-ops">${P.ops.map((x,i)=>`<div class="prod-op"><div class="prod-top"><span class="rank${i===0&&tot(x)>0?' first':''}">${i+1}</span><span class="prod-n">${esc(x.name)}</span><span class="prod-id mono">${x.id}</span></div>${bar('Receive',x.rcv,x.rcvStock,x.rcvTransit,'var(--lg2)')}${bar('Putaway',x.put,x.putStock,x.putTransit,'var(--lg3)')}</div>`).join('')}</div></div></section>
+  <section class="card" style="--i:3"><div class="ch"><span class="hic">${I.users}</span><h2>Per operator</h2><span class="hint">urut dari tertinggi</span></div><div class="cb">${teamTot>0?'':`<p class="foot" style="padding:0 0 8px">Belum ada transaksi yang dihitung ${esc(rlabel())}.</p>`}<div class="prod-ops">${P.ops.map((x,i)=>`<div class="prod-op"><div class="prod-top"><span class="rank${i===0&&tot(x)>0?' first':''}">${i+1}</span><span class="prod-n">${esc(x.name)}</span><span class="prod-id mono">${x.id}</span><span class="prod-share" title="Porsi dari total tim">${pc(tot(x),teamTot)}%</span></div>${bar('Receive',x.rcv,x.rcvStock,x.rcvTransit,'var(--lg2)')}${bar('Putaway',x.put,x.putStock,x.putTransit,'var(--lg3)')}</div>`).join('')}</div></div></section>
   ${multi&&bks.length?`<section class="card" style="--i:4"><div class="ch"><span class="hic">${I.trend}</span><h2>CBM per ${bks[0].mode==='m'?'bulan':bks[0].mode==='w'?'minggu':'hari'}</h2><span class="hint">tim</span></div><div class="cb"><div class="legend">${SER.map(s=>`<span><i class="dot" style="background:${s.color}"></i>${s.name}</span>`).join('')}</div>${stackChart('cProd',bks,SER,{unit:'CBM',fmt:f2})}</div></section>`:''}`;
 }
 // ---------- TTO / Dokumen ----------
-const TTO={rows:[],key:'',state:'idle'};
+const TTO={rows:[],key:'',state:'idle',at:0};
 let TTO_DRAFT=null; // {photos:[{file,url,at}],saving}
 function inbSyncTto(force){
   if(!IMMStore.configured())return;const [from,to]=range();const key=from+'|'+to;
-  if(!force&&key===TTO.key&&TTO.state!=='idle')return;TTO.key=key;TTO.state=TTO.rows.length&&force?'refreshing':'loading';
-  IMMStore.listTto({from,to}).then(rows=>{if(TTO.key!==key)return;TTO.rows=rows;TTO.state='ok'},()=>{if(TTO.key===key)TTO.state='error'})
+  if(!force&&key===TTO.key&&TTO.state!=='idle'&&!(TTO.state==='ok'&&Date.now()-TTO.at>INB_FRESH_MS))return;TTO.key=key;TTO.state=TTO.rows.length&&force?'refreshing':'loading';
+  IMMStore.listTto({from,to}).then(rows=>{if(TTO.key!==key)return;TTO.rows=rows;TTO.state='ok';TTO.at=Date.now()},()=>{if(TTO.key===key)TTO.state='error'})
     .then(()=>{if(TTO.key===key&&S.page==='inb'&&S.inb==='tto')render()});
 }
 function inbTto(){
@@ -274,6 +275,8 @@ function pageInbound(){
   if(!S.inb||!INB_PAGES[S.inb])return inbList();
   return INB_PAGES[S.inb]();
 }
+// Muat ulang data halaman Inbound yang sedang dibuka (tombol sinkron, tarik-untuk-segarkan, "Coba lagi").
+function inbRefresh(){PH.state='idle';if(S.inb==='tto'){inbSyncTto(true);return Promise.resolve()}return loadInbound(true)}
 function inboundBack(){if(S.page!=='inb'||!S.inb||!inbUnlocked())return false;S.inb='';S.more={};render(true);window.scrollTo({top:0});return true}
 function inboundClick(e){
   if(S.page!=='inb')return false;const g=s=>e.target.closest(s);let t;
@@ -281,7 +284,7 @@ function inboundClick(e){
   if(g('#inbGo')){inbTryUnlock();return true}
   if(g('[data-inb-back]')){inboundBack();return true}
   if(!inbUnlocked())return false;
-  if(g('#sync')||g('[data-inb-reload]')){buzz(6);PH.key='';PH.state='idle';if(S.inb==='tto')inbSyncTto(true);else loadInbound(true);render();return true}
+  if(g('#sync')||g('[data-inb-reload]')){buzz(6);inbRefresh();render();return true}
   if(t=g('[data-photo-add]')){const el=document.getElementById(t.dataset.photoAdd==='cam'?'phCam':'phGal');el&&el.click();return true}
   if(t=g('[data-photo-view]')){photoView(t.dataset.photoView);return true}
   if(t=g('[data-photo-del]')){phDel(t.dataset.photoDel);return true}
@@ -292,7 +295,7 @@ function inboundClick(e){
   if(t=g('[data-tto-unphoto]')){if(TTO_DRAFT&&!TTO_DRAFT.saving){const p=TTO_DRAFT.photos.splice(+t.dataset.ttoUnphoto,1)[0];if(p)try{URL.revokeObjectURL(p.url)}catch(_){}document.getElementById('ttoPhotos').innerHTML=ttoPhotosHtml()}return true}
   if(g('#ttoDel')){ttoDelete(g('#ttoDel').dataset.id);return true}
   if(t=g('[data-tto]')){openTto(t.dataset.tto);return true}
-  if(t=g('[data-inb]')){if(!inbUnlocked()){render();return true}S.inb=t.dataset.inb;S.more={};buzz(6);render(true);window.scrollTo({top:0});return true}
+  if(t=g('[data-inb]')){if(!inbUnlocked()){render();return true}S.inb=t.dataset.inb;S.more={};buzz(6);if(S.inb==='put')PH.state='idle';if(S.inb==='tto'&&TTO.state!=='idle')inbSyncTto(true);render(true);window.scrollTo({top:0});return true}
   return false;
 }
 document.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target&&e.target.id==='inbPw'){e.preventDefault();inbTryUnlock()}});

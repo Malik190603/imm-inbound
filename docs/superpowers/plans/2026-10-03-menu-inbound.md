@@ -12,7 +12,7 @@
 
 ## Global Constraints
 
-- No change to anything in the native fingerprint (`package.json` dependencies, `capacitor.config.json`, `android/**`): v1.3.0 must ship as a live update for native base 1.2.0.
+- (Revised after final review) v1.3.0 adds `<queries>` for `IMAGE_CAPTURE` to `AndroidManifest.xml`, so it is a new native base and ships as an APK. No new plugins or dependencies.
 - `package.json` version becomes `1.3.0`.
 - UI copy is Indonesian. Units: CBM = CM3 ÷ 1,000,000; containers stay in TEUs.
 - Customer personal names are never shown.

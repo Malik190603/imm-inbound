@@ -6,7 +6,7 @@ Tanggal: 3 Oktober 2026 · Status: menunggu persetujuan
 
 Tim inbound DC Tallo bisa memantau putaway, mendokumentasikan barang dan serah terima TTO dengan foto, dan melihat produktivitas operator dari satu aplikasi. Semua pengguna selalu memakai versi terbaru.
 
-Dirilis sekaligus sebagai v1.3.0 (APK untuk dibagikan; HP lama bisa juga lewat update kilat).
+Dirilis sekaligus sebagai APK baru v1.3.0 yang dipasang menimpa versi lama.
 
 ## 1. Kerangka aplikasi
 
@@ -18,7 +18,7 @@ Beranda · Inbound · Role · Monitoring · Pengaturan.
 
 ### Kunci menu Inbound
 - Mengetuk menu Inbound memunculkan kolom sandi. Sandi benar membuka akses selama 2 jam di HP itu (waktu buka disimpan di HP), lalu diminta lagi.
-- Sandi: `<sandi>`. Di kode hanya disimpan hash SHA-256 bergaram, bukan teks aslinya, karena repo publik.
+- Sandi ditentukan pemilik aplikasi dan tidak ditulis di repo. Di kode hanya disimpan hash SHA-256 bergaram, karena repo publik.
 - Ini kunci ringan (pencegah orang iseng), bukan pengaman kuat.
 
 ### Halaman Inbound
@@ -44,8 +44,8 @@ Kartu profil, dikelompokkan per jabatan:
 - Update dipasang lewat update kilat di dalam aplikasi (tanpa pasang ulang) selama bagian native tidak berubah; kalau berubah, aplikasi mengunduh APK lalu memasangnya.
 - Tampilan "Yang baru di versi ini" dihapus seluruhnya.
 - Tanpa internet: aplikasi tetap terbuka dengan data terakhir; pengecekan diulang saat internet tersambung.
-- Versi lama (v1.2.6 ke bawah): v1.3.0 tidak mengubah bagian native, jadi versi lama menerima v1.3.0 sebagai update kilat biasa. Begitu "Perbarui" ditekan, HP itu langsung menjadi v1.3.0 dan sejak itu ikut aturan wajib update. Ini menggantikan rencana "layar penutup v1.2.7": versi lama hanya membaca rilis terbaru, sehingga layar penutup tidak akan pernah terlihat setelah v1.3.0 terbit. Keterbatasan tetap sama: HP yang tidak pernah menekan "Perbarui" masih memakai versi lama.
-- APK v1.3.0 tetap dibuat untuk dibagikan dan dipasang di HP baru.
+- Versi lama (v1.2.6 ke bawah): v1.3.0 mengubah bagian native (izin membuka aplikasi kamera untuk tombol Kamera di Android 11+), jadi v1.3.0 dipasang lewat APK. Di versi lama, menu Pengaturan menawarkan "Unduh & pasang" v1.3.0 langsung dari dalam aplikasi; APK-nya juga dibagikan manual. Setelah v1.3.0 terpasang, HP itu ikut aturan wajib update. Keterbatasan: HP yang tidak pernah memperbarui masih memakai versi lama.
+- Rilis setelah v1.3.0 yang tidak mengubah bagian native dikirim sebagai update kilat (tanpa pasang ulang).
 
 ### Pengaturan
 - Dihapus: "Muat ulang data", "Hapus data tersimpan", "Aturan perhitungan", "Yang baru di versi ini".
@@ -102,7 +102,7 @@ Operator yang dihitung (awalan ID):
   - CBM = `CBM Received`, dihitung sama besar untuk Receive dan Putaway, orang yang sama.
   - Tanggal: `Date`. BU: `Owner`.
 - Tampilan: total tim (Receive, Putaway), kartu per operator (CBM Receive, CBM Putaway, pembagian stock/transit), peringkat.
-- Ringkasan pintar: tertinggi, porsi tiap orang terhadap tim, perbandingan dengan periode sebelumnya, grafik CBM per hari.
+- Ringkasan pintar: tertinggi, porsi tiap orang terhadap tim (persen di tiap kartu operator), perbandingan dengan periode sebelumnya, grafik CBM per hari.
 - Tidak ada hitungan per jam (keputusan pengguna).
 
 ### Supabase (project baru khusus IMM)
