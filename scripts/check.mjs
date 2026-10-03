@@ -32,7 +32,7 @@ for (const f of jsFiles) {
   catch (e) { fail(f + ': ' + e.message); }
 }
 ok(jsFiles.length + ' file .js di www/');
-for (const f of ['inbound-core.js', 'store.js', 'inbound.js', 'inbound.css']) {
+for (const f of ['inbound-core.js', 'store.js', 'inbound.js', 'inbound.css', 'ui-core.js', 'ui.js', 'ui.css']) {
   if (!fs.existsSync(path.join(ROOT, 'www', f))) fail('www/' + f + ' tidak ada');
   else if (!html.includes('"' + f + '"')) fail('index.html tidak memuat ' + f);
 }

@@ -5,3 +5,6 @@ datalayer.js
 icon-preview.png
 *.apk
 .superpowers/
+.impeccable/review/
+.impeccable/mocks/
+.impeccable/build/
