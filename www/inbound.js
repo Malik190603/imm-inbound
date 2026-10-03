@@ -68,6 +68,7 @@ function loadInbound(force){
   })();
   return inbLoading;
 }
+function inbSourceText(){if(INB.state==='idle')return 'Dibaca saat menu Inbound dibuka';if(INB.state==='loading')return 'Memuat…';const e=[INB.err.stock,INB.err.transit].filter(Boolean);return e.length?esc(e.join(' ')):`${f0(INB.stock.length)} baris stock · ${f0(INB.transit.length)} baris transit`}
 const inbBusy=()=>INB.state==='idle'||INB.state==='loading';
 const inbSkeleton=()=>`<div class="sk" style="height:84px"></div><div class="sk" style="height:120px"></div><div class="sk" style="height:120px"></div>`;
 const inbErrCard=(title,msg,i=1)=>`<section class="card" style="--i:${i}">${emptyState(title,esc(msg),false,I.crit)}<div class="empty" style="padding-top:0"><button class="btn press" data-inb-reload>Coba lagi</button></div></section>`;

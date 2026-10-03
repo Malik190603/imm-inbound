@@ -97,3 +97,15 @@
 .tto-del{display:flex;align-items:center;justify-content:center;gap:8px;color:var(--crit);padding:12px}
 .tto-del svg{width:16px;height:16px}
 span.ph-thumb{display:block}
+/* Wajib update */
+#updGate{position:fixed;inset:0;z-index:200;display:grid;place-items:center;padding:calc(var(--sat) + 20px) 18px calc(var(--sab) + 20px);background:var(--bg)}
+.ug-card{width:100%;max-width:420px;display:grid;gap:12px;justify-items:start}
+.ug-card .mark{width:52px;height:52px;border-radius:17px}
+.ug-card .mark svg{width:30px;height:30px}
+.ug-card h2{margin:8px 0 0;font-size:26px;font-weight:800;letter-spacing:-.02em;line-height:1.15}
+.ug-card p{margin:0;color:var(--ink-2);font-size:14px;line-height:1.5}
+.ug-card .ug-how{color:var(--ink-3);font-size:13px}
+.ug-card .ug-status{font-size:12.5px;min-height:18px}
+.ug-card .prog{width:100%;background:var(--sunk)}
+.ug-card .btn{padding:14px 18px;font-size:15px}
+.ug-card .btn:disabled{opacity:.5}
