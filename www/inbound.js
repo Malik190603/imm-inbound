@@ -2,20 +2,22 @@
 // Terkunci sandi (berlaku 2 jam per HP). Isi: Putaway, TTO/Dokumen, Productivity, MPP detail.
 I.lock='<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="9" width="12" height="8" rx="2"/><path d="M7 9V6.5a3 3 0 0 1 6 0V9M10 12.5v1.5"/></svg>';
 I.cam='<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7.5a1.5 1.5 0 0 1 1.5-1.5H6l1.2-1.8h5.6L14 6h1.5A1.5 1.5 0 0 1 17 7.5v7a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 3 14.5z"/><circle cx="10" cy="11" r="2.8"/></svg>';
+I.plus='<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10 4.5v11M4.5 10h11"/></svg>';
 const INB_ITEMS=[['put','Putaway','LPN yang diputaway ke lokasi FLR',I.box],['tto','TTO/Dokumen','Serah terima dokumen dan barang',I.doc],['prod','Productivity','CBM Receive dan Putaway per operator',I.trend],['mpp','MPP detail','Profil tim inbound',I.users]];
 const INB_UNLOCK_KEY='imm.inb.unlock';
 let inbPwErr='';
 function inbUnlocked(){return IMMCore.unlockValid(LS.get(INB_UNLOCK_KEY),Date.now())}
+const inbWhen=()=>{const p=F().preset;return p==='today'?'hari ini':p==='tomorrow'?'besok':p==='all'?'di semua tanggal':'pada '+esc(rlabel())};
 function inbShowsFilter(){return inbUnlocked()&&['put','tto','prod'].includes(S.inb)}
 
 function inbLock(){
-  return `<div class="hello" style="--i:0"><h1>Inbound</h1><p>Khusus tim inbound DC Tallo</p></div>
+  return `<div class="hello slim" style="--i:0"><h1>Inbound</h1><p>Khusus tim inbound DC Tallo</p></div>
   <section class="card inb-lock" style="--i:1"><div class="cb">
-    <span class="inb-lock-ic">${I.lock}</span>
-    <h2>Menu ini terkunci</h2><p>Masukkan kata sandi tim inbound. Setelah benar, menu terbuka selama 2 jam di HP ini.</p>
+    <div class="inb-lock-top"><span class="inb-lock-ic">${I.lock}</span><div><h2>Menu ini terkunci</h2><p>Masukkan kata sandi tim inbound.</p></div></div>
     <label class="inb-field"><span>Kata sandi</span><input id="inbPw" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" enterkeyhint="go" placeholder="Kata sandi"></label>
     <p class="inb-err" id="inbErr" role="alert">${esc(inbPwErr)}</p>
     <button class="btn block press" id="inbGo">Buka</button>
+    <p class="inb-lock-note">${I.wait}<span>Setelah benar, menu terbuka selama 2 jam di HP ini.</span></p>
   </div></section>`;
 }
 async function inbTryUnlock(){
@@ -25,9 +27,43 @@ async function inbTryUnlock(){
   if(ok){inbPwErr='';LS.set(INB_UNLOCK_KEY,Date.now());S.inb='';buzz(12);render(true)}
   else{inbPwErr='Sandi salah. Coba lagi.';buzz(30);render();const n=document.getElementById('inbPw');n&&n.focus()}
 }
+// Angka di kartu daftar selalu untuk hari ini dan semua BU (filter tidak tampil di daftar).
+const TILE={key:'',state:'idle',tto:null,noPh:null,at:0};
+function inbSyncTiles(lpns){
+  if(!IMMStore.configured())return;const key=TODAY+'|'+lpns.join('|');
+  if(key===TILE.key&&TILE.state!=='idle'&&!(TILE.state==='ok'&&Date.now()-TILE.at>INB_FRESH_MS))return;TILE.key=key;TILE.state='loading';
+  Promise.all([IMMStore.listTto({from:TODAY,to:TODAY}),lpns.length?IMMStore.listPutawayPhotos(lpns):[]])
+    .then(([tto,ph])=>{if(TILE.key!==key)return;const has=new Set(ph.map(r=>r.lpn));TILE.tto=tto.length;TILE.noPh=lpns.filter(l=>!has.has(l)).length;TILE.state='ok';TILE.at=Date.now()},()=>{if(TILE.key===key)TILE.state='error'})
+    .then(()=>{if(TILE.key===key&&S.page==='inb'&&!S.inb&&inbUnlocked())render()});
+}
 function inbList(){
-  return `<div class="hello" style="--i:0"><h1>Inbound</h1><p>Pilih yang mau dibuka</p></div>
-  <section class="card" style="--i:1"><div class="cb"><div class="set-group">${INB_ITEMS.map(([k,l,x,ic])=>`<button class="set-row press" data-inb="${k}"><span class="ic">${ic}</span><span><div class="t">${l}</div><div class="x">${x}</div></span><span class="end">${I.chev}</span></button>`).join('')}</div></div></section>`;
+  const WAIT='…',NONE='–',busy=inbBusy(),cfg=IMMStore.configured(),o={from:TODAY,to:TODAY,bu:'ALL'};
+  let put=WAIT,putFlags=[],putNote='',prod=WAIT,prodNote='CBM tim hari ini';
+  if(!busy){
+    let lpns=[];
+    if(INB.err.stock){put=NONE;putNote='Data putaway belum bisa dibaca'}
+    else{const L=IMMCore.putawayLpns(INB.stock,o);lpns=L.map(l=>l.lpn);put=f0(L.length);
+      const d=L.filter(l=>l.kind==='damage').length,m=L.filter(l=>l.mixed).length,seen=cfg&&TILE.state!=='error'&&TILE.at>0&&TILE.key===TODAY+'|'+lpns.join('|');
+      if(seen&&TILE.noPh)putFlags.push(tag(`${f0(TILE.noPh)} belum ada foto`,'warn'));
+      if(d)putFlags.push(tag(`${f0(d)} damage`,'crit'));if(m)putFlags.push(tag(`${f0(m)} campur Dept`,'warn'));
+      if(!L.length)putNote='Belum ada putaway hari ini';else if(!putFlags.length)putNote=seen?'Semua sudah berfoto, tanpa damage':'Tanpa damage dan campur Dept'}
+    if(INB.err.stock&&INB.err.transit)prod=NONE;
+    else{const P=IMMCore.productivity(INB.err.stock?[]:INB.stock,INB.err.transit?[]:INB.transit,o);prod=f2(P.team.rcv+P.team.put);if(INB.err.stock||INB.err.transit)prodNote='CBM tim · sebagian data'}
+    inbSyncTiles(lpns);
+  }
+  const tto=!cfg||TILE.state==='error'?NONE:TILE.at>0?f0(TILE.tto):WAIT;
+  const ic=k=>INB_ITEMS.find(x=>x[0]===k)[3],go=`<span class="tile-go">${I.chev}</span>`;
+  return `<div class="hello slim" style="--i:0"><h1>Inbound</h1><p>Angka hari ini · ketuk untuk membuka</p></div>
+  <div class="tiles" style="--i:1">
+    <button class="tile wide press" data-inb="put"><span class="tile-h"><span class="tile-ic">${ic('put')}</span><span class="t">Putaway</span>${go}</span>
+      <span class="tile-n"><span class="tile-v">${put}</span><span class="tile-u">LPN hari ini</span></span>
+      ${putFlags.length?`<span class="tile-f">${putFlags.join('')}</span>`:putNote?`<span class="tile-x">${putNote}</span>`:''}</button>
+    <button class="tile press" data-inb="tto"><span class="tile-h"><span class="tile-ic">${ic('tto')}</span>${go}</span><span class="t">TTO/Dokumen</span>
+      <span class="tile-v">${tto}</span><span class="tile-u">${cfg?'TTO hari ini':'Penyimpanan belum diatur'}</span></button>
+    <button class="tile press" data-inb="prod"><span class="tile-h"><span class="tile-ic">${ic('prod')}</span>${go}</span><span class="t">Productivity</span>
+      <span class="tile-v">${prod}</span><span class="tile-u">${prodNote}</span></button>
+    <button class="tile wide row press" data-inb="mpp"><span class="tile-ic">${ic('mpp')}</span><span class="t">MPP detail</span><span class="tile-n"><span class="tile-v">${IMMCore.MPP.length}</span><span class="tile-u">orang</span></span>${go}</button>
+  </div>`;
 }
 function inbHead(title,sub){return `<div class="inb-head" style="--i:0"><button class="icon-btn press" data-inb-back aria-label="Kembali ke daftar Inbound">${I.left}</button><div class="hello"><h1>${title}</h1><p>${sub}</p></div></div>`}
 function inbMpp(){
@@ -140,10 +176,15 @@ function inbPutaway(){
   const filtered=!!(S.putF||S.putLoc||q);const n=lim('put',20);
   const tile=(k,num,label,tone)=>`<button class="press ${tone||''}" data-putf="${k}" aria-pressed="${(S.putF||'all')===k}"><b>${num}</b><span>${label}</span></button>`;
   const active=[S.putF?F_LABEL[S.putF]:'',S.putLoc?esc(S.putLoc):''].filter(Boolean).join(' · ');
-  return head+`<section class="card pad" style="--i:1"><div class="put-sum">
+  const N=PUT_LIST.length,cbm=PUT_LIST.reduce((a,l)=>a+l.cbm,0),qty=PUT_LIST.reduce((a,l)=>a+l.qty,0),nOp=new Set(PUT_LIST.map(l=>l.operator)).size;
+  const flags=[nDmg?`${f0(nDmg)} damage`:'',nMix?`${f0(nMix)} campur Dept`:'',phOk&&nNoPh?`${f0(nNoPh)} belum ada foto`:''].filter(Boolean);
+  const say=N?`<b>${f0(N)} LPN</b> masuk lokasi FLR ${inbWhen()}. ${flags.length?`Perlu dicek: ${flags.join(', ')}.`:phOk?'Semua sudah berfoto, tanpa damage maupun campur Dept.':'Tanpa damage maupun campur Dept.'}`:`Belum ada LPN yang diputaway ke lokasi FLR ${inbWhen()}.`;
+  return head+lead({tone:'inb',i:1,empty:!N,headline:say,value:cnt(cbm,2),unit:'CBM diputaway',
+    body:`<div class="put-sum">
       ${tile('all',cnt(PUT_LIST.length),'LPN')}${tile('dmg',cnt(nDmg),'damage',nDmg?'crit':'')}${tile('mix',cnt(nMix),'campur Dept',nMix?'warn':'')}${cfg?tile('noph',phOk?cnt(nNoPh):'…','belum ada foto',phOk?(nNoPh?'warn':'good'):''):''}
-    </div><p class="foot" style="padding:8px 0 0">Ketuk kartu untuk menampilkan LPN-nya saja.</p></section>
-    <section class="card" style="--i:2"><div class="ch put-list-head"><span class="hic">${I.box}</span><h2>${active||'Daftar LPN'}</h2><span class="hint">${f0(fl.length)} LPN</span>${filtered?`<button class="btn ghost sm press right" data-put-reset>Hapus filter</button>`:''}</div>
+    </div><p class="lead-note">Ketuk satu kotak untuk menampilkan LPN-nya saja.</p>`,
+    stats:[{l:'Qty',v:f0(qty)},{l:'Lokasi',v:f0(locs.length)},{l:'Operator',v:f0(nOp)}]})+`
+    <section class="card" style="--i:2">${secHead({icon:I.box,title:active||'Daftar LPN',hint:`${f0(fl.length)} LPN`,sub:'Urut dari yang terbaru. Ketuk satu LPN untuk isi dan fotonya.',gloss:['lpn','campur','dept'],cls:'put-list-head',right:filtered?`<button class="btn ghost sm press" data-put-reset>Hapus filter</button>`:''})}
     <div class="put-tools">${searchBox('put','Cari LPN / lokasi')}<label class="put-loc"><span class="sr">Filter lokasi</span><select id="putLoc" aria-label="Filter lokasi"><option value="">Semua lokasi</option>${locs.map(x=>`<option value="${esc(x)}" ${S.putLoc===x?'selected':''}>${esc(x)}</option>`).join('')}</select></label></div>
     <div class="cb" style="padding-top:6px">${fl.length?`<div class="lpns">${fl.slice(0,n).map(l=>`<button class="lpn press${l.kind==='damage'?' dmg':''}" data-lpn="${esc(l.lpn)}">
         <div class="lpn-top"><span class="mono lpn-id">${esc(l.lpn)}</span>${lpnTag(l)}${phRows(l.lpn).length?`<span class="lpn-cam">${I.cam}${phRows(l.lpn).length}</span>`:''}<span class="lpn-time">${l.date!==TODAY?dshort(l.date)+' ':''}${esc(l.time)}</span></div>
@@ -169,7 +210,7 @@ function inbProd(){
   const o=inbOpt(),st=INB.err.stock?[]:INB.stock,tr=INB.err.transit?[]:INB.transit;
   const P=IMMCore.productivity(st,tr,o);const tot=x=>x.rcv+x.put;const teamTot=tot(P.team);
   const errs=[INB.err.stock,INB.err.transit].filter(Boolean);
-  const ins=[];const top=P.ops[0];const active=P.ops.filter(x=>tot(x)>0);
+  const ins=[];const top=P.ops[0];const active=P.ops.filter(x=>tot(x)>0);let prodDelta='';
   if(teamTot>0){
     ins.push({c:'h',h:'Tertinggi',t:`<b>${esc(top.name)}</b> paling banyak: ${f2(top.rcv)} CBM receive dan ${f2(top.put)} CBM putaway (${pc(tot(top),teamTot)}% dari total tim).`});
     const idle=P.ops.filter(x=>tot(x)===0);
@@ -178,7 +219,7 @@ function inbProd(){
     ins.push({h:'Stock dan transit',t:`Receive: <b>${pc(rT,P.team.rcv)}%</b> dari transit, sisanya stock. Putaway stock ${f2(pS)} CBM dari total ${f2(P.team.put)} CBM.`});
     const [from,to]=range();
     if(from>'1000'&&to<'9000'){const n=days(from,to);const Q=IMMCore.productivity(st,tr,{from:addD(from,-n),to:addD(from,-1),bu:o.bu});const q=tot(Q.team);
-      if(q>0){const d=(teamTot-q)/q*100;ins.push({c:d<0?'w':'',h:'Dibanding periode sebelumnya',t:`Total tim <b>${d>=0?'naik':'turun'} ${f0(Math.abs(d))}%</b> dibanding ${dshort(addD(from,-n))}${n>1?' – '+dshort(addD(from,-1)):''} (${f2(q)} CBM → ${f2(teamTot)} CBM).`})}}
+      if(q>0){const d=(teamTot-q)/q*100;prodDelta=leadDelta(IMMUi.deltaInfo(teamTot,q),'periode sebelumnya');ins.push({c:d<0?'w':'',h:'Dibanding periode sebelumnya',t:`Total tim <b>${d>=0?'naik':'turun'} ${f0(Math.abs(d))}%</b> dibanding ${dshort(addD(from,-n))}${n>1?' – '+dshort(addD(from,-1)):''} (${f2(q)} CBM → ${f2(teamTot)} CBM).`})}}
     if(P.days.length>1){const best=P.days.slice().sort((a,b)=>tot(b)-tot(a))[0];ins.push({h:'Hari tersibuk',t:`<b>${dday(best.d)}</b>: ${f2(best.rcv)} CBM receive dan ${f2(best.put)} CBM putaway.`})}
   }
   const mx=Math.max(1e-9,...P.ops.map(x=>Math.max(x.rcv,x.put)));
@@ -188,11 +229,11 @@ function inbProd(){
   const SER=[{name:'Receive',color:'var(--lg2)'},{name:'Putaway',color:'var(--lg3)'}];
   return head+
   (errs.length?`<div class="inb-note" style="--i:1">${I.warn}<span>${errs.map(esc).join(' ')} Angka di bawah hanya dari sheet yang terbaca.</span></div>`:'')+
-  `<section class="card pad" style="--i:1"><div class="prod-team">
-    <div><span>Receive</span><b>${cnt(P.team.rcv,2)}</b><small>CBM · tim</small></div><div><span>Putaway</span><b>${cnt(P.team.put,2)}</b><small>CBM · tim</small></div>
-  </div></section>
+  lead({tone:'inb',i:1,empty:!(teamTot>0),headline:teamTot>0?`Tim inbound mengerjakan <b>${f2(teamTot)} CBM</b> ${inbWhen()}. Tertinggi <b>${esc(top.name)}</b> dengan ${f2(tot(top))} CBM.`:`Belum ada transaksi receive atau putaway ${inbWhen()}.`,
+    value:cnt(teamTot,2),unit:'CBM',delta:prodDelta,
+    body:`<div class="lead-stats n3 prod-team"><div><span><i class="dot" style="background:var(--lg2)"></i>Receive</span><b>${f2(P.team.rcv)}<small>CBM</small></b></div><div><span><i class="dot" style="background:var(--lg3)"></i>Putaway</span><b>${f2(P.team.put)}<small>CBM</small></b></div><div><span>Operator aktif</span><b>${active.length}<small>dari ${P.ops.length}</small></b></div></div>`})+`
   <div style="--i:2">${insights('Ringkasan pintar',ins)}</div>
-  <section class="card" style="--i:3"><div class="ch"><span class="hic">${I.users}</span><h2>Per operator</h2><span class="hint">urut dari tertinggi</span></div><div class="cb">${teamTot>0?'':`<p class="foot" style="padding:0 0 8px">Belum ada transaksi yang dihitung ${esc(rlabel())}.</p>`}<div class="prod-ops">${P.ops.map((x,i)=>`<div class="prod-op"><div class="prod-top"><span class="rank${i===0&&tot(x)>0?' first':''}">${i+1}</span><span class="prod-n">${esc(x.name)}</span><span class="prod-id mono">${x.id}</span><span class="prod-share" title="Porsi dari total tim">${pc(tot(x),teamTot)}%</span></div>${bar('Receive',x.rcv,x.rcvStock,x.rcvTransit,'var(--lg2)')}${bar('Putaway',x.put,x.putStock,x.putTransit,'var(--lg3)')}</div>`).join('')}</div></div></section>
+  <section class="card" style="--i:3">${secHead({icon:I.users,title:'Per operator',hint:'urut dari tertinggi',sub:'Persen di kanan nama = porsi dari total tim.',gloss:['cbm']})}<div class="cb">${teamTot>0?'':`<p class="foot" style="padding:0 0 8px">Belum ada transaksi yang dihitung ${esc(rlabel())}.</p>`}<div class="prod-ops">${P.ops.map((x,i)=>`<div class="prod-op"><div class="prod-top"><span class="rank${i===0&&tot(x)>0?' first':''}">${i+1}</span><span class="prod-n">${esc(x.name)}</span><span class="prod-id mono">${x.id}</span><span class="prod-share" title="Porsi dari total tim">${pc(tot(x),teamTot)}%</span></div>${bar('Receive',x.rcv,x.rcvStock,x.rcvTransit,'var(--lg2)')}${bar('Putaway',x.put,x.putStock,x.putTransit,'var(--lg3)')}</div>`).join('')}</div></div></section>
   ${multi&&bks.length?`<section class="card" style="--i:4"><div class="ch"><span class="hic">${I.trend}</span><h2>CBM per ${bks[0].mode==='m'?'bulan':bks[0].mode==='w'?'minggu':'hari'}</h2><span class="hint">tim</span></div><div class="cb"><div class="legend">${SER.map(s=>`<span><i class="dot" style="background:${s.color}"></i>${s.name}</span>`).join('')}</div>${stackChart('cProd',bks,SER,{unit:'CBM',fmt:f2})}</div></section>`:''}`;
 }
 // ---------- TTO / Dokumen ----------
@@ -208,14 +249,16 @@ function inbTto(){
   const head=inbHead('TTO/Dokumen',`Serah terima · ${esc(rlabel())}`);
   if(!IMMStore.configured())return head+`<section class="card" style="--i:1">${emptyState('Penyimpanan belum diatur','Data TTO disimpan di server. Fitur ini aktif setelah penyimpanan diatur.',false,I.doc)}</section>`;
   inbSyncTto();
-  const add=`<button class="btn block press tto-add" id="ttoAdd" style="--i:1">Tambah TTO</button>`;
+  const add=`<button class="btn block press tto-add" id="ttoAdd" style="--i:2">${I.plus}Tambah TTO</button>`;
   if(TTO.state==='loading'||TTO.state==='idle')return head+add+inbSkeleton();
   if(TTO.state==='error')return head+add+inbErrCard('Data TTO belum bisa dibaca','Cek koneksi internet, lalu coba lagi.',2);
   const q=(S.q.tto||'').toLowerCase().trim();
   const fl=q?TTO.rows.filter(r=>(r.no_tto+' '+r.barang+' '+r.penerima+' '+r.pic).toLowerCase().includes(q)):TTO.rows;const n=lim('tto',20);
-  const koli=TTO.rows.reduce((a,r)=>a+(+r.koli||0),0);
-  return head+add+`<section class="card" style="--i:2"><div class="ch"><span class="hic">${I.doc}</span><h2>Daftar TTO</h2><span class="hint">${f0(TTO.rows.length)} TTO · ${f0(koli)} koli</span><div class="right" style="flex:1 1 170px;max-width:230px">${searchBox('tto','Cari No TTO / barang')}</div></div>
-    <div class="cb" style="padding-top:4px">${fl.length?`<div class="list">${fl.slice(0,n).map(r=>`<button class="tto-row press" data-tto="${r.id}"><div class="tto-top"><span class="mono tto-no">${esc(r.no_tto)}</span>${(r.photos||[]).length?`<span class="lpn-cam">${I.cam}${r.photos.length}</span>`:''}<span class="lpn-time">${dshort(r.tgl)}</span></div><div class="tto-b">${esc(r.barang)}</div><div class="tto-m"><span>${f0(r.koli)} koli</span><span>${esc(r.pic)} → ${esc(r.penerima)}</span></div></button>`).join('')}</div>${moreBtn('tto',fl.length,n)}`
+  const koli=TTO.rows.reduce((a,r)=>a+(+r.koli||0),0),N=TTO.rows.length,withPh=TTO.rows.filter(r=>(r.photos||[]).length).length,pics=new Set(TTO.rows.map(r=>r.pic).filter(Boolean)).size;
+  const top=lead({tone:'inb',i:1,empty:!N,headline:N?`<b>${f0(N)} TTO</b> dicatat ${inbWhen()}, total ${f0(koli)} koli.${withPh<N?` ${f0(N-withPh)} belum ada fotonya.`:' Semua sudah berfoto.'}`:`Belum ada serah terima yang dicatat ${inbWhen()}.`,
+    value:cnt(N),unit:'TTO',stats:[{l:'Koli',v:f0(koli)},{l:'Berfoto',v:f0(withPh),u:`dari ${f0(N)}`},{l:'PIC',v:f0(pics),u:'orang'}]});
+  return head+top+add+`<section class="card" style="--i:3">${secHead({icon:I.doc,title:'Daftar TTO',hint:`${f0(fl.length)} TTO`,sub:'Urut dari yang terbaru. Ketuk untuk rincian dan foto.',gloss:['tto']})}<div class="tools">${searchBox('tto','Cari No TTO / barang')}</div>
+    <div class="cb" style="padding-top:8px">${fl.length?`<div class="list">${fl.slice(0,n).map(r=>`<button class="tto-row press" data-tto="${r.id}"><div class="tto-top"><span class="mono tto-no">${esc(r.no_tto)}</span>${(r.photos||[]).length?`<span class="lpn-cam">${I.cam}${r.photos.length}</span>`:''}<span class="lpn-time">${dshort(r.tgl)}</span></div><div class="tto-b">${esc(r.barang)}</div><div class="tto-m"><span>${f0(r.koli)} koli</span><span>${esc(r.pic)} → ${esc(r.penerima)}</span></div></button>`).join('')}</div>${moreBtn('tto',fl.length,n)}`
       :emptyState(q?'Tidak ditemukan':'Belum ada TTO',q?'Tidak ada TTO yang cocok.':`Belum ada serah terima yang dicatat ${esc(rlabel())}.`,!q,I.doc)}</div></section>`;
 }
 function ttoPhotosHtml(){
@@ -289,7 +332,7 @@ function pageInbound(){
 }
 // Muat ulang data halaman Inbound yang sedang dibuka (tombol sinkron, tarik-untuk-segarkan, "Coba lagi").
 function inbRefresh(){PH.state='idle';if(S.inb==='tto'){inbSyncTto(true);return Promise.resolve()}return loadInbound(true)}
-function inboundBack(){if(S.page!=='inb'||!S.inb||!inbUnlocked())return false;S.inb='';S.more={};render(true);window.scrollTo({top:0});return true}
+function inboundBack(){if(S.page!=='inb'||!S.inb||!inbUnlocked())return false;S.inb='';if(TILE.state==='ok')TILE.at=1;S.more={};render(true);window.scrollTo({top:0});return true}
 function inboundClick(e){
   if(S.page!=='inb')return false;const g=s=>e.target.closest(s);let t;
   if(g('[data-pv-x]')||(e.target&&e.target.id==='photoView')){inboundOverlayBack();return true}
