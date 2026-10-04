@@ -57,7 +57,7 @@ Di form **Tambah TTO** ada bagian "Scan dari foto". Foto dokumen dikirim ke fung
 Pemasangan (sekali):
 1. **SQL**: Supabase → SQL Editor → tempel ulang seluruh isi `supabase/schema.sql` → Run. Ini menambah tabel `scan_log` serta fungsi `imm_scan_take` dan `imm_scan_refund` (batas scan per hari; scan yang gagal di sisi AI tidak memakan jatah). Aman dijalankan ulang.
 2. **Fungsi**: Supabase → Edge Functions → **Deploy a new function** → **Via Editor** → beri nama `scan-tto` (harus persis) → hapus isi contoh, tempel seluruh isi `supabase/functions/scan-tto/index.ts` → **Deploy function**. Biarkan verifikasi JWT menyala.
-3. **Kunci**: Supabase → Edge Functions → **Secrets** → isi Key `GEMINI_API_KEY` dan Value kunci dari aistudio.google.com → **Save**. Untuk Claude pakai `ANTHROPIC_API_KEY`. Kalau dua-duanya dipasang, Gemini yang dipakai kecuali `SCAN_PROVIDER` diisi `claude`.
+3. **Kunci**: Supabase → Edge Functions → **Secrets** → isi Key `GEMINI_API_KEY` dan Value kunci dari aistudio.google.com → **Save**. Sebagai gantinya kunci boleh disimpan di brankas database: `select vault.create_secret('<kunci>', 'GEMINI_API_KEY');` (dibaca fungsi lewat `imm_secret`; secret fungsi didahulukan). Untuk Claude pakai `ANTHROPIC_API_KEY`. Kalau dua-duanya dipasang, Gemini yang dipakai kecuali `SCAN_PROVIDER` diisi `claude`.
 4. Opsional: `SCAN_DAILY_LIMIT` (bawaan 200 scan per hari), `GEMINI_MODEL` (bawaan `gemini-3.5-flash-lite`), `ANTHROPIC_MODEL` (bawaan `claude-haiku-4-5-20251001`).
 
 Batas harian berlaku untuk semua HP bersama-sama dan `SCAN_DAILY_LIMIT=0` mematikan scan. Karena kunci anon ada di aplikasi, orang iseng bisa menghabiskan jatah hari itu; tagihan tetap terlindungi dan form manual tetap jalan.

@@ -83,7 +83,7 @@ async function askGemini(env, image, mime, fetchFn) {
     body: JSON.stringify({ contents: [{ parts: [{ inline_data: { mime_type: mime, data: image } }, { text: PROMPT }] }], generationConfig: { responseMimeType: 'application/json' } }),
     signal: timeout(LIMITS.aiTimeoutMs),
   });
-  if (!r.ok) throw new Error(r.status === 429 ? 'AIQUOTA' : 'AIFAIL');
+  if (!r.ok) throw Object.assign(new Error(r.status === 429 ? 'AIQUOTA' : 'AIFAIL'), { upstream: r.status });
   const j = await r.json(); const cand = (j.candidates || [])[0] || {};
   if (cand.finishReason === 'MAX_TOKENS') throw new Error('TOOLONG');
   return ((cand.content || {}).parts || []).map((p) => p.text || '').join('');
@@ -94,7 +94,7 @@ async function askClaude(env, image, mime, fetchFn) {
     body: JSON.stringify({ model: modelName(env.ANTHROPIC_MODEL, MODELS.claude), max_tokens: 4096, messages: [{ role: 'user', content: [{ type: 'image', source: { type: 'base64', media_type: mime, data: image } }, { type: 'text', text: PROMPT }] }] }),
     signal: timeout(LIMITS.aiTimeoutMs),
   });
-  if (!r.ok) throw new Error(r.status === 429 ? 'AIQUOTA' : 'AIFAIL');
+  if (!r.ok) throw Object.assign(new Error(r.status === 429 ? 'AIQUOTA' : 'AIFAIL'), { upstream: r.status });
   const j = await r.json(); if (j.stop_reason === 'max_tokens') throw new Error('TOOLONG');
   return (j.content || []).filter((p) => p.type === 'text').map((p) => p.text || '').join('');
 }
@@ -155,7 +155,7 @@ export async function handle(req, env, fetchFn) {
   const q = await takeQuota(env, body.device, fetchFn);
   if (q.state === 'NOLOG') return fail(503, 'NOLOG'); if (q.state === 'QUOTA') return fail(429, 'QUOTA');
   let text; try { text = await (provider === 'gemini' ? askGemini : askClaude)(env, image, mime, fetchFn); }
-  catch (e) { await refund(env, q.id, fetchFn); const m = e && e.message; return m === 'AIQUOTA' ? fail(429, 'AIQUOTA') : m === 'TOOLONG' ? fail(422, 'TOOLONG') : fail(502, 'AIFAIL'); }
+  catch (e) { await refund(env, q.id, fetchFn); const m = e && e.message; return m === 'AIQUOTA' ? fail(429, 'AIQUOTA') : m === 'TOOLONG' ? fail(422, 'TOOLONG') : json(502, { ok: false, error: 'AIFAIL', upstream: (e && e.upstream) || 0 }); } // upstream = kode HTTP dari layanan AI (tanpa isi jawabannya)
   let scan; try { scan = parseModelText(text); } catch (_) { return fail(422, 'UNREADABLE'); }
   return json(200, { ok: true, provider, scan });
 }

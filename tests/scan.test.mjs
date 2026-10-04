@@ -149,7 +149,7 @@ test('server: AI menolak karena kuota → 429 AIQUOTA; galat lain → 502 AIFAIL
   let x = fake({ gemini: () => new Response('{"error":{"message":"quota key=SECRET"}}', { status: 429 }) });
   let r = await S.handle(post({ image: b64(10), mime: 'image/jpeg' }), ENV, x.f); eq(r.status, 429); eq((await r.json()).error, 'AIQUOTA');
   x = fake({ gemini: () => new Response('{"error":{"message":"bad key SECRET"}}', { status: 400 }) });
-  r = await S.handle(post({ image: b64(10), mime: 'image/jpeg' }), ENV, x.f); eq(r.status, 502); const t = await r.text(); ok(/AIFAIL/.test(t) && !/SECRET/.test(t), t);
+  r = await S.handle(post({ image: b64(10), mime: 'image/jpeg' }), ENV, x.f); eq(r.status, 502); const t = await r.text(); ok(/AIFAIL/.test(t) && !/SECRET/.test(t), t); eq(JSON.parse(t).upstream, 400);
   const rf = x.calls.find((c) => /imm_scan_refund/.test(c.url)); ok(rf, 'jatah dikembalikan saat AI gagal'); eq(JSON.parse(rf.init.body).p_id, 41);
   x = fake({ gemini: () => { throw new Error('network'); } });
   r = await S.handle(post({ image: b64(10), mime: 'image/jpeg' }), ENV, x.f); eq(r.status, 502);

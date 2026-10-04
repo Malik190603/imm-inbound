@@ -71,31 +71,32 @@ create policy "imm hapus objek" on storage.objects for delete to anon using (buc
 
 -- Scan TTO dari foto: pencatat pemakaian untuk batas harian (dipanggil hanya oleh fungsi server scan-tto).
 -- Aplikasi (anon) tidak bisa membaca atau menulis tabel ini, dan tidak bisa memanggil fungsinya.
+-- Baris tidak pernah dihapus (paling banyak sebanyak batas harian per hari); jatah yang dikembalikan hanya ditandai.
 create table if not exists public.scan_log (
   id bigint generated always as identity primary key,
   device text,
   created_at timestamptz not null default now()
 );
+alter table public.scan_log add column if not exists refunded boolean not null default false;
 create index if not exists scan_log_created_idx on public.scan_log (created_at);
 alter table public.scan_log enable row level security;
+revoke all on table public.scan_log from anon, authenticated;
 
 -- Mengambil satu jatah scan untuk hari ini (waktu Makassar). Hasil: id jatah, atau 0 bila batas harian tercapai.
-drop function if exists public.imm_scan_take(integer, text);
-create function public.imm_scan_take(p_limit integer, p_device text) returns bigint
+create or replace function public.imm_scan_take(p_limit integer, p_device text) returns bigint
 language plpgsql security definer set search_path = '' as $$
 declare n integer; new_id bigint;
 begin
   perform pg_advisory_xact_lock(hashtext('imm_scan_take'));
   select count(*) into n from public.scan_log
-    where created_at >= (date_trunc('day', now() at time zone 'Asia/Makassar') at time zone 'Asia/Makassar');
+    where not refunded and created_at >= (date_trunc('day', now() at time zone 'Asia/Makassar') at time zone 'Asia/Makassar');
   if n >= greatest(coalesce(p_limit, 1), 1) then return 0; end if;
   insert into public.scan_log (device) values (left(coalesce(p_device, ''), 40)) returning id into new_id;
-  delete from public.scan_log where created_at < now() - interval '30 days';
   return new_id;
 end $$;
 -- Mengembalikan jatah bila AI gagal menjawab (bukan salah fotonya).
 create or replace function public.imm_scan_refund(p_id bigint) returns void
-language sql security definer set search_path = '' as $$ delete from public.scan_log where id = p_id $$;
+language sql security definer set search_path = '' as $$ update public.scan_log set refunded = true where id = p_id $$;
 revoke all on function public.imm_scan_take(integer, text) from public, anon, authenticated;
 revoke all on function public.imm_scan_refund(bigint) from public, anon, authenticated;
 grant execute on function public.imm_scan_take(integer, text), public.imm_scan_refund(bigint) to service_role;
