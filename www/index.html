@@ -339,7 +339,7 @@ button.row:hover{background:var(--surface-2)}
 .rg-opt .ic svg{width:17px;height:17px}
 .rg-opt[aria-pressed="true"]{border-color:var(--accent);background:var(--surface)}
 .rg-opt[aria-pressed="true"] .ic{background:var(--accent);color:var(--accent-ink)}
-.rg-opt:nth-child(9){grid-column:1/-1}
+.rg-opt:last-child:nth-child(odd){grid-column:1/-1}
 .rg-go{padding:14px 18px;font-size:15px}
 .rg-go:disabled{opacity:.35}
 .uv{display:grid;gap:8px;margin-top:10px}
@@ -1155,7 +1155,7 @@ async function formFields(){
   if(!f.role){const ids=[...h.matchAll(/name="(entry\.\d+)"/g)].map(x=>x[1]).filter((v,i,a)=>a.indexOf(v)===i);[f.role,f.dev,f.ver]=[ids[0]||'',ids[1]||'',ids[2]||'']}
   if(!f.role)throw new Error('kolom form tidak ditemukan');LS.set('imm.form',f);return f;
 }
-const ROLES=[['Manager',I.star],['Assistant Manager',I.star],['Inbound',I.box],['Storing',I.stock],['Outbound',I.truck],['Inventory',I.db],['Planner',I.cal],['MHE',I.motion],['Ekspediter',I.ship]];
+const ROLES=[['Manager',I.star],['Assistant Manager',I.star],['Inbound',I.box],['Storing',I.stock],['Outbound',I.truck],['Inventory',I.db],['Planner',I.cal],['MHE',I.motion],['Ekspediter',I.ship],['LP','<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2.8 4 5v4.6c0 3.6 2.4 6.4 6 7.6 3.6-1.2 6-4 6-7.6V5z"/><path d="m7.6 10 1.7 1.7 3.2-3.4"/></svg>']];
 function deviceId(){let d=LS.get('imm.dev');if(!d){d='d'+Date.now().toString(36)+Math.random().toString(36).slice(2,8);LS.set('imm.dev',d)}return d}
 async function sendRole(){
   const r=LS.get('imm.role');if(!r||LS.get('imm.role.sent')===r.t||!ROLE_FORM.id||window.IMM_SNAPSHOT)return;
