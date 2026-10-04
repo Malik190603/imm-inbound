@@ -85,7 +85,7 @@ test('scanTto: foto dikirim sebagai base64 ke fungsi scan-tto dengan kunci anon,
 });
 test('scanTto: galat server diterjemahkan ke kode yang dipahami aplikasi', async () => {
   const cases = [[404, {}, 'NOSCAN'], [503, { error: 'NOKEY' }, 'NOSCAN'], [503, { error: 'NOLOG' }, 'NOSCAN'], [429, { error: 'QUOTA' }, 'SCANQUOTA'], [429, { error: 'AIQUOTA' }, 'SCANQUOTA'],
-    [422, { error: 'UNREADABLE' }, 'UNREADABLE'], [413, { error: 'TOOBIG' }, 'TOOBIG'], [502, { error: 'AIFAIL' }, 'SCANFAIL'], [500, {}, 'SCANFAIL'], [200, { ok: true }, 'SCANFAIL']];
+    [422, { error: 'UNREADABLE' }, 'UNREADABLE'], [413, { error: 'TOOBIG' }, 'TOOBIG'], [422, { error: 'TOOLONG' }, 'TOOLONG'], [401, { message: 'Invalid JWT' }, 'NOSCAN'], [502, { error: 'AIFAIL' }, 'SCANFAIL'], [500, {}, 'SCANFAIL'], [200, { ok: true }, 'SCANFAIL']];
   for (const [st, body, code] of cases) { S._setFetch(scanResp(st, body)); await rejects(() => S.scanTto(blob, 'd'), new RegExp('^Error: ' + code + '$'), st + ' ' + JSON.stringify(body)); }
 });
 test('scanTto: tanpa internet → NETWORK; penyimpanan belum diatur → NOCONFIG', async () => {
@@ -96,4 +96,8 @@ test('scanTto: server tidak menjawab → berhenti sendiri dengan TIMEOUT dan per
   let aborted = false;
   S._setFetch((url, o) => new Promise((_, rej) => { o.signal.addEventListener('abort', () => { aborted = true; rej(new Error('aborted')); }); }));
   const t0 = Date.now(); await rejects(() => S.scanTto(blob, 'd', 60), /^Error: TIMEOUT$/); eq(aborted, true); assert.ok(Date.now() - t0 < 2000);
+});
+test('scanTto: jawaban datang tapi isinya tidak selesai-selesai → tetap TIMEOUT', async () => {
+  S._setFetch(async () => ({ ok: true, status: 200, json: () => new Promise(() => {}) }));
+  const t0 = Date.now(); await rejects(() => S.scanTto(blob, 'd', 60), /^Error: TIMEOUT$/); assert.ok(Date.now() - t0 < 2000);
 });

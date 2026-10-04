@@ -52,7 +52,8 @@ test('scanToForm: masukan rusak tidak melempar galat', () => {
 });
 
 // ---------- fungsi server ----------
-const b64 = (n) => Buffer.alloc(n, 1).toString('base64');
+const JPG = [0xff, 0xd8, 0xff, 0xe0], PNG = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
+const b64 = (n, head = JPG) => Buffer.concat([Buffer.from(head), Buffer.alloc(Math.max(0, n - head.length), 1)]).toString('base64');
 const post = (body, headers = {}) => new Request('https://x.supabase.co/functions/v1/scan-tto', { method: 'POST', headers: { 'content-type': 'application/json', ...headers }, body: JSON.stringify(body) });
 const gemOK = (obj) => new Response(JSON.stringify({ candidates: [{ content: { parts: [{ text: typeof obj === 'string' ? obj : JSON.stringify(obj) }] } }] }), { status: 200 });
 const claudeOK = (obj) => new Response(JSON.stringify({ content: [{ type: 'text', text: JSON.stringify(obj) }] }), { status: 200 });
@@ -61,7 +62,8 @@ function fake(o = {}) {
   const calls = [];
   const f = async (url, init = {}) => {
     calls.push({ url: String(url), init });
-    if (/\/rest\/v1\/rpc\/imm_scan_take/.test(url)) return o.rpc ? o.rpc() : new Response('true', { status: 200 });
+    if (/\/rest\/v1\/rpc\/imm_scan_take/.test(url)) return o.rpc ? o.rpc() : new Response('41', { status: 200 });
+    if (/\/rest\/v1\/rpc\/imm_scan_refund/.test(url)) return new Response('null', { status: 200 });
     if (/generativelanguage/.test(url)) return o.gemini ? o.gemini() : gemOK(SAMPLE);
     if (/api\.anthropic\.com/.test(url)) return o.claude ? o.claude() : claudeOK(SAMPLE);
     return new Response('not found', { status: 404 });
@@ -85,16 +87,17 @@ test('server: Gemini — foto dikirim sebagai inline_data dengan kunci di header
   eq(g.init.headers['x-goog-api-key'], 'g-key'); ok(!g.url.includes('g-key'));
   const body = JSON.parse(g.init.body); const parts = body.contents[0].parts;
   ok(parts.some((p) => p.inline_data && p.inline_data.mime_type === 'image/jpeg' && p.inline_data.data === b64(1000)));
-  ok(parts.some((p) => typeof p.text === 'string' && /Document No/.test(p.text))); eq(body.generationConfig.responseMimeType, 'application/json');
+  ok(parts.some((p) => typeof p.text === 'string' && /Document No/.test(p.text))); eq(body.generationConfig.responseMimeType, 'application/json'); eq('temperature' in body.generationConfig, false);
+  ok(!calls.some((c) => /imm_scan_refund/.test(c.url)), 'scan berhasil tidak mengembalikan jatah');
   eq(r.headers.get('access-control-allow-origin'), '*');
 });
 test('server: Claude — dipakai bila hanya kunci Anthropic yang ada', async () => {
   const S = await server(); const { f, calls } = fake();
-  const r = await S.handle(post({ image: b64(500), mime: 'image/png' }), { ...ENV, GEMINI_API_KEY: '', ANTHROPIC_API_KEY: 'a-key' }, f); eq(r.status, 200);
+  const r = await S.handle(post({ image: b64(500, PNG), mime: 'image/png' }), { ...ENV, GEMINI_API_KEY: '', ANTHROPIC_API_KEY: 'a-key' }, f); eq(r.status, 200);
   eq((await r.json()).provider, 'claude');
   const c = calls.find((x) => /anthropic/.test(x.url)); eq(c.init.headers['x-api-key'], 'a-key'); ok(c.init.headers['anthropic-version']);
   const body = JSON.parse(c.init.body); const img = body.messages[0].content.find((p) => p.type === 'image');
-  eq(img.source.type, 'base64'); eq(img.source.media_type, 'image/png'); ok(body.max_tokens > 0 && body.model);
+  eq(img.source.type, 'base64'); eq(img.source.media_type, 'image/png'); ok(body.max_tokens >= 4096 && body.model);
 });
 test('server: model bisa diganti lewat secret', async () => {
   const S = await server(); const { f, calls } = fake();
@@ -131,7 +134,7 @@ test('server: foto terlalu besar atau bukan gambar ditolak sebelum memanggil AI'
   eq(calls.length, 0);
 });
 test('server: batas harian — kuota habis → 429 QUOTA tanpa memanggil AI; batas dikirim ke database', async () => {
-  const S = await server(); const { f, calls } = fake({ rpc: () => new Response('false', { status: 200 }) });
+  const S = await server(); const { f, calls } = fake({ rpc: () => new Response('0', { status: 200 }) });
   const r = await S.handle(post({ image: b64(10), mime: 'image/jpeg', device: 'd9' }), { ...ENV, SCAN_DAILY_LIMIT: '50' }, f); eq(r.status, 429); eq((await r.json()).error, 'QUOTA');
   eq(calls.length, 1); const b = JSON.parse(calls[0].init.body); eq(b.p_limit, 50); eq(b.p_device, 'd9'); eq(calls[0].init.headers.Authorization, 'Bearer srv');
   const d = fake(); await S.handle(post({ image: b64(10), mime: 'image/jpeg' }), ENV, d.f); eq(JSON.parse(d.calls[0].init.body).p_limit, S.LIMITS.perDay);
@@ -146,6 +149,7 @@ test('server: AI menolak karena kuota → 429 AIQUOTA; galat lain → 502 AIFAIL
   let r = await S.handle(post({ image: b64(10), mime: 'image/jpeg' }), ENV, x.f); eq(r.status, 429); eq((await r.json()).error, 'AIQUOTA');
   x = fake({ gemini: () => new Response('{"error":{"message":"bad key SECRET"}}', { status: 400 }) });
   r = await S.handle(post({ image: b64(10), mime: 'image/jpeg' }), ENV, x.f); eq(r.status, 502); const t = await r.text(); ok(/AIFAIL/.test(t) && !/SECRET/.test(t), t);
+  const rf = x.calls.find((c) => /imm_scan_refund/.test(c.url)); ok(rf, 'jatah dikembalikan saat AI gagal'); eq(JSON.parse(rf.init.body).p_id, 41);
   x = fake({ gemini: () => { throw new Error('network'); } });
   r = await S.handle(post({ image: b64(10), mime: 'image/jpeg' }), ENV, x.f); eq(r.status, 502);
 });
@@ -156,4 +160,62 @@ test('server: OPTIONS dijawab untuk CORS, metode lain ditolak', async () => {
 });
 test('server: prompt melarang nama orang dan meminta Document No', async () => {
   const S = await server(); ok(/Document No/.test(S.PROMPT)); ok(/nama orang|tanda tangan/i.test(S.PROMPT));
+});
+
+// ---------- hasil tinjauan kode ----------
+test('server: isi yang bukan gambar (base64 rusak, kepala file salah, mime tidak cocok) ditolak tanpa memakai jatah', async () => {
+  const S = await server(); const { f, calls } = fake();
+  for (const body of [{ image: Buffer.alloc(300, 1).toString('base64'), mime: 'image/jpeg' }, { image: b64(300) + '!!bukan base64!!', mime: 'image/jpeg' }, { image: b64(300, PNG), mime: 'image/jpeg' }, { image: 'AAAA', mime: 'image/jpeg' }]) {
+    const r = await S.handle(post(body), ENV, f); eq(r.status, 400, JSON.stringify(body).slice(0, 60)); eq((await r.json()).error, 'BADREQ');
+  }
+  eq(calls.length, 0);
+});
+test('server: awalan data: dibuang dan tetap diterima', async () => {
+  const S = await server(); const { f, calls } = fake();
+  const r = await S.handle(post({ image: 'data:image/jpeg;base64,' + b64(200), mime: 'image/jpeg' }), ENV, f); eq(r.status, 200);
+  eq(JSON.parse(calls.find((c) => /generativelanguage/.test(c.url)).init.body).contents[0].parts[0].inline_data.data, b64(200));
+});
+test('server: badan permintaan raksasa ditolak dari Content-Length, tanpa dibaca dan tanpa memakai jatah', async () => {
+  const S = await server(); const { f, calls } = fake(); let read = false;
+  const req = { method: 'POST', headers: new Headers({ 'content-length': String(50 * 1024 * 1024) }), json: async () => { read = true; return {}; }, text: async () => { read = true; return ''; }, body: null };
+  const r = await S.handle(req, ENV, f); eq(r.status, 413); eq(read, false); eq(calls.length, 0);
+});
+test('server: jawaban AI terpotong (daftar terlalu panjang) → 422 TOOLONG dan jatah dikembalikan', async () => {
+  const S = await server();
+  let x = fake({ gemini: () => new Response(JSON.stringify({ candidates: [{ finishReason: 'MAX_TOKENS', content: { parts: [{ text: '{"no_tto":"A","items":[{"nama":"X"' }] } }] }), { status: 200 }) });
+  let r = await S.handle(post({ image: b64(10), mime: 'image/jpeg' }), ENV, x.f); eq(r.status, 422); eq((await r.json()).error, 'TOOLONG'); ok(x.calls.some((c) => /imm_scan_refund/.test(c.url)));
+  x = fake({ claude: () => new Response(JSON.stringify({ stop_reason: 'max_tokens', content: [{ type: 'text', text: '{"no_tto":"A"' }] }), { status: 200 }) });
+  r = await S.handle(post({ image: b64(10), mime: 'image/jpeg' }), { ...ENV, GEMINI_API_KEY: '', ANTHROPIC_API_KEY: 'k' }, x.f); eq(r.status, 422); eq((await r.json()).error, 'TOOLONG');
+});
+test('server: jawaban AI kosong atau diblokir → 422 UNREADABLE', async () => {
+  const S = await server(); const { f } = fake({ gemini: () => new Response(JSON.stringify({ candidates: [], promptFeedback: { blockReason: 'SAFETY' } }), { status: 200 }) });
+  const r = await S.handle(post({ image: b64(10), mime: 'image/jpeg' }), ENV, f); eq(r.status, 422); eq((await r.json()).error, 'UNREADABLE');
+});
+test('server: Claude menolak karena kuota → 429 AIQUOTA', async () => {
+  const S = await server(); const { f } = fake({ claude: () => new Response('{}', { status: 429 }) });
+  const r = await S.handle(post({ image: b64(10), mime: 'image/jpeg' }), { ...ENV, GEMINI_API_KEY: '', ANTHROPIC_API_KEY: 'k' }, f); eq(r.status, 429); eq((await r.json()).error, 'AIQUOTA');
+});
+test('server: panggilan ke AI dan ke database diberi batas waktu', async () => {
+  const S = await server(); const { f, calls } = fake(); await S.handle(post({ image: b64(10), mime: 'image/jpeg' }), ENV, f);
+  for (const c of calls) ok(c.init.signal instanceof AbortSignal, c.url);
+});
+test('server: nama model dari secret yang tidak wajar diabaikan (pakai bawaan)', async () => {
+  const S = await server(); const { f, calls } = fake(); await S.handle(post({ image: b64(10), mime: 'image/jpeg' }), { ...ENV, GEMINI_MODEL: '../../evil?x=1' }, f);
+  ok(calls.some((c) => c.url.endsWith('/models/' + S.MODELS.gemini + ':generateContent')));
+});
+test('server: SCAN_DAILY_LIMIT=0 mematikan scan tanpa memanggil apa pun; kunci layanan kosong → NOLOG', async () => {
+  const S = await server(); let x = fake();
+  let r = await S.handle(post({ image: b64(10), mime: 'image/jpeg' }), { ...ENV, SCAN_DAILY_LIMIT: '0' }, x.f); eq(r.status, 429); eq((await r.json()).error, 'QUOTA'); eq(x.calls.length, 0);
+  x = fake(); r = await S.handle(post({ image: b64(10), mime: 'image/jpeg' }), { ...ENV, SUPABASE_SERVICE_ROLE_KEY: '' }, x.f); eq(r.status, 503); eq((await r.json()).error, 'NOLOG'); eq(x.calls.length, 0);
+  x = fake({ rpc: () => { throw new Error('db down'); } }); r = await S.handle(post({ image: b64(10), mime: 'image/jpeg' }), ENV, x.f); eq(r.status, 503);
+});
+test('server: angka dengan pemisah ribuan dibaca utuh, angka tak wajar dibuang', async () => {
+  const S = await server();
+  const s = S.normalizeScan({ no_tto: 'A', items: [{ nama: 'X', qty: '1.000' }, { nama: 'Y', qty: '2,500' }, { nama: 'Z', qty: 1e12 }, { nama: 'W', qty: '2,5' }], total: '3.500' });
+  deepEq(s.items.map((i) => i.qty), [1000, 2500, null, 2.5]); eq(s.total, 3500);
+});
+test('scanToForm: satuan selain koli → catatan untuk cek jumlah koli', () => {
+  const f = C.scanToForm({ no_tto: 'A', items: [{ nama: 'X', qty: 2, satuan: 'PCS' }, { nama: 'Y', qty: 1, satuan: 'KOLI' }], total: 3 });
+  eq(f.koli, 3); ok(f.notes.some((n) => /PCS/.test(n) && /koli/i.test(n)), JSON.stringify(f.notes));
+  deepEq(C.scanToForm({ no_tto: 'A', items: [{ nama: 'X', qty: 2, satuan: 'koli' }], total: 2 }).notes, []);
 });

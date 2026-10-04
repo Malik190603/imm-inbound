@@ -55,10 +55,12 @@ Untuk dua sheet inbound, kolom boleh digeser asalkan **judulnya tidak diganti**.
 Di form **Tambah TTO** ada bagian "Scan dari foto". Foto dokumen dikirim ke fungsi server `scan-tto` di Supabase, dibaca AI (Gemini atau Claude), lalu No TTO (dari *Document No*), daftar barang, dan jumlah koli terisi sendiri untuk dicek sebelum disimpan. Kunci AI hanya ada di Supabase, tidak di aplikasi dan tidak di repo ini.
 
 Pemasangan (sekali):
-1. **SQL**: Supabase → SQL Editor → tempel ulang seluruh isi `supabase/schema.sql` → Run. Ini menambah tabel `scan_log` dan fungsi `imm_scan_take` (batas scan per hari). Aman dijalankan ulang.
+1. **SQL**: Supabase → SQL Editor → tempel ulang seluruh isi `supabase/schema.sql` → Run. Ini menambah tabel `scan_log` serta fungsi `imm_scan_take` dan `imm_scan_refund` (batas scan per hari; scan yang gagal di sisi AI tidak memakan jatah). Aman dijalankan ulang.
 2. **Fungsi**: Supabase → Edge Functions → **Deploy a new function** → **Via Editor** → beri nama `scan-tto` (harus persis) → hapus isi contoh, tempel seluruh isi `supabase/functions/scan-tto/index.ts` → **Deploy function**. Biarkan verifikasi JWT menyala.
 3. **Kunci**: Supabase → Edge Functions → **Secrets** → isi Key `GEMINI_API_KEY` dan Value kunci dari aistudio.google.com → **Save**. Untuk Claude pakai `ANTHROPIC_API_KEY`. Kalau dua-duanya dipasang, Gemini yang dipakai kecuali `SCAN_PROVIDER` diisi `claude`.
 4. Opsional: `SCAN_DAILY_LIMIT` (bawaan 200 scan per hari), `GEMINI_MODEL` (bawaan `gemini-3.5-flash-lite`), `ANTHROPIC_MODEL` (bawaan `claude-haiku-4-5-20251001`).
+
+Batas harian berlaku untuk semua HP bersama-sama dan `SCAN_DAILY_LIMIT=0` mematikan scan. Karena kunci anon ada di aplikasi, orang iseng bisa menghabiskan jatah hari itu; tagihan tetap terlindungi dan form manual tetap jalan.
 
 Sebelum langkah di atas selesai, tombol scan menampilkan "Scan belum diaktifkan di server" dan form tetap bisa diisi manual. Foto dokumen dikirim ke penyedia AI yang kuncinya dipasang. Fungsi memakai `SUPABASE_SERVICE_ROLE_KEY` bawaan Supabase hanya untuk mencatat pemakaian.
 

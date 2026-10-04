@@ -4,7 +4,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import vm from 'node:vm';
 import crypto from 'node:crypto';
-import { execSync } from 'node:child_process';
+import { execSync, execFileSync } from 'node:child_process';
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
 
@@ -90,13 +90,14 @@ for (const [p, name] of PATTERNS) if (p.test(allWww)) fail('kunci rahasia ikut k
   const fnDir = path.join(ROOT, 'supabase', 'functions');
   const walk = (d) => (fs.existsSync(d) ? fs.readdirSync(d, { withFileTypes: true }).flatMap((e) => (e.isDirectory() ? walk(path.join(d, e.name)) : [path.join(d, e.name)])) : []);
   const files = walk(fnDir);
-  for (const f of files) { const t = fs.readFileSync(f, 'utf8'); for (const [p, name] of PATTERNS) if (p.test(t)) fail('kunci rahasia tertulis di ' + path.relative(ROOT, f) + ': ' + name); }
+  for (const f of files) { const t = fs.readFileSync(f, 'utf8'); for (const [p, name] of PATTERNS) if (p.test(t)) fail('kunci rahasia tertulis di ' + path.relative(ROOT, f) + ': ' + name); if (/eyJ[A-Za-z0-9_-]{10,}\.eyJ[A-Za-z0-9_-]{10,}\./.test(t)) fail('kunci JWT tertulis di ' + path.relative(ROOT, f)); }
   const entry = path.join(fnDir, 'scan-tto', 'index.ts');
   if (!fs.existsSync(entry)) fail('supabase/functions/scan-tto/index.ts tidak ada');
   else {
     // index.ts ditulis dengan sintaks JavaScript biasa (satu file untuk ditempel di dashboard): periksa sintaksnya sebagai modul.
-    const tmp = path.join(fs.mkdtempSync(path.join(require('node:os').tmpdir(), 'imm-fn-')), 'scan-tto.mjs'); fs.copyFileSync(entry, tmp);
-    try { execSync('node --check ' + JSON.stringify(tmp), { stdio: 'pipe' }); ok('fungsi server scan-tto'); } catch (e) { fail('scan-tto/index.ts: ' + String(e.stderr || e.message).split('\n').slice(0, 4).join(' ')); }
+    const dir = fs.mkdtempSync(path.join(require('node:os').tmpdir(), 'imm-fn-')); const tmp = path.join(dir, 'scan-tto.mjs'); fs.copyFileSync(entry, tmp);
+    try { execFileSync(process.execPath, ['--check', tmp], { stdio: 'pipe' }); ok('fungsi server scan-tto'); } catch (e) { fail('scan-tto/index.ts: ' + String(e.stderr || e.message).split('\n').slice(0, 4).join(' ')); }
+    finally { fs.rmSync(dir, { recursive: true, force: true }); }
   }
 }
 // Kunci Supabase service_role (JWT dengan role service_role) tidak boleh ada di aplikasi; yang boleh hanya anon.

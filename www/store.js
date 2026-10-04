@@ -92,16 +92,19 @@
   async function scanTto(blob, device, timeoutMs) {
     need();
     const body = JSON.stringify({ image: await toBase64(blob), mime: blob.type || 'image/jpeg', device: device || '' });
-    // AI bisa lambat; setelah batas waktu permintaan dibatalkan supaya form tidak menunggu selamanya.
-    const ac = typeof AbortController === 'function' ? new AbortController() : null; let late = false;
-    const timer = setTimeout(() => { late = true; if (ac) ac.abort(); }, timeoutMs || 45000);
-    let r; try { r = await doFetch(SUPA.url + '/functions/v1/scan-tto', { method: 'POST', headers: headers({ 'Content-Type': 'application/json' }), body, signal: ac ? ac.signal : undefined }); }
-    catch (e) { throw new Error(late ? 'TIMEOUT' : 'NETWORK'); } finally { clearTimeout(timer); }
-    let j = null; try { j = await r.json(); } catch (_) { /* jawaban bukan JSON */ }
-    if (r.ok && j && j.ok && j.scan) return j.scan;
-    const st = r.status, code = j && j.error;
-    // 404 = fungsi belum dipasang; NOKEY/NOLOG = kunci AI atau pencatat kuota belum dipasang
-    throw new Error(st === 404 || code === 'NOKEY' || code === 'NOLOG' ? 'NOSCAN' : st === 429 ? 'SCANQUOTA' : st === 422 ? 'UNREADABLE' : st === 413 ? 'TOOBIG' : 'SCANFAIL');
+    // AI bisa lambat: setelah batas waktu permintaan dibatalkan dan form tidak menunggu selamanya (termasuk saat isi jawaban tak kunjung selesai).
+    const ac = typeof AbortController === 'function' ? new AbortController() : null; let timer;
+    const late = new Promise((_, rej) => { timer = setTimeout(() => { if (ac) ac.abort(); rej(new Error('TIMEOUT')); }, timeoutMs || 45000); });
+    const work = (async () => {
+      let r; try { r = await doFetch(SUPA.url + '/functions/v1/scan-tto', { method: 'POST', headers: headers({ 'Content-Type': 'application/json' }), body, signal: ac ? ac.signal : undefined }); } catch (e) { throw new Error('NETWORK'); }
+      let j = null; try { j = await r.json(); } catch (_) { /* jawaban bukan JSON */ }
+      if (r.ok && j && j.ok && j.scan) return j.scan;
+      const st = r.status, code = j && j.error;
+      // 404 = fungsi belum dipasang; 401/403 = kunci aplikasi ditolak fungsi; NOKEY/NOLOG = kunci AI atau pencatat kuota belum dipasang
+      throw new Error(st === 404 || st === 401 || st === 403 || code === 'NOKEY' || code === 'NOLOG' ? 'NOSCAN' : st === 429 ? 'SCANQUOTA' : code === 'TOOLONG' ? 'TOOLONG' : st === 422 ? 'UNREADABLE' : st === 413 ? 'TOOBIG' : 'SCANFAIL');
+    })();
+    work.catch(() => {}); // bila batas waktu menang, galat susulan dari permintaan yang dibatalkan diabaikan
+    try { return await Promise.race([work, late]); } finally { clearTimeout(timer); }
   }
 
   // ---------- penyiapan foto (hanya di browser) ----------

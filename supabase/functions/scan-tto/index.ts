@@ -9,7 +9,7 @@
 //   SCAN_DAILY_LIMIT    batas scan per hari (bawaan 200)
 // SUPABASE_URL dan SUPABASE_SERVICE_ROLE_KEY sudah disediakan Supabase. Kunci AI tidak pernah dikirim ke aplikasi.
 
-export const LIMITS = { maxBytes: 1500000, perDay: 200 };
+export const LIMITS = { maxBytes: 1500000, perDay: 200, aiTimeoutMs: 30000, dbTimeoutMs: 8000 };
 export const MODELS = { gemini: 'gemini-3.5-flash-lite', claude: 'claude-haiku-4-5-20251001' };
 const MIMES = ['image/jpeg', 'image/png', 'image/webp'];
 
@@ -31,7 +31,23 @@ const CORS = { 'access-control-allow-origin': '*', 'access-control-allow-headers
 const json = (status, body) => new Response(JSON.stringify(body), { status, headers: { ...CORS, 'content-type': 'application/json' } });
 const fail = (status, error) => json(status, { ok: false, error });
 const str = (v, max) => String(v == null ? '' : v).replace(/\s+/g, ' ').trim().slice(0, max);
-const num = (v) => { if (v == null || v === '') return null; const n = Number(String(v).replace(',', '.')); return Number.isFinite(n) && n >= 0 ? n : null; };
+// Angka dari dokumen: "1.000" / "2,500" = pemisah ribuan; "2,5" = desimal. Di luar 0..1.000.000 dianggap salah baca.
+const num = (v) => {
+  if (v == null || v === '') return null; let t = String(v).trim();
+  t = /^\d{1,3}([.,]\d{3})+$/.test(t) ? t.replace(/[.,]/g, '') : t.replace(',', '.');
+  const n = Number(t); return Number.isFinite(n) && n >= 0 && n <= 1000000 ? n : null;
+};
+const timeout = (ms) => (typeof AbortSignal !== 'undefined' && AbortSignal.timeout ? AbortSignal.timeout(ms) : undefined);
+const modelName = (v, fallback) => (/^[\w.-]{1,80}$/.test(String(v || '')) ? String(v) : fallback);
+// Kepala file harus cocok dengan jenis gambarnya (JPEG, PNG, WebP).
+function looksLikeImage(b64, mime) {
+  let head; try { head = atob(b64.slice(0, 24)); } catch (_) { return false; }
+  const c = (i) => head.charCodeAt(i);
+  if (mime === 'image/jpeg') return c(0) === 0xff && c(1) === 0xd8 && c(2) === 0xff;
+  if (mime === 'image/png') return c(0) === 0x89 && head.slice(1, 4) === 'PNG';
+  if (mime === 'image/webp') return head.slice(0, 4) === 'RIFF' && head.slice(8, 12) === 'WEBP';
+  return false;
+}
 function isoDate(v) {
   const s = str(v, 20); let m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/); if (m) return m[1] + '-' + m[2].padStart(2, '0') + '-' + m[3].padStart(2, '0');
   m = s.match(/^(\d{1,2})[-/.](\d{1,2})[-/.](\d{4})$/); return m ? m[3] + '-' + m[2].padStart(2, '0') + '-' + m[1].padStart(2, '0') : '';
@@ -60,50 +76,67 @@ export function parseModelText(text) {
 }
 
 async function askGemini(env, image, mime, fetchFn) {
-  const model = env.GEMINI_MODEL || MODELS.gemini;
+  const model = modelName(env.GEMINI_MODEL, MODELS.gemini);
   const r = await fetchFn('https://generativelanguage.googleapis.com/v1beta/models/' + model + ':generateContent', {
     method: 'POST', headers: { 'content-type': 'application/json', 'x-goog-api-key': env.GEMINI_API_KEY },
-    body: JSON.stringify({ contents: [{ parts: [{ inline_data: { mime_type: mime, data: image } }, { text: PROMPT }] }], generationConfig: { responseMimeType: 'application/json', temperature: 0 } }),
+    body: JSON.stringify({ contents: [{ parts: [{ inline_data: { mime_type: mime, data: image } }, { text: PROMPT }] }], generationConfig: { responseMimeType: 'application/json' } }),
+    signal: timeout(LIMITS.aiTimeoutMs),
   });
   if (!r.ok) throw new Error(r.status === 429 ? 'AIQUOTA' : 'AIFAIL');
-  const j = await r.json(); const parts = (((j.candidates || [])[0] || {}).content || {}).parts || [];
-  return parts.map((p) => p.text || '').join('');
+  const j = await r.json(); const cand = (j.candidates || [])[0] || {};
+  if (cand.finishReason === 'MAX_TOKENS') throw new Error('TOOLONG');
+  return ((cand.content || {}).parts || []).map((p) => p.text || '').join('');
 }
 async function askClaude(env, image, mime, fetchFn) {
   const r = await fetchFn('https://api.anthropic.com/v1/messages', {
     method: 'POST', headers: { 'content-type': 'application/json', 'x-api-key': env.ANTHROPIC_API_KEY, 'anthropic-version': '2023-06-01' },
-    body: JSON.stringify({ model: env.ANTHROPIC_MODEL || MODELS.claude, max_tokens: 1500, messages: [{ role: 'user', content: [{ type: 'image', source: { type: 'base64', media_type: mime, data: image } }, { type: 'text', text: PROMPT }] }] }),
+    body: JSON.stringify({ model: modelName(env.ANTHROPIC_MODEL, MODELS.claude), max_tokens: 4096, messages: [{ role: 'user', content: [{ type: 'image', source: { type: 'base64', media_type: mime, data: image } }, { type: 'text', text: PROMPT }] }] }),
+    signal: timeout(LIMITS.aiTimeoutMs),
   });
   if (!r.ok) throw new Error(r.status === 429 ? 'AIQUOTA' : 'AIFAIL');
-  const j = await r.json(); return (j.content || []).filter((p) => p.type === 'text').map((p) => p.text || '').join('');
+  const j = await r.json(); if (j.stop_reason === 'max_tokens') throw new Error('TOOLONG');
+  return (j.content || []).filter((p) => p.type === 'text').map((p) => p.text || '').join('');
 }
 
-// Batas harian dijaga di database (fungsi imm_scan_take di supabase/schema.sql): menghitung dan mencatat dalam satu langkah.
+// Batas harian dijaga di database (imm_scan_take di supabase/schema.sql): menghitung dan mencatat dalam satu langkah, mengembalikan id jatah (0 = habis).
+// Batas ini berlaku untuk semua HP bersama-sama: melindungi tagihan, dengan risiko jatah bisa dihabiskan orang iseng (form manual tetap jalan).
+const rpc = (env, name, args, fetchFn) => fetchFn(String(env.SUPABASE_URL || '').replace(/\/$/, '') + '/rest/v1/rpc/' + name, {
+  method: 'POST', headers: { 'content-type': 'application/json', apikey: env.SUPABASE_SERVICE_ROLE_KEY, Authorization: 'Bearer ' + env.SUPABASE_SERVICE_ROLE_KEY },
+  body: JSON.stringify(args), signal: timeout(LIMITS.dbTimeoutMs),
+});
 async function takeQuota(env, device, fetchFn) {
-  const limit = Math.max(1, Math.floor(Number(env.SCAN_DAILY_LIMIT)) || LIMITS.perDay);
-  let r; try {
-    r = await fetchFn(String(env.SUPABASE_URL || '').replace(/\/$/, '') + '/rest/v1/rpc/imm_scan_take', {
-      method: 'POST', headers: { 'content-type': 'application/json', apikey: env.SUPABASE_SERVICE_ROLE_KEY || '', Authorization: 'Bearer ' + (env.SUPABASE_SERVICE_ROLE_KEY || '') },
-      body: JSON.stringify({ p_limit: limit, p_device: str(device, 40) }),
-    });
-  } catch (_) { return 'NOLOG'; }
-  if (!r.ok) return 'NOLOG';
-  let v; try { v = await r.json(); } catch (_) { return 'NOLOG'; }
-  return v === true ? 'OK' : 'QUOTA';
+  const raw = String(env.SCAN_DAILY_LIMIT == null ? '' : env.SCAN_DAILY_LIMIT).trim(); const n = Math.floor(Number(raw));
+  if (raw !== '' && n === 0) return { state: 'QUOTA' }; // 0 = scan dimatikan
+  if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_ROLE_KEY) return { state: 'NOLOG' };
+  let v; try { const r = await rpc(env, 'imm_scan_take', { p_limit: n > 0 ? n : LIMITS.perDay, p_device: str(device, 40) }, fetchFn); if (!r.ok) return { state: 'NOLOG' }; v = await r.json(); }
+  catch (_) { return { state: 'NOLOG' }; }
+  return typeof v === 'number' && v > 0 ? { state: 'OK', id: v } : v === 0 ? { state: 'QUOTA' } : { state: 'NOLOG' };
+}
+// Scan yang gagal bukan karena fotonya (AI galat atau jawaban terpotong) tidak memakan jatah.
+async function refund(env, id, fetchFn) { try { await rpc(env, 'imm_scan_refund', { p_id: id }, fetchFn); } catch (_) { /* jatah tetap terpakai */ } }
+
+// Membaca badan permintaan dengan batas ukuran, supaya kiriman raksasa tidak membebani server.
+async function readJson(req, maxChars) {
+  const len = Number(req.headers && req.headers.get && req.headers.get('content-length'));
+  if (Number.isFinite(len) && len > maxChars) throw new Error('TOOBIG');
+  if (!req.body || !req.body.getReader) { const t = await req.text(); if (t.length > maxChars) throw new Error('TOOBIG'); return JSON.parse(t); }
+  const reader = req.body.getReader(); const dec = new TextDecoder(); let text = '';
+  for (;;) { const { done, value } = await reader.read(); if (done) break; text += dec.decode(value, { stream: true }); if (text.length > maxChars) { try { await reader.cancel(); } catch (_) { /* abaikan */ } throw new Error('TOOBIG'); } }
+  return JSON.parse(text + dec.decode());
 }
 
 export async function handle(req, env, fetchFn) {
   if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: CORS });
   if (req.method !== 'POST') return fail(405, 'METHOD');
   const provider = pickProvider(env); if (!provider) return fail(503, 'NOKEY');
-  let body; try { body = await req.json(); } catch (_) { return fail(400, 'BADREQ'); }
-  const image = body && typeof body.image === 'string' ? body.image.replace(/^data:[^,]*,/, '') : ''; const mime = body && body.mime;
-  if (!image || !MIMES.includes(mime) || !/^[A-Za-z0-9+/=\s]+$/.test(image.slice(0, 200))) return fail(400, 'BADREQ');
+  let body; try { body = await readJson(req, Math.ceil(LIMITS.maxBytes / 0.75) + 4096); } catch (e) { return e && e.message === 'TOOBIG' ? fail(413, 'TOOBIG') : fail(400, 'BADREQ'); }
+  const image = body && typeof body.image === 'string' ? body.image.replace(/^data:[^,]*,/, '').replace(/\s+/g, '') : ''; const mime = body && body.mime;
   if (image.length * 0.75 > LIMITS.maxBytes) return fail(413, 'TOOBIG');
+  if (!image || !MIMES.includes(mime) || !/^[A-Za-z0-9+/]+={0,2}$/.test(image) || !looksLikeImage(image, mime)) return fail(400, 'BADREQ');
   const q = await takeQuota(env, body.device, fetchFn);
-  if (q === 'NOLOG') return fail(503, 'NOLOG'); if (q === 'QUOTA') return fail(429, 'QUOTA');
+  if (q.state === 'NOLOG') return fail(503, 'NOLOG'); if (q.state === 'QUOTA') return fail(429, 'QUOTA');
   let text; try { text = await (provider === 'gemini' ? askGemini : askClaude)(env, image, mime, fetchFn); }
-  catch (e) { return e && e.message === 'AIQUOTA' ? fail(429, 'AIQUOTA') : fail(502, 'AIFAIL'); }
+  catch (e) { await refund(env, q.id, fetchFn); const m = e && e.message; return m === 'AIQUOTA' ? fail(429, 'AIQUOTA') : m === 'TOOLONG' ? fail(422, 'TOOLONG') : fail(502, 'AIFAIL'); }
   let scan; try { scan = parseModelText(text); } catch (_) { return fail(422, 'UNREADABLE'); }
   return json(200, { ok: true, provider, scan });
 }

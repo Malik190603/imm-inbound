@@ -145,6 +145,8 @@
       barang = barang.slice(0, TTO_BARANG_MAX);
     }
     if (!items.length) notes.push('Daftar barang tidak terbaca. Isi manual.');
+    const units = Array.from(new Set((Array.isArray(s.items) ? s.items : []).map((x) => str(x && x.satuan).toUpperCase()).filter((u) => u && u !== 'KOLI')));
+    if (units.length) notes.push('Satuan di dokumen bukan koli (' + units.slice(0, 3).join(', ') + '). Cek jumlah koli.');
     const sum = items.reduce((a, x) => a + (x.qty || 0), 0); const total = pos(s.total); let koli = '';
     if (total != null) { koli = total; if (items.length && sum !== total) notes.push('Total di dokumen ' + total + ', jumlah per baris ' + sum + '. Cek jumlah koli.'); }
     else if (sum > 0) koli = sum;

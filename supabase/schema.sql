@@ -79,18 +79,23 @@ create table if not exists public.scan_log (
 create index if not exists scan_log_created_idx on public.scan_log (created_at);
 alter table public.scan_log enable row level security;
 
--- Mengambil satu jatah scan untuk hari ini (waktu Makassar). true = boleh, false = batas harian tercapai.
-create or replace function public.imm_scan_take(p_limit integer, p_device text) returns boolean
-language plpgsql security definer set search_path = public as $$
-declare n integer;
+-- Mengambil satu jatah scan untuk hari ini (waktu Makassar). Hasil: id jatah, atau 0 bila batas harian tercapai.
+drop function if exists public.imm_scan_take(integer, text);
+create function public.imm_scan_take(p_limit integer, p_device text) returns bigint
+language plpgsql security definer set search_path = '' as $$
+declare n integer; new_id bigint;
 begin
   perform pg_advisory_xact_lock(hashtext('imm_scan_take'));
   select count(*) into n from public.scan_log
     where created_at >= (date_trunc('day', now() at time zone 'Asia/Makassar') at time zone 'Asia/Makassar');
-  if n >= greatest(coalesce(p_limit, 1), 1) then return false; end if;
-  insert into public.scan_log (device) values (left(coalesce(p_device, ''), 40));
+  if n >= greatest(coalesce(p_limit, 1), 1) then return 0; end if;
+  insert into public.scan_log (device) values (left(coalesce(p_device, ''), 40)) returning id into new_id;
   delete from public.scan_log where created_at < now() - interval '30 days';
-  return true;
+  return new_id;
 end $$;
+-- Mengembalikan jatah bila AI gagal menjawab (bukan salah fotonya).
+create or replace function public.imm_scan_refund(p_id bigint) returns void
+language sql security definer set search_path = '' as $$ delete from public.scan_log where id = p_id $$;
 revoke all on function public.imm_scan_take(integer, text) from public, anon, authenticated;
-grant execute on function public.imm_scan_take(integer, text) to service_role;
+revoke all on function public.imm_scan_refund(bigint) from public, anon, authenticated;
+grant execute on function public.imm_scan_take(integer, text), public.imm_scan_refund(bigint) to service_role;

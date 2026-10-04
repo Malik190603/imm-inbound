@@ -270,7 +270,7 @@ function ttoPhotosHtml(){
 }
 // ---------- Scan TTO dari foto: foto dibaca AI di server (fungsi scan-tto), hasilnya mengisi form untuk dicek pengguna ----------
 const SCAN_MARK='Hasil scan, cek lagi';
-const SCAN_ERR={NOSCAN:'Scan belum diaktifkan di server. Isi kolom di bawah secara manual.',NOCONFIG:'Scan belum diaktifkan di server. Isi kolom di bawah secara manual.',UNREADABLE:'Foto tidak terbaca sebagai dokumen TTO. Foto ulang lebih dekat dan terang, atau isi manual.',SCANQUOTA:'Kuota scan hari ini habis. Isi manual, atau coba lagi besok.',NETWORK:'Tidak ada internet. Isi manual, atau coba lagi saat tersambung.',TIMEOUT:'Scan terlalu lama. Coba lagi, atau isi manual.',TOOBIG:'Foto terlalu besar untuk di-scan. Isi manual.',BADIMAGE:'File ini bukan foto yang bisa dibaca.'};
+const SCAN_ERR={NOSCAN:'Scan belum diaktifkan di server. Isi kolom di bawah secara manual.',NOCONFIG:'Scan belum diaktifkan di server. Isi kolom di bawah secara manual.',UNREADABLE:'Foto tidak terbaca sebagai dokumen TTO. Foto ulang lebih dekat dan terang, atau isi manual.',SCANQUOTA:'Kuota scan hari ini habis. Isi manual, atau coba lagi besok.',NETWORK:'Tidak ada internet. Isi manual, atau coba lagi saat tersambung.',TIMEOUT:'Scan terlalu lama. Coba lagi, atau isi manual.',TOOBIG:'Foto terlalu besar untuk di-scan. Isi manual.',TOOLONG:'Daftar barang di dokumen terlalu panjang untuk di-scan. Isi manual.',BADIMAGE:'File ini bukan foto yang bisa dibaca.'};
 function ttoScanHtml(){
   const sc=TTO_DRAFT.scan,dis=(sc.busy||TTO_DRAFT.saving)?'disabled':'';
   return `<div class="scan-h"><span class="scan-ic">${I.scan}</span><div><b>Scan dari foto</b><span>Foto dokumen TTO, lalu No TTO, barang, dan koli terisi sendiri.</span></div></div>
@@ -280,18 +280,22 @@ function ttoScanHtml(){
 }
 function ttoScanPaint(){const box=document.getElementById('ttoScan');if(box&&TTO_DRAFT)box.innerHTML=ttoScanHtml()}
 // Hanya kolom yang terbaca yang diisi; isi yang sudah diketik tidak dikosongkan.
-function ttoFill(f){[['ttoNo',f.no_tto],['ttoBarang',f.barang],['ttoKoli',f.koli]].forEach(([id,v])=>{if(v===''||v==null)return;const el=document.getElementById(id);if(!el)return;el.value=String(v);ttoGrow(el);
-  const fld=el.closest('.inb-field');fld.classList.remove('bad');fld.classList.add('scanned');fld.querySelector('.inb-msg').textContent=SCAN_MARK})}
+// Kolom yang sudah diisi atau dikoreksi tangan (tanpa tanda hasil scan) juga tidak ditimpa. Hasil: jumlah kolom yang dilewati karena itu.
+function ttoFill(f){let kept=0;[['ttoNo',f.no_tto],['ttoBarang',f.barang],['ttoKoli',f.koli]].forEach(([id,v])=>{if(v===''||v==null)return;const el=document.getElementById(id);if(!el)return;const fld=el.closest('.inb-field');
+  if(el.value.trim()&&!fld.classList.contains('scanned')){if(el.value.trim()!==String(v))kept++;return}
+  el.value=String(v);ttoGrow(el);fld.classList.remove('bad');fld.classList.add('scanned');fld.querySelector('.inb-msg').textContent=SCAN_MARK});return kept}
 function ttoGrow(el){if(!el||el.tagName!=='TEXTAREA')return;el.style.height='auto';el.style.height=Math.min(180,el.scrollHeight+2)+'px'}
 async function ttoScan(file){
   const draft=TTO_DRAFT;if(!draft||!file||draft.scan.busy||draft.saving)return;
   if(!/^image\//.test(file.type||'')){toast('File ini bukan foto');return}
-  ttoPick(file); // foto dokumen ikut jadi dokumentasi (kalau belum 4)
+  // Foto dokumen ikut jadi dokumentasi (kalau belum 4). Scan ulang mengganti foto scan sebelumnya supaya tidak menumpuk.
+  if(draft.scanPhoto){const i=draft.photos.indexOf(draft.scanPhoto);if(i>=0){draft.photos.splice(i,1);try{URL.revokeObjectURL(draft.scanPhoto.url)}catch(_){}}draft.scanPhoto=null}
+  const before=draft.photos.length;ttoPick(file);draft.scanPhoto=draft.photos.length>before?draft.photos[draft.photos.length-1]:null;
   draft.scan={busy:true,tone:'busy',msg:'Membaca foto…'};ttoScanPaint();let out;
   try{const blob=await IMMStore.preparePhoto(file,[],1600);const scan=await IMMStore.scanTto(blob,deviceId());
     if(TTO_DRAFT!==draft)return; // form sudah ditutup
-    const f=IMMCore.scanToForm(scan);ttoFill(f);const n=(scan.items||[]).length;
-    out={tone:f.notes.length?'warn':'ok',msg:`Terbaca: ${f.no_tto||'tanpa nomor'} · ${f0(n)} barang${f.koli!==''?` · ${f0(f.koli)} koli`:''}. ${f.notes.length?f.notes.join(' '):'Cek lagi sebelum disimpan.'}`};buzz(12)}
+    const f=IMMCore.scanToForm(scan);const kept=ttoFill(f);const n=(scan.items||[]).length;const notes=f.notes.concat(kept?['Kolom yang sudah kamu isi tidak diubah.']:[]);
+    out={tone:f.notes.length?'warn':'ok',msg:`Terbaca: ${f.no_tto||'tanpa nomor'} · ${f0(n)} barang${f.koli!==''?` · ${f0(f.koli)} koli`:''}. ${notes.length?notes.join(' '):'Cek lagi sebelum disimpan.'}`};buzz(12)}
   catch(e){if(TTO_DRAFT!==draft)return;out={tone:'err',msg:SCAN_ERR[e&&e.message]||'Scan gagal. Coba lagi, atau isi manual.'};buzz(30)}
   draft.scan={busy:false,...out};ttoScanPaint();
 }
@@ -312,7 +316,7 @@ function openTtoForm(){
       <button type="button" class="btn block press" id="ttoSave">Simpan TTO</button>
     </form>`);
 }
-function ttoRead(){const v=id=>{const e=document.getElementById(id);return e?String(e.value).trim():''};return {tgl:v('ttoTgl'),no_tto:v('ttoNo'),barang:v('ttoBarang'),koli:v('ttoKoli'),pic:v('ttoPic'),penerima:v('ttoPenerima')}}
+function ttoRead(){const v=id=>{const e=document.getElementById(id);return e?String(e.value).trim():''};return {tgl:v('ttoTgl'),no_tto:v('ttoNo'),barang:v('ttoBarang').replace(/\s*[\r\n]+\s*/g,' '),koli:v('ttoKoli'),pic:v('ttoPic'),penerima:v('ttoPenerima')}}
 function ttoValidate(e){
   const bad={};const k=Number(e.koli);
   if(!/^\d{4}-\d{2}-\d{2}$/.test(e.tgl))bad.ttoTgl='Pilih tanggal';
@@ -388,6 +392,7 @@ document.addEventListener('change',e=>{const el=e.target;if(!el||!el.matches||!e
 document.addEventListener('change',e=>{const el=e.target;if(!el||!el.matches||!el.matches('[data-tto-input]'))return;const f=el.files&&el.files[0];el.value='';ttoPick(f)});
 document.addEventListener('submit',e=>{if(e.target&&e.target.id==='ttoForm'){e.preventDefault();ttoSave()}});
 document.addEventListener('input',e=>{const f=e.target&&e.target.closest&&e.target.closest('#ttoForm .inb-field.bad,#ttoForm .inb-field.scanned');if(f){f.classList.remove('bad','scanned');f.querySelector('.inb-msg').textContent=''}});
-document.addEventListener('input',e=>{if(e.target&&e.target.id==='ttoBarang'){if(/[\r\n]/.test(e.target.value))e.target.value=e.target.value.replace(/\s*[\r\n]+\s*/g,' ');ttoGrow(e.target)}});
+document.addEventListener('input',e=>{if(e.target&&e.target.id==='ttoBarang')ttoGrow(e.target)});
+document.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target&&e.target.id==='ttoBarang')e.preventDefault()});
 document.addEventListener('change',e=>{const el=e.target;if(!el||!el.matches||!el.matches('[data-tto-scan-input]'))return;const f=el.files&&el.files[0];el.value='';ttoScan(f)});
 document.addEventListener('change',e=>{if(e.target&&e.target.id==='putLoc'){S.putLoc=e.target.value;S.more.put=0;buzz(5);render()}});
