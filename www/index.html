@@ -160,8 +160,11 @@ main>*,.ins-wrap{min-width:0}
 .hb .top .l>span{overflow:hidden;text-overflow:ellipsis}
 .hb .top .l>span.mono{flex:none}
 .hb .top .l{font-weight:600;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;display:flex;align-items:center;gap:7px}
-.hb .top .s{color:var(--ink-3);font-size:12px;white-space:nowrap}
+.hb .top .s{color:var(--ink-3);font-size:12px;white-space:nowrap;min-width:0;overflow:hidden;text-overflow:ellipsis}
+.hb .top .q{margin-left:auto;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap;color:var(--ink-2)}
+.hb .top .q small{font-weight:500;color:var(--ink-3);font-size:12px;margin-left:3px}
 .hb .top .v{margin-left:auto;font-weight:700;font-variant-numeric:tabular-nums;white-space:nowrap}
+.hb .top .q+.v{margin-left:6px;min-width:76px;text-align:right}
 .track{height:8px;border-radius:999px;background:var(--sunk);display:flex;gap:2px;overflow:hidden}
 .track span{display:block;height:100%;transform-origin:left;animation:grow .9s var(--ease) both}
 .track span:last-child{border-radius:0 999px 999px 0}
@@ -733,7 +736,7 @@ function bindCarousel(id,n){const el=document.getElementById(id);if(!el)return;c
   el.addEventListener('scroll',()=>{const w=el.firstElementChild?el.firstElementChild.offsetWidth+10:1;const k=Math.min(n-1,Math.round(el.scrollLeft/w));dots.forEach((d,j)=>d.classList.toggle('on',j===k));const ix=document.getElementById(id+'-i');if(ix)ix.textContent=(k+1)+'/'+n},{passive:true})}
 function emptyState(title,msg,acts=true,icon=I.box){const cur=F().preset;return `<div class="empty"><div class="art">${icon}</div><div class="e1">${title}</div><div>${msg}</div>${acts?`<div class="acts">${[['today','Hari ini'],['tomorrow','Besok'],['next7','7 hari ke depan'],['last30','30 hari terakhir']].filter(x=>x[0]!==cur).map(([k,l])=>`<button class="btn ghost sm press" data-qp="${k}">${l}</button>`).join('')}</div>`:''}</div>`}
 function hbars(items){const max=Math.max(1e-9,...items.map(x=>x.segs?x.segs.reduce((a,s)=>a+s[0],0):x.v));
-  return `<div class="hbars">${items.map((x,i)=>{const segs=x.segs||[[x.v,x.color||'var(--s-stock)']];const tr=`<div class="track">${segs.filter(s=>s[0]>0).map(s=>`<span style="width:${s[0]/max*100}%;background:${s[1]};animation-delay:${i*45}ms"></span>`).join('')}</div>`;return `<div class="hb ${x.click?'click press':''}" ${x.click||''}><div class="top"><span class="l">${x.l}</span>${x.s?`<span class="s">${x.s}</span>`:''}<span class="v">${x.vt}</span></div>${x.pct!=null?`<div class="trow">${tr}<span class="pct">${x.pct}%</span></div>`:tr}</div>`}).join('')}</div>`}
+  return `<div class="hbars">${items.map((x,i)=>{const segs=x.segs||[[x.v,x.color||'var(--s-stock)']];const tr=`<div class="track">${segs.filter(s=>s[0]>0).map(s=>`<span style="width:${s[0]/max*100}%;background:${s[1]};animation-delay:${i*45}ms"></span>`).join('')}</div>`;return `<div class="hb ${x.click?'click press':''}" ${x.click||''}><div class="top"><span class="l">${x.l}</span>${x.s?`<span class="s">${x.s}</span>`:''}${x.vq?`<span class="q">${x.vq}</span>`:''}<span class="v">${x.vt}</span></div>${x.pct!=null?`<div class="trow">${tr}<span class="pct">${x.pct}%</span></div>`:tr}</div>`}).join('')}</div>`}
 const buLabel=b=>`<i class="dot" style="background:${buCol(b)};border-radius:50%"></i>${esc(b)}`;
 function searchBox(key,ph){return `<label class="search">${I.search}<input type="search" placeholder="${ph}" data-q="${key}" value="${esc(S.q[key]||'')}" aria-label="${ph}"></label>`}
 function moreBtn(key,total,shown){return total>shown?`<div class="more"><button class="btn ghost sm press" data-more="${key}">Tampilkan ${Math.min(20,total-shown)} lagi · ${total-shown} tersisa</button></div>`:''}
@@ -911,7 +914,7 @@ function pageStock(){
     foot:weekStrip(IMMUi.weekDays(TODAY).map(d=>({d,v:dayCbm(d,0)})),single?from:'')})}
   <div style="--i:2">${insights('Ringkasan pintar',ins)}</div>
   ${cbm>0?`<div class="grid2" style="--i:3">
-    <section class="card">${secHead({icon:I.stock,title:'Per dept',hint:`${dep.length} dept`,sub:'Volume storing per kelompok barang, dari yang terbesar.',gloss:['dept','cbm','lc']})}<div class="tools">${searchBox('dept','Cari dept')}</div><div class="cb">${dep.length?hbars(dep.slice(0,nd).map(d=>({l:`<span class="mono">${esc(D.depts[d.k])}</span>`,s:`${d.lc.size} LC · ${f0(d.sku)} SKU`,vt:`${f1(d.cbm)}<small>CBM</small>`,pct:pc(d.cbm,cbm),v:d.cbm,color:'var(--s-stock)'}))):emptyState('Dept tidak ditemukan','Coba kata kunci lain.',false,I.search)}${moreBtn('dept',dep.length,nd)}</div></section>
+    <section class="card">${secHead({icon:I.stock,title:'Per dept',hint:`${dep.length} dept`,sub:'Volume storing per kelompok barang, dari yang terbesar.',gloss:['dept','cbm','lc']})}<div class="tools">${searchBox('dept','Cari dept')}</div><div class="cb">${dep.length?hbars(dep.slice(0,nd).map(d=>({l:`<span class="mono">${esc(D.depts[d.k])}</span>`,s:`${d.lc.size} LC · ${f0(d.sku)} SKU`,vq:`${f0(d.qty)}<small>qty</small>`,vt:`${f1(d.cbm)}<small>CBM</small>`,pct:pc(d.cbm,cbm),v:d.cbm,color:'var(--s-stock)'}))):emptyState('Dept tidak ditemukan','Coba kata kunci lain.',false,I.search)}${moreBtn('dept',dep.length,nd)}</div></section>
     <section class="card">${secHead({icon:I.box,title:'Per BU',sub:'Pembagian CBM storing per pemilik barang.',gloss:['bu','cbm']})}<div class="cb">${buZ.rows.length?hbars(buZ.rows.map(x=>({...x,vt:`${f1(x.v)}<small>CBM</small>`})))+buZ.zero:''}</div></section>
   </div>`:''}
   <section class="card" style="--i:4">${secHead({icon:I.doc,title:'Daftar No LC',hint:`${lcs.length} LC`,sub:'Ketuk LC untuk melihat isinya per tipe inbound.',gloss:['lc','cbm']})}<div class="tools">${searchBox('lcS','Cari LC / kontainer')}</div><div class="cb" style="padding-top:4px">${lcs.length?lcRows(lcs,'S','lcS'):emptyState(S.q.lcS?'Tidak ditemukan':'Tidak ada storing',S.q.lcS?'Tidak ada LC yang cocok.':`Tidak ada LC ke storing ${whenWord()}.`,!S.q.lcS)}</div></section>`;
@@ -1306,7 +1309,7 @@ function lcDetail(k,type){
   let html='';
   if(type===0){
     const dep=groupBy(R,r=>r[3],x=>({d:x,cbm:0,sku:0,qty:0}),(g,r)=>{g.cbm+=r[6];g.sku+=r[4];g.qty+=r[5]}).sort((a,b)=>b.cbm-a.cbm);
-    html=`<div><h4>Per dept <span style="font-weight:500;color:var(--ink-3);font-size:12px">· storing ${f1(cbm)} CBM</span></h4>${hbars(dep.map(d=>({l:`<span class="mono">${esc(D.depts[d.d])}</span>`,s:`${f0(d.sku)} SKU · ${f0(d.qty)} pcs`,vt:`${f2(d.cbm)}<small>CBM</small>`,pct:pc(d.cbm,cbm),v:d.cbm,color:TCOL[0]})))}</div>`;
+    html=`<div><h4>Per dept <span style="font-weight:500;color:var(--ink-3);font-size:12px">· storing ${f1(cbm)} CBM</span></h4>${hbars(dep.map(d=>({l:`<span class="mono">${esc(D.depts[d.d])}</span>`,s:`${f0(d.sku)} SKU`,vq:`${f0(d.qty)}<small>qty</small>`,vt:`${f2(d.cbm)}<small>CBM</small>`,pct:pc(d.cbm,cbm),v:d.cbm,color:TCOL[0]})))}</div>`;
   }else if(type===1){
     const st=groupBy(R,r=>r[2],x=>({c:D.codes[x],cbm:0,sku:0,qty:0}),(g,r)=>{g.cbm+=r[6];g.sku+=r[4];g.qty+=r[5]}).sort((a,b)=>b.cbm-a.cbm);
     html=`<div><h4>Store tujuan <span style="font-weight:500;color:var(--ink-3);font-size:12px">· ${st.length} store · ${f1(cbm)} CBM</span></h4>${hbars(st.map(d=>({l:`<span class="mono">${esc(d.c)}</span> <span style="font-weight:500;color:var(--ink-3)">${esc(nameOf(d.c))}</span>`,s:`${f0(d.sku)} SKU · ${f0(d.qty)} pcs`,vt:`${f2(d.cbm)}<small>CBM</small>`,pct:pc(d.cbm,cbm),v:d.cbm,color:TCOL[1]})))}</div>`;
