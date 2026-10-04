@@ -1,6 +1,6 @@
 {
   "name": "imm-inbound",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "private": true,
   "description": "IMM - Inbound Mini Monitoring DC Tallo: aplikasi Android yang membaca data dari Google Sheets",
   "scripts": {
