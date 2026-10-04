@@ -914,7 +914,7 @@ function pageStock(){
     foot:weekStrip(IMMUi.weekDays(TODAY).map(d=>({d,v:dayCbm(d,0)})),single?from:'')})}
   <div style="--i:2">${insights('Ringkasan pintar',ins)}</div>
   ${cbm>0?`<div class="grid2" style="--i:3">
-    <section class="card">${secHead({icon:I.stock,title:'Per dept',hint:`${dep.length} dept`,sub:'Volume storing per kelompok barang, dari yang terbesar.',gloss:['dept','cbm','lc']})}<div class="tools">${searchBox('dept','Cari dept')}</div><div class="cb">${dep.length?hbars(dep.slice(0,nd).map(d=>({l:`<span class="mono">${esc(D.depts[d.k])}</span>`,s:`${d.lc.size} LC · ${f0(d.sku)} SKU`,vq:`${f0(d.qty)}<small>qty</small>`,vt:`${f1(d.cbm)}<small>CBM</small>`,pct:pc(d.cbm,cbm),v:d.cbm,color:'var(--s-stock)'}))):emptyState('Dept tidak ditemukan','Coba kata kunci lain.',false,I.search)}${moreBtn('dept',dep.length,nd)}</div></section>
+    <section class="card">${secHead({icon:I.stock,title:'Per dept',hint:`${dep.length} dept`,sub:'Volume storing per kelompok barang, dari yang terbesar. Ketuk satu dept untuk melihat barangnya.',gloss:['dept','cbm','lc']})}<div class="tools">${searchBox('dept','Cari dept')}</div><div class="cb">${dep.length?hbars(dep.slice(0,nd).map(d=>({l:`<span class="mono">${esc(D.depts[d.k])}</span>`,s:`${d.lc.size} LC · ${f0(d.sku)} SKU`,vq:`${f0(d.qty)}<small>qty</small>`,vt:`${f1(d.cbm)}<small>CBM</small>`,pct:pc(d.cbm,cbm),v:d.cbm,color:'var(--s-stock)',click:`data-grp="dept" data-gk="${d.k}" role="button" tabindex="0"`}))):emptyState('Dept tidak ditemukan','Coba kata kunci lain.',false,I.search)}${moreBtn('dept',dep.length,nd)}</div></section>
     <section class="card">${secHead({icon:I.box,title:'Per BU',sub:'Pembagian CBM storing per pemilik barang.',gloss:['bu','cbm']})}<div class="cb">${buZ.rows.length?hbars(buZ.rows.map(x=>({...x,vt:`${f1(x.v)}<small>CBM</small>`})))+buZ.zero:''}</div></section>
   </div>`:''}
   <section class="card" style="--i:4">${secHead({icon:I.doc,title:'Daftar No LC',hint:`${lcs.length} LC`,sub:'Ketuk LC untuk melihat isinya per tipe inbound.',gloss:['lc','cbm']})}<div class="tools">${searchBox('lcS','Cari LC / kontainer')}</div><div class="cb" style="padding-top:4px">${lcs.length?lcRows(lcs,'S','lcS'):emptyState(S.q.lcS?'Tidak ditemukan':'Tidak ada storing',S.q.lcS?'Tidak ada LC yang cocok.':`Tidak ada LC ke storing ${whenWord()}.`,!S.q.lcS)}</div></section>`;
@@ -922,7 +922,7 @@ function pageStock(){
 function pageOut(){
   const [from,to]=range(),X=slice(from,to);const RA=X.rows.filter(r=>r[1]>0),RS=RA.filter(r=>r[1]===1);
   const st=RS.reduce((a,r)=>a+r[6],0),cu=RA.filter(r=>r[1]===2).reduce((a,r)=>a+r[6],0),all=st+cu;
-  const dest=groupBy(RS,r=>r[2],k=>({c:D.codes[k],cbm:0,sku:0,lc:new Set(),bu:''}),(g,r)=>{g.cbm+=r[6];g.sku+=r[4];g.lc.add(r[0]);g.bu=BUS[r[7]]}).sort((a,b)=>b.cbm-a.cbm);
+  const dest=groupBy(RS,r=>r[2],k=>({gk:k,c:D.codes[k],cbm:0,sku:0,lc:new Set(),bu:''}),(g,r)=>{g.cbm+=r[6];g.sku+=r[4];g.lc.add(r[0]);g.bu=BUS[r[7]]}).sort((a,b)=>b.cbm-a.cbm);
   const lcs=lcList(RA,S.q.lcO);const ins=[];
   const teO=teu(X.cont.filter(c=>c.lc&&LCSET.has(c.lc)&&(LCTOT[LCI[c.lc]][1]+LCTOT[LCI[c.lc]][2])>0));
   if(all>0){
@@ -942,7 +942,7 @@ function pageOut(){
     foot:weekStrip(IMMUi.weekDays(TODAY).map(d=>({d,v:dayCbm(d,1)})),single?from:'')})}
   <div style="--i:2">${insights('Ringkasan pintar',ins)}</div>
   ${all>0?`<div class="grid2" style="--i:3">
-    <section class="card">${secHead({icon:I.out,title:'Per store',hint:`${dest.length} store`,sub:'Volume ke tiap store, dari yang terbesar. Customer tidak ditampilkan.',gloss:['cbm','lc']})}<div class="cb">${dest.length?hbars(dest.slice(0,nd).map(d=>({l:`<span class="mono">${esc(d.c)}</span> <span style="font-weight:500;color:var(--ink-3)">${esc(nameOf(d.c))}</span>`,s:`${d.lc.size} LC`,vt:`${f1(d.cbm)}<small>CBM</small>`,pct:pc(d.cbm,st),v:d.cbm,color:'var(--s-store)'}))):emptyState('Tidak ada store','Semua outbound di periode ini adalah pesanan customer.',false,I.out)}${moreBtn('dest',dest.length,nd)}</div></section>
+    <section class="card">${secHead({icon:I.out,title:'Per store',hint:`${dest.length} store`,sub:'Volume ke tiap store, dari yang terbesar. Ketuk satu store untuk melihat barangnya. Customer tidak ditampilkan.',gloss:['cbm','lc']})}<div class="cb">${dest.length?hbars(dest.slice(0,nd).map(d=>({l:`<span class="mono">${esc(d.c)}</span> <span style="font-weight:500;color:var(--ink-3)">${esc(nameOf(d.c))}</span>`,s:`${d.lc.size} LC`,vt:`${f1(d.cbm)}<small>CBM</small>`,pct:pc(d.cbm,st),v:d.cbm,color:'var(--s-store)',click:`data-grp="store" data-gk="${d.gk}" role="button" tabindex="0"`}))):emptyState('Tidak ada store','Semua outbound di periode ini adalah pesanan customer.',false,I.out)}${moreBtn('dest',dest.length,nd)}</div></section>
     <section class="card">${secHead({icon:I.box,title:'Per BU',hint:'store + customer',sub:'Pembagian CBM outbound per pemilik barang.',gloss:['bu','cbm']})}<div class="cb">${buZ.rows.length?hbars(buZ.rows.map(x=>({...x,vt:`${f1(x.v)}<small>CBM</small>`})))+buZ.zero:''}</div></section>
   </div>`:''}
   <section class="card" style="--i:4">${secHead({icon:I.doc,title:'Daftar No LC',hint:`${lcs.length} LC`,sub:'Ketuk LC untuk melihat isinya per tipe inbound.',gloss:['lc','cbm']})}<div class="tools">${searchBox('lcO','Cari LC / kontainer')}</div><div class="cb" style="padding-top:4px">${lcs.length?lcRows(lcs,'O','lcO'):emptyState(S.q.lcO?'Tidak ditemukan':'Tidak ada outbound',S.q.lcO?'Tidak ada LC yang cocok.':`Tidak ada LC ke store atau customer ${whenWord()}.`,!S.q.lcO)}</div></section>`;
@@ -1326,6 +1326,41 @@ async function showSku(lc,type,rid){const box=()=>document.getElementById(rid);
   catch(e){delete SKU_CACHE[lc];if(box())box().innerHTML=`<p style="margin:0;color:var(--ink-2)">Isi SKU belum bisa dimuat. ${esc(e.message)}</p><button class="btn ghost sm press" data-lctype="${type}" data-lck="${LCI[lc]}" style="margin-top:8px">Coba lagi</button>`}}
 function skuTable(sk,q){const Q=q.trim().toUpperCase();const f=Q?sk.filter(r=>(r.sku+' '+r.desc+' '+r.dept).toUpperCase().includes(Q)):sk;
   return `<div class="list">${f.slice(0,150).map(r=>`<div class="row"><span class="a" style="font-size:13px">${esc(r.desc)}</span><span class="b"><span class="mono">${esc(r.sku)}</span> · ${esc(r.dept)}${r.dest===1?' · '+esc(r.code):''} · ${f0(r.qty)} pcs</span><span class="v">${f2(r.cbm)}<small>CBM</small></span></div>`).join('')}</div>${f.length>150?`<p class="foot">Menampilkan 150 dari ${f.length}. Gunakan pencarian.</p>`:''}${!f.length?'<p class="foot">Tidak ada SKU yang cocok.</p>':''}`}
+// ---------- Rincian barang satu dept (Storing) atau satu store (Outbound) pada periode dan BU yang sedang dipilih ----------
+// Isi SKU dibaca per LC dari MASTER_LC (paling banyak 4 sekaligus), lalu SKU yang sama dari beberapa LC dijumlahkan.
+let GRP=null;
+function openGroup(kind,key){
+  const [from,to]=range(),X=slice(from,to),type=kind==='dept'?0:1,col=kind==='dept'?3:2;
+  const R=X.rows.filter(r=>r[1]===type&&r[col]===key);if(!R.length)return;
+  const name=kind==='dept'?D.depts[key]:D.codes[key];const lcs=[...new Set(R.map(r=>r[0]))].map(k=>D.lcs[k]);
+  const cbm=R.reduce((a,r)=>a+r[6],0),qty=R.reduce((a,r)=>a+r[5],0);
+  GRP={kind,name,lcs};
+  sheet(sHead(esc(name),`${kind==='store'?`<span>${esc(nameOf(name))}</span>`:'<span>Storing</span>'}<span>${esc(plabel())} · ${esc(rlabel())}</span><span><b>${f0(lcs.length)}</b> LC</span><span><b>${f1(cbm)}</b> CBM</span><span><b>${f0(qty)}</b> qty</span>`),
+    `<div><h4>Isi barang <span id="grpN" style="font-weight:500;color:var(--ink-3);font-size:12px"></span></h4>
+      <label class="search" style="margin-bottom:8px">${I.search}<input type="search" placeholder="Cari SKU atau deskripsi" id="grpQ" aria-label="Cari barang" disabled></label>
+      <div id="grpNote"></div><div id="grpList"></div></div>`);
+  loadGroup(GRP);
+}
+async function loadGroup(g){
+  const el=id=>document.getElementById(id);const alive=()=>GRP===g&&!!el('grpList');
+  el('grpNote').innerHTML='';el('grpList').innerHTML=`<p class="foot" id="grpProg" style="padding:0 0 8px">Memuat isi ${f0(g.lcs.length)} LC…</p><div class="sk" style="height:120px"></div>`;
+  const match=x=>g.kind==='dept'?(x.dest===0&&x.dept===g.name):(x.dest===1&&x.code===g.name);
+  const queue=g.lcs.slice(),found=[],failed=[];let done=0;
+  const worker=async()=>{while(queue.length){const lc=queue.shift();
+    try{const d=SKU_CACHE[lc]||(SKU_CACHE[lc]=await loadSkuDetail(lc));d.filter(match).forEach(x=>found.push(x))}catch(e){delete SKU_CACHE[lc];failed.push(lc)}
+    done++;if(alive()){const p=el('grpProg');if(p)p.textContent=`Memuat isi LC… ${f0(done)} dari ${f0(g.lcs.length)}`}}};
+  await Promise.all(Array.from({length:Math.min(4,queue.length)},worker));
+  if(!alive())return;
+  const m=new Map();found.forEach(x=>{const o=m.get(x.sku);if(o){o.qty+=x.qty;o.cbm+=x.cbm;o.n++}else m.set(x.sku,{sku:x.sku,desc:x.desc,dept:x.dept,qty:x.qty,cbm:x.cbm,n:1})});
+  const items=[...m.values()].sort((a,b)=>b.cbm-a.cbm);
+  const retry=`<button class="btn ghost sm press" data-grp-retry style="margin:2px 0 10px">Coba lagi</button>`;
+  if(failed.length&&!items.length){el('grpList').innerHTML=`<p style="margin:0 0 6px;color:var(--ink-2)">Isi barang belum bisa dimuat. Cek koneksi internet.</p>${retry}`;return}
+  el('grpNote').innerHTML=failed.length?`<p class="foot" style="padding:0 0 4px;color:var(--warn);font-weight:600">${f0(failed.length)} dari ${f0(g.lcs.length)} LC belum bisa dimuat, jadi daftar ini belum lengkap.</p>${retry}`:'';
+  el('grpN').textContent=`· ${f0(items.length)} SKU`;
+  const table=q=>{const Q=q.trim().toUpperCase();const f=Q?items.filter(r=>(r.sku+' '+r.desc+' '+r.dept).toUpperCase().includes(Q)):items;
+    return `<div class="list">${f.slice(0,150).map(r=>`<div class="row"><span class="a" style="font-size:13px;white-space:normal">${esc(r.desc||'-')}</span><span class="b"><span class="mono">${esc(r.sku)}</span>${g.kind==='store'?' · '+esc(r.dept):''} · ${f0(r.qty)} pcs${r.n>1?` · ${r.n} LC`:''}</span><span class="v">${f2(r.cbm)}<small>CBM</small></span></div>`).join('')}</div>${f.length>150?`<p class="foot">Menampilkan 150 dari ${f0(f.length)}. Gunakan pencarian.</p>`:''}${!f.length?`<p class="foot">${items.length?'Tidak ada barang yang cocok.':'Tidak ada barang untuk ditampilkan.'}</p>`:''}`};
+  const q=el('grpQ');q.disabled=false;q.oninput=()=>{if(alive())el('grpList').innerHTML=table(q.value)};el('grpList').innerHTML=table(q.value||'');
+}
 function openRdc(i){const r=D.rdc[i];if(!r)return;const pl=CONT_BY_LC[r.si]||[];const cb=D.lcAll[r.si];
   const ms=[['Checkout dari asal',r.ck||r.dd],['Masuk POO',r.poo],['Kapal berangkat (ETD)',r.etd],['Berangkat (ATD)',r.atd],['Perkiraan tiba (ETA)',r.eta],['Tiba di pelabuhan (ATA)',r.ata],['Request dooring',r.rqd],['Dooring',r.acd],['Bongkar di DC',r.bk]];
   const lg=legs(r),e=r.p<4?estBk(r):null;const B=baseline();
@@ -1370,6 +1405,8 @@ document.addEventListener('click',e=>{
   if(document.getElementById('updGate'))return;
   if(g('#updCheck')){checkForUpdate(true);return}
   if(g('#roleEdit')){roleGate(null,true);return}
+  if(t=g('[data-grp-retry]')){if(GRP)loadGroup(GRP);return}
+  if(t=g('[data-grp]')){buzz(6);openGroup(t.dataset.grp,+t.dataset.gk);return}
   if(t=g('[data-lctype]')){buzz(6);lcDetail(+t.dataset.lck,+t.dataset.lctype);return}
   if(t=g('[data-lc]')){openLC(t.dataset.lc,t.dataset.mode||'all');return}
   if(t=g('[data-cont]')){openCont(+t.dataset.cont);return}
@@ -1380,6 +1417,7 @@ document.addEventListener('click',e=>{
 document.addEventListener('change',e=>{if(e.target.id==='pmonth'&&e.target.value){const f=F();f.month=e.target.value;f.preset='month';closeSheet();render(true)}});
 let qT;document.addEventListener('input',e=>{const k=e.target.dataset.q;if(!k)return;S.q[k]=e.target.value;S.more[k]=0;clearTimeout(qT);qT=setTimeout(()=>{const pos=e.target.selectionStart;render();const el=document.querySelector(`[data-q="${k}"]`);if(el){el.focus();try{el.setSelectionRange(pos,pos)}catch(_){}}},180)});
 document.addEventListener('keydown',e=>{if(e.key==='Escape')closeSheet()});
+document.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target&&e.target.matches&&e.target.matches('.hb[role="button"]')){e.preventDefault();e.target.click()}});
 addEventListener('resize',()=>{placePills();placeKnobs()});
 if(document.fonts&&document.fonts.ready)document.fonts.ready.then(()=>{placePills();placeKnobs()});
 try{PL.App&&PL.App.addListener&&PL.App.addListener('backButton',()=>{if(document.getElementById('updGate'))return;const rg=document.getElementById('roleGate');if(rg){const x=rg.querySelector('[data-rg-x]');x&&x.click();return}if(inboundOverlayBack())return;if(document.querySelector('.sheet')){closeSheet();return}if(inboundBack())return;if(S.page!=='home'){setPage('home');return}PL.App.exitApp&&PL.App.exitApp()})}catch(e){}
