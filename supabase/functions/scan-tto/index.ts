@@ -7,6 +7,7 @@
 //   SCAN_PROVIDER       'gemini' atau 'claude' bila dua kunci dipasang (bawaan: gemini)
 //   GEMINI_MODEL / ANTHROPIC_MODEL   mengganti model bawaan
 //   SCAN_DAILY_LIMIT    batas scan per hari (bawaan 200)
+// Kunci AI juga boleh disimpan di brankas database (Supabase Vault) dengan nama yang sama; secret fungsi didahulukan.
 // SUPABASE_URL dan SUPABASE_SERVICE_ROLE_KEY sudah disediakan Supabase. Kunci AI tidak pernah dikirim ke aplikasi.
 
 export const LIMITS = { maxBytes: 1500000, perDay: 200, aiTimeoutMs: 30000, dbTimeoutMs: 8000 };
@@ -115,6 +116,23 @@ async function takeQuota(env, device, fetchFn) {
 // Scan yang gagal bukan karena fotonya (AI galat atau jawaban terpotong) tidak memakan jatah.
 async function refund(env, id, fetchFn) { try { await rpc(env, 'imm_scan_refund', { p_id: id }, fetchFn); } catch (_) { /* jatah tetap terpakai */ } }
 
+// Kunci AI: dari secret fungsi; kalau tidak ada, dari brankas database lewat imm_secret (hanya service_role). Diingat 5 menit.
+let keyCache = { at: 0, keys: null };
+export function _resetKeyCache() { keyCache = { at: 0, keys: null }; }
+async function withKeys(env, fetchFn) {
+  if (env.GEMINI_API_KEY || env.ANTHROPIC_API_KEY) return env;
+  if (!env.SUPABASE_URL || !env.SUPABASE_SERVICE_ROLE_KEY) return env;
+  if (!keyCache.keys || Date.now() - keyCache.at > 300000) {
+    const keys = {};
+    for (const name of ['GEMINI_API_KEY', 'ANTHROPIC_API_KEY']) {
+      try { const r = await rpc(env, 'imm_secret', { p_name: name }, fetchFn); if (r.ok) { const v = await r.json(); if (typeof v === 'string' && v) keys[name] = v; } } catch (_) { /* brankas tidak tersedia */ }
+    }
+    if (!Object.keys(keys).length) return env; // jangan mengingat hasil kosong: kunci bisa saja baru dipasang
+    keyCache = { at: Date.now(), keys };
+  }
+  return { ...env, ...keyCache.keys };
+}
+
 // Membaca badan permintaan dengan batas ukuran, supaya kiriman raksasa tidak membebani server.
 async function readJson(req, maxChars) {
   const len = Number(req.headers && req.headers.get && req.headers.get('content-length'));
@@ -128,6 +146,7 @@ async function readJson(req, maxChars) {
 export async function handle(req, env, fetchFn) {
   if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: CORS });
   if (req.method !== 'POST') return fail(405, 'METHOD');
+  env = await withKeys(env, fetchFn);
   const provider = pickProvider(env); if (!provider) return fail(503, 'NOKEY');
   let body; try { body = await readJson(req, Math.ceil(LIMITS.maxBytes / 0.75) + 4096); } catch (e) { return e && e.message === 'TOOBIG' ? fail(413, 'TOOBIG') : fail(400, 'BADREQ'); }
   const image = body && typeof body.image === 'string' ? body.image.replace(/^data:[^,]*,/, '').replace(/\s+/g, '') : ''; const mime = body && body.mime;

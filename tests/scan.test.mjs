@@ -64,6 +64,7 @@ function fake(o = {}) {
     calls.push({ url: String(url), init });
     if (/\/rest\/v1\/rpc\/imm_scan_take/.test(url)) return o.rpc ? o.rpc() : new Response('41', { status: 200 });
     if (/\/rest\/v1\/rpc\/imm_scan_refund/.test(url)) return new Response('null', { status: 200 });
+    if (/\/rest\/v1\/rpc\/imm_secret/.test(url)) { const n = JSON.parse(init.body).p_name; const v = o.vault && o.vault[n]; return new Response(JSON.stringify(v || null), { status: 200 }); }
     if (/generativelanguage/.test(url)) return o.gemini ? o.gemini() : gemOK(SAMPLE);
     if (/api\.anthropic\.com/.test(url)) return o.claude ? o.claude() : claudeOK(SAMPLE);
     return new Response('not found', { status: 404 });
@@ -123,7 +124,7 @@ test('server: jawaban AI bukan JSON → 422 UNREADABLE', async () => {
 });
 test('server: tanpa kunci AI → 503 NOKEY, AI tidak dipanggil', async () => {
   const S = await server(); const { f, calls } = fake();
-  const r = await S.handle(post({ image: b64(10), mime: 'image/jpeg' }), { ...ENV, GEMINI_API_KEY: '' }, f); eq(r.status, 503); eq((await r.json()).error, 'NOKEY'); eq(calls.length, 0);
+  const r = await S.handle(post({ image: b64(10), mime: 'image/jpeg' }), { ...ENV, GEMINI_API_KEY: '' }, f); eq(r.status, 503); eq((await r.json()).error, 'NOKEY'); ok(!calls.some((c) => /generativelanguage|anthropic|imm_scan_take/.test(c.url)));
 });
 test('server: foto terlalu besar atau bukan gambar ditolak sebelum memanggil AI', async () => {
   const S = await server(); const { f, calls } = fake();
@@ -218,4 +219,28 @@ test('scanToForm: satuan selain koli → catatan untuk cek jumlah koli', () => {
   const f = C.scanToForm({ no_tto: 'A', items: [{ nama: 'X', qty: 2, satuan: 'PCS' }, { nama: 'Y', qty: 1, satuan: 'KOLI' }], total: 3 });
   eq(f.koli, 3); ok(f.notes.some((n) => /PCS/.test(n) && /koli/i.test(n)), JSON.stringify(f.notes));
   deepEq(C.scanToForm({ no_tto: 'A', items: [{ nama: 'X', qty: 2, satuan: 'koli' }], total: 2 }).notes, []);
+});
+
+// ---------- kunci AI dari brankas (Supabase Vault) bila secret fungsi tidak dipasang ----------
+test('server: kunci Gemini diambil dari brankas database bila tidak ada di secret fungsi', async () => {
+  const S = await server(); S._resetKeyCache(); const { f, calls } = fake({ vault: { GEMINI_API_KEY: 'vault-g' } });
+  const r = await S.handle(post({ image: b64(10), mime: 'image/jpeg' }), { ...ENV, GEMINI_API_KEY: '' }, f); eq(r.status, 200); eq((await r.json()).provider, 'gemini');
+  eq(calls.find((c) => /generativelanguage/.test(c.url)).init.headers['x-goog-api-key'], 'vault-g');
+  const v = calls.filter((c) => /imm_secret/.test(c.url)); ok(v.length >= 1); eq(v[0].init.headers.Authorization, 'Bearer srv');
+  ok(!JSON.stringify(await (await S.handle(post({ image: b64(10), mime: 'image/jpeg' }), { ...ENV, GEMINI_API_KEY: '' }, f)).json()).includes('vault-g'), 'kunci tidak ikut di jawaban');
+});
+test('server: kunci dari brankas diingat sebentar, tidak ditanyakan tiap scan', async () => {
+  const S = await server(); S._resetKeyCache(); const { f, calls } = fake({ vault: { GEMINI_API_KEY: 'vault-g' } });
+  for (let i = 0; i < 3; i++) await S.handle(post({ image: b64(10), mime: 'image/jpeg' }), { ...ENV, GEMINI_API_KEY: '' }, f);
+  const n = calls.filter((c) => /imm_secret/.test(c.url)).length; ok(n >= 1 && n <= 2, String(n));
+});
+test('server: secret fungsi menang atas brankas, dan brankas tidak ditanya', async () => {
+  const S = await server(); S._resetKeyCache(); const { f, calls } = fake({ vault: { GEMINI_API_KEY: 'vault-g' } });
+  await S.handle(post({ image: b64(10), mime: 'image/jpeg' }), ENV, f);
+  eq(calls.find((c) => /generativelanguage/.test(c.url)).init.headers['x-goog-api-key'], 'g-key'); ok(!calls.some((c) => /imm_secret/.test(c.url)));
+});
+test('server: brankas kosong atau galat → 503 NOKEY', async () => {
+  const S = await server(); S._resetKeyCache(); let x = fake();
+  let r = await S.handle(post({ image: b64(10), mime: 'image/jpeg' }), { ...ENV, GEMINI_API_KEY: '' }, x.f); eq(r.status, 503); eq((await r.json()).error, 'NOKEY');
+  S._resetKeyCache(); r = await S.handle(post({ image: b64(10), mime: 'image/jpeg' }), { GEMINI_API_KEY: '' }, x.f); eq(r.status, 503);
 });

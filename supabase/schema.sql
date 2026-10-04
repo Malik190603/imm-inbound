@@ -99,3 +99,17 @@ language sql security definer set search_path = '' as $$ delete from public.scan
 revoke all on function public.imm_scan_take(integer, text) from public, anon, authenticated;
 revoke all on function public.imm_scan_refund(bigint) from public, anon, authenticated;
 grant execute on function public.imm_scan_take(integer, text), public.imm_scan_refund(bigint) to service_role;
+
+-- Kunci AI boleh disimpan di brankas Supabase (Vault) dengan nama GEMINI_API_KEY atau ANTHROPIC_API_KEY,
+-- sebagai pengganti secret fungsi. Hanya fungsi server (service_role) yang bisa membacanya.
+create or replace function public.imm_secret(p_name text) returns text
+language plpgsql security definer set search_path = '' as $$
+declare v text;
+begin
+  if p_name not in ('GEMINI_API_KEY', 'ANTHROPIC_API_KEY') then return null; end if;
+  select decrypted_secret into v from vault.decrypted_secrets where name = p_name limit 1;
+  return v;
+exception when undefined_table or invalid_schema_name then return null;
+end $$;
+revoke all on function public.imm_secret(text) from public, anon, authenticated;
+grant execute on function public.imm_secret(text) to service_role;
