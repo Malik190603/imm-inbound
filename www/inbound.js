@@ -8,7 +8,7 @@ const INB_UNLOCK_KEY='imm.inb.unlock';
 let inbPwErr='';
 function inbUnlocked(){return IMMCore.unlockValid(LS.get(INB_UNLOCK_KEY),Date.now())}
 const inbWhen=()=>{const p=F().preset;return p==='today'?'hari ini':p==='tomorrow'?'besok':p==='all'?'di semua tanggal':'pada '+esc(rlabel())};
-function inbShowsFilter(){return inbUnlocked()&&['put','tto','prod'].includes(S.inb)}
+function inbShowsFilter(){return inbUnlocked()&&['','put','tto','prod'].includes(S.inb||'')}
 
 function inbLock(){
   return `<div class="hello slim" style="--i:0"><h1>Inbound</h1><p>Khusus tim inbound DC Tallo</p></div>
@@ -27,40 +27,40 @@ async function inbTryUnlock(){
   if(ok){inbPwErr='';LS.set(INB_UNLOCK_KEY,Date.now());S.inb='';buzz(12);render(true)}
   else{inbPwErr='Sandi salah. Coba lagi.';buzz(30);render();const n=document.getElementById('inbPw');n&&n.focus()}
 }
-// Angka di kartu daftar selalu untuk hari ini dan semua BU (filter tidak tampil di daftar).
+// Angka di kartu daftar mengikuti filter periode dan BU di atas halaman (bawaan: hari ini, semua BU). TTO tidak punya BU.
 const TILE={key:'',okKey:'',state:'idle',tto:null,noPh:null,at:0};
 function inbTilesStale(){TILE.state='idle'}
 function inbSyncTiles(lpns){
-  if(!IMMStore.configured())return;const key=TODAY+'|'+lpns.join('|');
+  if(!IMMStore.configured())return;const [from,to]=range();const key=from+'|'+to+'|'+lpns.join('|');
   if(key===TILE.key&&TILE.state!=='idle'&&!(TILE.state==='ok'&&Date.now()-TILE.at>INB_FRESH_MS))return;TILE.key=key;TILE.state='loading';
-  Promise.all([IMMStore.listTto({from:TODAY,to:TODAY}),lpns.length?IMMStore.listPutawayPhotos(lpns):[]])
+  Promise.all([IMMStore.listTto({from,to}),lpns.length?IMMStore.listPutawayPhotos(lpns):[]])
     .then(([tto,ph])=>{if(TILE.key!==key)return;const has=new Set(ph.map(r=>r.lpn));TILE.tto=tto.length;TILE.noPh=lpns.filter(l=>!has.has(l)).length;TILE.state='ok';TILE.okKey=key;TILE.at=Date.now()},()=>{if(TILE.key===key)TILE.state='error'})
     .then(()=>{if(TILE.key===key&&S.page==='inb'&&!S.inb&&inbUnlocked())render()});
 }
 function inbList(){
-  const WAIT='…',NONE='–',busy=inbBusy(),cfg=IMMStore.configured(),o={from:TODAY,to:TODAY,bu:'ALL'};
-  let put=WAIT,putFlags=[],putNote='',prod=WAIT,prodNote='CBM tim hari ini';
+  const WAIT='…',NONE='–',busy=inbBusy(),cfg=IMMStore.configured(),o=inbOpt(),when=inbWhen();
+  let put=WAIT,putFlags=[],putNote='',prod=WAIT,prodNote=`CBM tim ${when}`;
   if(!busy){
     let lpns=[];
     if(INB.err.stock){put=NONE;putNote='Data putaway belum bisa dibaca'}
     else{const L=IMMCore.putawayLpns(INB.stock,o);lpns=L.map(l=>l.lpn);put=f0(L.length);
-      const d=L.filter(l=>l.kind==='damage').length,m=L.filter(l=>l.mixed).length,seen=cfg&&TILE.state!=='error'&&TILE.at>0&&TILE.okKey===TODAY+'|'+lpns.join('|');
+      const d=L.filter(l=>l.kind==='damage').length,m=L.filter(l=>l.mixed).length,seen=cfg&&TILE.state!=='error'&&TILE.at>0&&TILE.okKey===o.from+'|'+o.to+'|'+lpns.join('|');
       if(seen&&TILE.noPh)putFlags.push(tag(`${f0(TILE.noPh)} belum ada foto`,'warn'));
       if(d)putFlags.push(tag(`${f0(d)} damage`,'crit'));if(m)putFlags.push(tag(`${f0(m)} campur Dept`,'warn'));
-      if(!L.length)putNote='Belum ada putaway hari ini';else if(!putFlags.length)putNote=seen?'Semua sudah berfoto, tanpa damage':'Tanpa damage dan campur Dept'}
+      if(!L.length)putNote=`Belum ada putaway ${when}`;else if(!putFlags.length)putNote=seen?'Semua sudah berfoto, tanpa damage':'Tanpa damage dan campur Dept'}
     if(INB.err.stock&&INB.err.transit)prod=NONE;
     else{const P=IMMCore.productivity(INB.err.stock?[]:INB.stock,INB.err.transit?[]:INB.transit,o);prod=f2(P.team.rcv+P.team.put);if(INB.err.stock||INB.err.transit)prodNote='CBM tim · sebagian data'}
     inbSyncTiles(lpns);
   }
   const tto=!cfg||TILE.state==='error'?NONE:TILE.at>0?f0(TILE.tto):WAIT;
   const ic=k=>INB_ICON[k],go=`<span class="tile-go">${I.chev}</span>`;
-  return `<div class="hello slim" style="--i:0"><h1>Inbound</h1><p>Angka hari ini · ketuk untuk membuka</p></div>
+  return `<div class="hello slim" style="--i:0"><h1>Inbound</h1><p>Angka ${when} · ketuk kartu untuk membuka</p></div>
   <div class="tiles" style="--i:1">
     <button class="tile wide press" data-inb="put"><span class="tile-h"><span class="tile-ic">${ic('put')}</span>${go}</span><span class="t">Putaway</span>
-      <span class="tile-n"><span class="tile-v">${put}</span><span class="tile-u">LPN hari ini</span></span>
+      <span class="tile-n"><span class="tile-v">${put}</span><span class="tile-u">LPN ${when}</span></span>
       ${putFlags.length?`<span class="tile-f">${putFlags.join('')}</span>`:putNote?`<span class="tile-x">${putNote}</span>`:''}</button>
     <button class="tile press" data-inb="tto"><span class="tile-h"><span class="tile-ic">${ic('tto')}</span>${go}</span><span class="t">TTO/Dokumen</span>
-      <span class="tile-v">${tto}</span><span class="tile-u">${cfg?'TTO hari ini':'Penyimpanan belum diatur'}</span></button>
+      <span class="tile-v">${tto}</span><span class="tile-u">${cfg?`TTO ${when}`:'Penyimpanan belum diatur'}</span></button>
     <button class="tile press" data-inb="prod"><span class="tile-h"><span class="tile-ic">${ic('prod')}</span>${go}</span><span class="t">Productivity</span>
       <span class="tile-v">${prod}</span><span class="tile-u">${prodNote}</span></button>
     <button class="tile wide row press" data-inb="mpp"><span class="tile-ic">${ic('mpp')}</span><span class="t">MPP detail</span><span class="tile-n"><span class="tile-v">${IMMCore.MPP.length}</span><span class="tile-u">orang</span></span>${go}</button>

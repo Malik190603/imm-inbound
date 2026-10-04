@@ -815,7 +815,6 @@ function pageHome(){
   const withLC=X.cont.filter(c=>c.lc&&LCSET.has(c.lc)),miss=X.cont.filter(c=>!c.lc||!LCSET.has(c.lc));
   const badKont=X.cont.filter(c=>c.k&&/[\s-]/.test(c.k));
   const mism=withLC.filter((c,i,a)=>a.findIndex(z=>z.lc===c.lc)===i).map(c=>{const t=LCTOT[LCI[c.lc]];const plan=c.ps+c.pt+c.pc;const lc=t[0]+t[1]+t[2];return {c,plan,lc,diff:lc-plan}}).filter(m=>Math.abs(m.diff)>=1).sort((a,b)=>Math.abs(b.diff)-Math.abs(a.diff));
-  const uns=D.un.filter(u=>buOK(u[1]));const unsC=uns.reduce((a,u)=>a+u[2]+u[3]+u[4],0);
   const rdcAct=(D.rdc||[]).filter(r=>r.p>=0&&r.p<4&&buOK(r.bu));
   const hr=new Date().getHours();const greet=hr<11?'Selamat pagi':hr<15?'Selamat siang':hr<18?'Selamat sore':'Selamat malam';
   const ins=[];
@@ -854,7 +853,6 @@ function pageHome(){
   const attn=[];
   if(miss.length)attn.push({tone:'c',n:f0(teu(miss)),u:'TEUs',label:'Belum terhitung',sub:'No LC kosong atau tidak ada di MASTER_LC',attr:'data-open="miss"'});
   if(mism.length)attn.push({n:f0(mism.length),u:'LC',label:'Selisih plan dan LC',sub:`Terbesar ${esc(mism[0].c.lc)}: plan ${f1(mism[0].plan)}, LC ${f1(mism[0].lc)} CBM`,attr:`data-lc="${esc(mism[0].c.lc)}"`});
-  if(uns.length)attn.push({n:f0(uns.length),u:'LC',label:'LC belum dijadwalkan',sub:`${f1(unsC)} CBM ada di MASTER_LC, belum di MASTER_PLAN`,attr:'data-open="uns"'});
   if(badKont.length)attn.push({n:f0(badKont.length),u:'nomor',label:'Nomor kontainer tidak seragam',sub:`Ada spasi atau tanda hubung, misalnya ${esc(badKont[0].k)}`});
   // ---- jadwal bongkar: garis waktu per jam ----
   const slots=dg?groupBy(dg.cs,c=>c.j||'',j=>({j,cs:[]}),(g,c)=>g.cs.push(c)).sort((x,y)=>x.j.localeCompare(y.j)):[];
@@ -1330,13 +1328,6 @@ function openRdc(i){const r=D.rdc[i];if(!r)return;const pl=CONT_BY_LC[r.si]||[];
    ${ag.length?`<div><h4>Durasi</h4><dl class="kv">${ag.map(([k,v,m])=>`<dt>${k}</dt><dd>${f0(v)} hari${B.n&&m?` <span style="font-weight:500;color:${v>m+1?'var(--crit)':v<m-1?'var(--good)':'var(--ink-3)'}">(${v>m?'+':''}${f0(v-m)} vs median)</span>`:''}</dd>`).join('')}</dl></div>`:''}
    ${e?`<div><h4>Perkiraan bongkar</h4><p style="margin:0;color:var(--ink-2)">${e.src==='plan'?`Sudah dijadwalkan <b style="color:var(--ink)">${dlong(e.d)}</b>${e.j?' jam '+e.j:''}.`:`±<b style="color:var(--ink)">${dlong(e.d)}</b>, berdasarkan median 60 hari terakhir. Belum ada di MASTER_PLAN.`}</p></div>`:''}
    <div><h4>Jadwal bongkar</h4>${pl.length?pl.map(c=>`<button class="row press" data-lc="${esc(r.si)}" data-mode="all"><span class="a">${dlong(c.d)}</span><span class="b">${c.j} · ${esc(c.k)}</span><span class="v" style="color:var(--ink-3)">${I.chev}</span></button>`).join(''):`<p style="margin:0;color:var(--ink-2)">${r.p===4?'Sudah delivered.':'Belum ada di MASTER_PLAN. Jadwalkan bongkar setelah kontainer tiba di Yard.'}</p>`}</div>`)}
-function openUnscheduled(){
-  const u=D.un.filter(x=>buOK(x[1])).map(x=>({lc:x[0],bu:x[1],s:x[2],o:x[3],c:x[4],n:x[5],d:lcDate(x[0])})).sort((a,b)=>b.d.localeCompare(a.d));
-  const byM=groupBy(u,x=>x.d.slice(0,7),k=>({k,n:0,cbm:0}),(g,x)=>{g.n++;g.cbm+=x.s+x.o+x.c}).sort((a,b)=>b.k.localeCompare(a.k));
-  sheet(sHead('LC belum dijadwalkan',`<span><b>${u.length}</b> LC</span><span><b>${f1(u.reduce((a,x)=>a+x.s+x.o+x.c,0))}</b> CBM</span>`,'',false),
-  `<p style="margin:0;color:var(--ink-2)">Ada di MASTER_LC tapi belum ada di MASTER_PLAN, jadi belum dihitung. Bisa jadi kontainernya masih di jalan, atau No LC di plan ditulis berbeda.</p>
-   <div><h4>Per bulan LC</h4>${hbars(byM.map(m=>{const[y,mm]=m.k.split('-').map(Number);return {l:`${BLNL[mm-1]} ${y}`,s:`${m.n} LC`,vt:f1(m.cbm),v:m.cbm,color:'var(--ink-3)'}}))}</div>
-   <div><h4>Daftar</h4><div class="list">${u.slice(0,120).map(x=>{const ri=RDC_BY_SI[x.lc];const r=ri!=null?D.rdc[ri]:null;return `<${r?`button class="row press" data-rdc="${ri}"`:'div class="row"'}><span class="a"><span class="mono">${esc(x.lc)}</span>${buTag(x.bu)}${r?tag(esc(r.pos),r.p===4?'good':''):''}</span><span class="b">${x.n} SKU · stock ${f1(x.s)} · store ${f1(x.o)} · cust ${f1(x.c)}</span><span class="v">${f1(x.s+x.o+x.c)}<small>CBM</small></span></${r?'button':'div'}>`}).join('')}</div></div>`)}
 function openMissing(){const [from,to]=range();const m=slice(from,to).cont.filter(c=>!c.lc||!LCSET.has(c.lc));
   sheet(sHead('Kontainer belum terhitung',`<span><b>${f0(teu(m))}</b> TEUs</span><span>${esc(rlabel())}</span>`,'',false),
   `<div class="list">${m.map(c=>`<button class="row press" data-cont="${D.cont.indexOf(c)}"><span class="a"><span class="mono">${esc(c.k||'—')}</span>${buTag(c.bu)}${tag(c.lc?'LC tidak ada':'Tanpa LC',c.lc?'crit':'warn')}</span><span class="b">${dday(c.d)} ${c.j} · ${esc(c.lc||'—')} · ${f0(c.te)} TEU</span><span class="v">${f1(c.ps+c.pt+c.pc)}<small>CBM plan</small></span></button>`).join('')}</div>`)}
@@ -1352,7 +1343,7 @@ document.addEventListener('click',e=>{
   if(g('#sync')||g('[data-reload]')){loadData(true);return}
   if(t=g('[data-tab]')){setPage(t.dataset.tab);return}
   if(t=g('[data-bu]')){const f=F(),v=t.dataset.bu;if(v==='ALL')f.bus=new Set(BUS);else if(allBU())f.bus=new Set([v]);else{f.bus.has(v)?f.bus.delete(v):f.bus.add(v);if(!f.bus.size)f.bus=new Set(BUS)}S.more={};buzz(5);render(true);return}
-  if(t=g('[data-open]')){({period:openPeriod,uns:openUnscheduled,miss:openMissing})[t.dataset.open]();return}
+  if(t=g('[data-open]')){({period:openPeriod,miss:openMissing})[t.dataset.open]();return}
   if(t=g('[data-preset]')){F().preset=t.dataset.preset;S.more={};closeSheet();render(true);return}
   if(g('#papply')){const f=F();f.from=document.getElementById('pfrom').value||TODAY;f.to=document.getElementById('pto').value||TODAY;f.preset='range';closeSheet();render(true);return}
   if(t=g('[data-qp]')){F().preset=t.dataset.qp;render(true);return}
