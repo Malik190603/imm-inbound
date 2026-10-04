@@ -43,7 +43,7 @@ for (const gid of ['349104626', '2022396471']) if (!allWww.includes(gid)) fail('
   const core = require(path.join(ROOT, 'www', 'inbound-core.js'));
   let tracked = [];
   try { tracked = execSync('git ls-files', { cwd: ROOT }).toString().split('\n').filter(Boolean); } catch { tracked = []; }
-  const texty = (f) => /\.(js|mjs|json|html|css|md|sql|yml|yaml|xml|gradle|txt|csv|properties)$/i.test(f) && f !== 'package-lock.json';
+  const texty = (f) => /\.(js|mjs|ts|json|html|css|md|sql|yml|yaml|xml|gradle|txt|csv|properties)$/i.test(f) && f !== 'package-lock.json';
   const words = new Map();
   for (const f of tracked.filter(texty)) {
     let t = ''; try { t = fs.readFileSync(path.join(ROOT, f), 'utf8'); } catch { continue; }
@@ -83,8 +83,22 @@ const cu = (cap.plugins || {}).CapacitorUpdater;
 if (!cu || cu.autoUpdate !== false || cu.statsUrl !== '' || cu.updateUrl !== '' || cu.channelUrl !== '') fail('CapacitorUpdater harus mode manual tanpa server pihak ketiga'); else ok('update kilat: mode manual, tanpa statistik pihak ketiga');
 if (!fs.existsSync(path.join(ROOT, 'www', 'config.js'))) fail('www/config.js tidak ada'); else ok('config.js');
 if (!fs.readFileSync(path.join(ROOT, 'android/app/src/main/AndroidManifest.xml'), 'utf8').includes('REQUEST_INSTALL_PACKAGES')) fail('izin REQUEST_INSTALL_PACKAGES tidak ada'); else ok('izin pasang update');
-const PATTERNS = [[/-----BEGIN (?:RSA )?PRIVATE KEY-----/, 'private key'], [/AIza[0-9A-Za-z_-]{30,}/, 'Google API key'], [/ghp_[0-9A-Za-z]{30,}/, 'GitHub token'], [/sb_secret_[0-9A-Za-z_-]{10,}/, 'Supabase secret key']];
+const PATTERNS = [[/-----BEGIN (?:RSA )?PRIVATE KEY-----/, 'private key'], [/AIza[0-9A-Za-z_-]{30,}/, 'Google API key'], [/ghp_[0-9A-Za-z]{30,}/, 'GitHub token'], [/sb_secret_[0-9A-Za-z_-]{10,}/, 'Supabase secret key'], [/sk-ant-[0-9A-Za-z_-]{20,}/, 'Anthropic API key']];
 for (const [p, name] of PATTERNS) if (p.test(allWww)) fail('kunci rahasia ikut ke aplikasi: ' + name);
+// Fungsi server (supabase/functions) ikut ke repo publik: kunci AI hanya boleh dibaca dari secret, tidak ditulis di kode.
+{
+  const fnDir = path.join(ROOT, 'supabase', 'functions');
+  const walk = (d) => (fs.existsSync(d) ? fs.readdirSync(d, { withFileTypes: true }).flatMap((e) => (e.isDirectory() ? walk(path.join(d, e.name)) : [path.join(d, e.name)])) : []);
+  const files = walk(fnDir);
+  for (const f of files) { const t = fs.readFileSync(f, 'utf8'); for (const [p, name] of PATTERNS) if (p.test(t)) fail('kunci rahasia tertulis di ' + path.relative(ROOT, f) + ': ' + name); }
+  const entry = path.join(fnDir, 'scan-tto', 'index.ts');
+  if (!fs.existsSync(entry)) fail('supabase/functions/scan-tto/index.ts tidak ada');
+  else {
+    // index.ts ditulis dengan sintaks JavaScript biasa (satu file untuk ditempel di dashboard): periksa sintaksnya sebagai modul.
+    const tmp = path.join(fs.mkdtempSync(path.join(require('node:os').tmpdir(), 'imm-fn-')), 'scan-tto.mjs'); fs.copyFileSync(entry, tmp);
+    try { execSync('node --check ' + JSON.stringify(tmp), { stdio: 'pipe' }); ok('fungsi server scan-tto'); } catch (e) { fail('scan-tto/index.ts: ' + String(e.stderr || e.message).split('\n').slice(0, 4).join(' ')); }
+  }
+}
 // Kunci Supabase service_role (JWT dengan role service_role) tidak boleh ada di aplikasi; yang boleh hanya anon.
 for (const m of allWww.matchAll(/eyJ[A-Za-z0-9_-]+\.(eyJ[A-Za-z0-9_-]+)\.[A-Za-z0-9_-]+/g)) {
   try { if (JSON.parse(Buffer.from(m[1], 'base64url').toString()).role === 'service_role') fail('kunci Supabase service_role ikut ke aplikasi'); } catch { /* bukan JWT */ }

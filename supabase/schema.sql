@@ -68,3 +68,29 @@ drop policy if exists "imm hapus objek" on storage.objects;
 create policy "imm baca objek" on storage.objects for select to anon using (bucket_id = 'imm-photos');
 create policy "imm unggah objek" on storage.objects for insert to anon with check (bucket_id = 'imm-photos');
 create policy "imm hapus objek" on storage.objects for delete to anon using (bucket_id = 'imm-photos');
+
+-- Scan TTO dari foto: pencatat pemakaian untuk batas harian (dipanggil hanya oleh fungsi server scan-tto).
+-- Aplikasi (anon) tidak bisa membaca atau menulis tabel ini, dan tidak bisa memanggil fungsinya.
+create table if not exists public.scan_log (
+  id bigint generated always as identity primary key,
+  device text,
+  created_at timestamptz not null default now()
+);
+create index if not exists scan_log_created_idx on public.scan_log (created_at);
+alter table public.scan_log enable row level security;
+
+-- Mengambil satu jatah scan untuk hari ini (waktu Makassar). true = boleh, false = batas harian tercapai.
+create or replace function public.imm_scan_take(p_limit integer, p_device text) returns boolean
+language plpgsql security definer set search_path = public as $$
+declare n integer;
+begin
+  perform pg_advisory_xact_lock(hashtext('imm_scan_take'));
+  select count(*) into n from public.scan_log
+    where created_at >= (date_trunc('day', now() at time zone 'Asia/Makassar') at time zone 'Asia/Makassar');
+  if n >= greatest(coalesce(p_limit, 1), 1) then return false; end if;
+  insert into public.scan_log (device) values (left(coalesce(p_device, ''), 40));
+  delete from public.scan_log where created_at < now() - interval '30 days';
+  return true;
+end $$;
+revoke all on function public.imm_scan_take(integer, text) from public, anon, authenticated;
+grant execute on function public.imm_scan_take(integer, text) to service_role;

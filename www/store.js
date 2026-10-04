@@ -83,9 +83,30 @@
     for (const p of row.photos || []) { try { await removeObject(p); } catch (_) { /* baris sudah terhapus */ } }
   }
 
+  // ---------- scan TTO dari foto (fungsi server scan-tto; kunci AI hanya ada di server) ----------
+  async function toBase64(blob) {
+    const u = new Uint8Array(await blob.arrayBuffer()); let s = '';
+    for (let i = 0; i < u.length; i += 0x8000) s += String.fromCharCode.apply(null, u.subarray(i, i + 0x8000));
+    return btoa(s);
+  }
+  async function scanTto(blob, device, timeoutMs) {
+    need();
+    const body = JSON.stringify({ image: await toBase64(blob), mime: blob.type || 'image/jpeg', device: device || '' });
+    // AI bisa lambat; setelah batas waktu permintaan dibatalkan supaya form tidak menunggu selamanya.
+    const ac = typeof AbortController === 'function' ? new AbortController() : null; let late = false;
+    const timer = setTimeout(() => { late = true; if (ac) ac.abort(); }, timeoutMs || 45000);
+    let r; try { r = await doFetch(SUPA.url + '/functions/v1/scan-tto', { method: 'POST', headers: headers({ 'Content-Type': 'application/json' }), body, signal: ac ? ac.signal : undefined }); }
+    catch (e) { throw new Error(late ? 'TIMEOUT' : 'NETWORK'); } finally { clearTimeout(timer); }
+    let j = null; try { j = await r.json(); } catch (_) { /* jawaban bukan JSON */ }
+    if (r.ok && j && j.ok && j.scan) return j.scan;
+    const st = r.status, code = j && j.error;
+    // 404 = fungsi belum dipasang; NOKEY/NOLOG = kunci AI atau pencatat kuota belum dipasang
+    throw new Error(st === 404 || code === 'NOKEY' || code === 'NOLOG' ? 'NOSCAN' : st === 429 ? 'SCANQUOTA' : st === 422 ? 'UNREADABLE' : st === 413 ? 'TOOBIG' : 'SCANFAIL');
+  }
+
   // ---------- penyiapan foto (hanya di browser) ----------
-  async function preparePhoto(file, lines) {
-    const MAXS = 1280;
+  async function preparePhoto(file, lines, maxSide) {
+    const MAXS = maxSide || 1280;
     let src; try { src = await createImageBitmap(file, { imageOrientation: 'from-image' }); }
     catch (e) { src = await new Promise((res, rej) => { const im = new Image(); im.onload = () => res(im); im.onerror = () => rej(new Error('BADIMAGE')); im.src = URL.createObjectURL(file); }); }
     const sw = src.width, sh = src.height; if (!sw || !sh) throw new Error('BADIMAGE');
@@ -104,7 +125,7 @@
   }
 
   return {
-    configured, photoUrl, listPutawayPhotos, addPutawayPhoto, removePutawayPhoto, listTto, addTto, removeTto, validTto, preparePhoto, MAX_PHOTOS,
+    configured, photoUrl, listPutawayPhotos, addPutawayPhoto, removePutawayPhoto, listTto, addTto, removeTto, validTto, scanTto, preparePhoto, MAX_PHOTOS,
     _setFetch(f) { fetchImpl = f; }, _config(url, key) { SUPA.url = url; SUPA.key = key; },
     _internals: { rest, upload, removeObject, insert, headers, safe, rand, need },
   };

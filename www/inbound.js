@@ -3,6 +3,7 @@
 I.lock='<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="9" width="12" height="8" rx="2"/><path d="M7 9V6.5a3 3 0 0 1 6 0V9M10 12.5v1.5"/></svg>';
 I.cam='<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7.5a1.5 1.5 0 0 1 1.5-1.5H6l1.2-1.8h5.6L14 6h1.5A1.5 1.5 0 0 1 17 7.5v7a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 3 14.5z"/><circle cx="10" cy="11" r="2.8"/></svg>';
 I.plus='<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M10 4.5v11M4.5 10h11"/></svg>';
+I.scan='<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7V5a2 2 0 0 1 2-2h2M13 3h2a2 2 0 0 1 2 2v2M17 13v2a2 2 0 0 1-2 2h-2M7 17H5a2 2 0 0 1-2-2v-2M6.5 10h7"/></svg>';
 const INB_ICON={put:I.box,tto:I.doc,prod:I.trend,mpp:I.users};
 const INB_UNLOCK_KEY='imm.inb.unlock';
 let inbPwErr='';
@@ -267,15 +268,43 @@ function ttoPhotosHtml(){
     <p class="foot" style="padding:6px 0 0">Opsional, maksimal ${max} foto. Cap waktu dan No TTO ditambahkan otomatis.</p>
     <input id="ttoCam" type="file" accept="image/*" capture="environment" data-tto-input hidden><input id="ttoGal" type="file" accept="image/*" data-tto-input hidden>`;
 }
+// ---------- Scan TTO dari foto: foto dibaca AI di server (fungsi scan-tto), hasilnya mengisi form untuk dicek pengguna ----------
+const SCAN_MARK='Hasil scan, cek lagi';
+const SCAN_ERR={NOSCAN:'Scan belum diaktifkan di server. Isi kolom di bawah secara manual.',NOCONFIG:'Scan belum diaktifkan di server. Isi kolom di bawah secara manual.',UNREADABLE:'Foto tidak terbaca sebagai dokumen TTO. Foto ulang lebih dekat dan terang, atau isi manual.',SCANQUOTA:'Kuota scan hari ini habis. Isi manual, atau coba lagi besok.',NETWORK:'Tidak ada internet. Isi manual, atau coba lagi saat tersambung.',TIMEOUT:'Scan terlalu lama. Coba lagi, atau isi manual.',TOOBIG:'Foto terlalu besar untuk di-scan. Isi manual.',BADIMAGE:'File ini bukan foto yang bisa dibaca.'};
+function ttoScanHtml(){
+  const sc=TTO_DRAFT.scan,dis=(sc.busy||TTO_DRAFT.saving)?'disabled':'';
+  return `<div class="scan-h"><span class="scan-ic">${I.scan}</span><div><b>Scan dari foto</b><span>Foto dokumen TTO, lalu No TTO, barang, dan koli terisi sendiri.</span></div></div>
+    <div class="ph-actions"><button type="button" class="btn ghost press" data-tto-scan="cam" ${dis}>${I.cam}Kamera</button><button type="button" class="btn ghost press" data-tto-scan="gal" ${dis}>${I.doc}Galeri</button></div>
+    ${sc.msg?`<p class="scan-res" data-tone="${sc.tone}" role="status">${sc.busy?'<i class="scan-spin" aria-hidden="true"></i>':''}<span>${esc(sc.msg)}</span></p>`:''}
+    <input id="ttoScanCam" type="file" accept="image/*" capture="environment" data-tto-scan-input hidden><input id="ttoScanGal" type="file" accept="image/*" data-tto-scan-input hidden>`;
+}
+function ttoScanPaint(){const box=document.getElementById('ttoScan');if(box&&TTO_DRAFT)box.innerHTML=ttoScanHtml()}
+// Hanya kolom yang terbaca yang diisi; isi yang sudah diketik tidak dikosongkan.
+function ttoFill(f){[['ttoNo',f.no_tto],['ttoBarang',f.barang],['ttoKoli',f.koli]].forEach(([id,v])=>{if(v===''||v==null)return;const el=document.getElementById(id);if(!el)return;el.value=String(v);ttoGrow(el);
+  const fld=el.closest('.inb-field');fld.classList.remove('bad');fld.classList.add('scanned');fld.querySelector('.inb-msg').textContent=SCAN_MARK})}
+function ttoGrow(el){if(!el||el.tagName!=='TEXTAREA')return;el.style.height='auto';el.style.height=Math.min(180,el.scrollHeight+2)+'px'}
+async function ttoScan(file){
+  const draft=TTO_DRAFT;if(!draft||!file||draft.scan.busy||draft.saving)return;
+  if(!/^image\//.test(file.type||'')){toast('File ini bukan foto');return}
+  ttoPick(file); // foto dokumen ikut jadi dokumentasi (kalau belum 4)
+  draft.scan={busy:true,tone:'busy',msg:'Membaca foto…'};ttoScanPaint();let out;
+  try{const blob=await IMMStore.preparePhoto(file,[],1600);const scan=await IMMStore.scanTto(blob,deviceId());
+    if(TTO_DRAFT!==draft)return; // form sudah ditutup
+    const f=IMMCore.scanToForm(scan);ttoFill(f);const n=(scan.items||[]).length;
+    out={tone:f.notes.length?'warn':'ok',msg:`Terbaca: ${f.no_tto||'tanpa nomor'} · ${f0(n)} barang${f.koli!==''?` · ${f0(f.koli)} koli`:''}. ${f.notes.length?f.notes.join(' '):'Cek lagi sebelum disimpan.'}`};buzz(12)}
+  catch(e){if(TTO_DRAFT!==draft)return;out={tone:'err',msg:SCAN_ERR[e&&e.message]||'Scan gagal. Coba lagi, atau isi manual.'};buzz(30)}
+  draft.scan={busy:false,...out};ttoScanPaint();
+}
 function ttoDraftClear(){if(TTO_DRAFT)TTO_DRAFT.photos.forEach(p=>{try{URL.revokeObjectURL(p.url)}catch(e){}});TTO_DRAFT=null}
 function openTtoForm(){
-  ttoDraftClear();TTO_DRAFT={photos:[],saving:false};
+  ttoDraftClear();TTO_DRAFT={photos:[],saving:false,scan:{busy:false,tone:'',msg:''}};
   const fld=(id,label,html)=>`<label class="inb-field" data-f="${id}"><span>${label}</span>${html}<em class="inb-msg"></em></label>`;
   sheet(sHead('Tambah TTO','Serah terima dokumen atau barang','',false),
     `<form id="ttoForm" class="tto-form" novalidate>
+      <div id="ttoScan" class="tto-scan">${ttoScanHtml()}</div>
       ${fld('ttoTgl','Tanggal serah terima',`<input id="ttoTgl" type="date" value="${TODAY}">`)}
       ${fld('ttoNo','No TTO',`<input id="ttoNo" type="text" autocomplete="off" autocapitalize="characters" maxlength="60">`)}
-      ${fld('ttoBarang','Nama barang',`<input id="ttoBarang" type="text" autocomplete="off" maxlength="120">`)}
+      ${fld('ttoBarang','Nama barang',`<textarea id="ttoBarang" rows="1" autocomplete="off" maxlength="${IMMCore.TTO_BARANG_MAX}"></textarea>`)}
       ${fld('ttoKoli','Jumlah koli',`<input id="ttoKoli" type="number" inputmode="numeric" min="1" step="1">`)}
       ${fld('ttoPic','PIC yang menyerahkan',`<select id="ttoPic"><option value="">Pilih PIC</option>${IMMCore.PICS.map(p=>`<option>${esc(p)}</option>`).join('')}</select>`)}
       ${fld('ttoPenerima','Penerima',`<input id="ttoPenerima" type="text" autocomplete="off" maxlength="60">`)}
@@ -290,12 +319,12 @@ function ttoValidate(e){
   if(!e.no_tto)bad.ttoNo='Wajib diisi';if(!e.barang)bad.ttoBarang='Wajib diisi';
   if(e.koli===''||!Number.isInteger(k)||k<1)bad.ttoKoli='Isi angka bulat, minimal 1';
   if(!e.pic)bad.ttoPic='Pilih PIC';if(!e.penerima)bad.ttoPenerima='Wajib diisi';
-  document.querySelectorAll('#ttoForm .inb-field').forEach(f=>{const m=bad[f.dataset.f]||'';f.classList.toggle('bad',!!m);f.querySelector('.inb-msg').textContent=m});
+  document.querySelectorAll('#ttoForm .inb-field').forEach(f=>{const m=bad[f.dataset.f]||'';f.classList.toggle('bad',!!m);if(m)f.classList.remove('scanned');f.querySelector('.inb-msg').textContent=m||(f.classList.contains('scanned')?SCAN_MARK:'')});
   return !Object.keys(bad).length;
 }
 async function ttoSave(){
-  if(!TTO_DRAFT||TTO_DRAFT.saving)return;const e=ttoRead();
-  if(!ttoValidate(e)){buzz(30);const f=document.querySelector('#ttoForm .inb-field.bad input,#ttoForm .inb-field.bad select');f&&f.focus();return}
+  if(!TTO_DRAFT||TTO_DRAFT.saving)return;if(TTO_DRAFT.scan.busy){toast('Tunggu sampai foto selesai dibaca');return}const e=ttoRead();
+  if(!ttoValidate(e)){buzz(30);const f=document.querySelector('#ttoForm .inb-field.bad input,#ttoForm .inb-field.bad select,#ttoForm .inb-field.bad textarea');f&&f.focus();return}
   const btn=document.getElementById('ttoSave');TTO_DRAFT.saving=true;btn.disabled=true;btn.textContent='Menyimpan…';
   try{const blobs=[];for(const p of TTO_DRAFT.photos)blobs.push(await IMMStore.preparePhoto(p.file,[IMMCore.stampText(p.at),'TTO '+e.no_tto]));
     const row=await IMMStore.addTto({...e,koli:Number(e.koli)},blobs,deviceId());
@@ -346,6 +375,7 @@ function inboundClick(e){
   if(t=g('[data-lpn]')){openLpn(t.dataset.lpn);return true}
   if(g('#ttoAdd')){openTtoForm();return true}
   if(g('#ttoSave')){ttoSave();return true}
+  if(t=g('[data-tto-scan]')){const el=document.getElementById(t.dataset.ttoScan==='cam'?'ttoScanCam':'ttoScanGal');el&&el.click();return true}
   if(t=g('[data-tto-photo]')){const el=document.getElementById(t.dataset.ttoPhoto==='cam'?'ttoCam':'ttoGal');el&&el.click();return true}
   if(t=g('[data-tto-unphoto]')){if(TTO_DRAFT&&!TTO_DRAFT.saving){const p=TTO_DRAFT.photos.splice(+t.dataset.ttoUnphoto,1)[0];if(p)try{URL.revokeObjectURL(p.url)}catch(_){}document.getElementById('ttoPhotos').innerHTML=ttoPhotosHtml()}return true}
   if(g('#ttoDel')){ttoDelete(g('#ttoDel').dataset.id);return true}
@@ -357,5 +387,7 @@ document.addEventListener('keydown',e=>{if(e.key==='Enter'&&e.target&&e.target.i
 document.addEventListener('change',e=>{const el=e.target;if(!el||!el.matches||!el.matches('[data-photo-input]'))return;const f=el.files&&el.files[0];el.value='';if(f&&el.closest('#lpnPhotos'))phAdd(f)});
 document.addEventListener('change',e=>{const el=e.target;if(!el||!el.matches||!el.matches('[data-tto-input]'))return;const f=el.files&&el.files[0];el.value='';ttoPick(f)});
 document.addEventListener('submit',e=>{if(e.target&&e.target.id==='ttoForm'){e.preventDefault();ttoSave()}});
-document.addEventListener('input',e=>{const f=e.target&&e.target.closest&&e.target.closest('#ttoForm .inb-field.bad');if(f){f.classList.remove('bad');f.querySelector('.inb-msg').textContent=''}});
+document.addEventListener('input',e=>{const f=e.target&&e.target.closest&&e.target.closest('#ttoForm .inb-field.bad,#ttoForm .inb-field.scanned');if(f){f.classList.remove('bad','scanned');f.querySelector('.inb-msg').textContent=''}});
+document.addEventListener('input',e=>{if(e.target&&e.target.id==='ttoBarang'){if(/[\r\n]/.test(e.target.value))e.target.value=e.target.value.replace(/\s*[\r\n]+\s*/g,' ');ttoGrow(e.target)}});
+document.addEventListener('change',e=>{const el=e.target;if(!el||!el.matches||!el.matches('[data-tto-scan-input]'))return;const f=el.files&&el.files[0];el.value='';ttoScan(f)});
 document.addEventListener('change',e=>{if(e.target&&e.target.id==='putLoc'){S.putLoc=e.target.value;S.more.put=0;buzz(5);render()}});

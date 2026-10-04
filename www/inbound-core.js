@@ -129,5 +129,27 @@
     return p.day + '/' + p.month + '/' + p.year + ' ' + (p.hour === '24' ? '00' : p.hour) + ':' + p.minute + ' WITA';
   }
 
-  return { OPERATORS, PICS, MPP, STOCK_HEADERS, TRANSIT_HEADERS, toObjects, missingHeaders, columnLetter, rdcQuery, usDate, lpnKind, putawayLpns, productivity, PW_SALT, PW_HASH, hashPassword, checkPassword, unlockValid, stampText };
+  // ---------- scan TTO dari foto: hasil bacaan AI → isi form ----------
+  // scan = {no_tto, items:[{nama, qty}], total}. Hasil: {no_tto, barang, koli, notes} — notes berisi hal yang perlu dicek pengguna.
+  const TTO_BARANG_MAX = 200;
+  function scanToForm(scan) {
+    const s = scan && typeof scan === 'object' ? scan : {}; const notes = [];
+    const pos = (v) => { const n = Number(v); return Number.isFinite(n) && n > 0 ? Math.round(n) : null; };
+    const items = (Array.isArray(s.items) ? s.items : []).filter((x) => x && typeof x === 'object' && str(x.nama)).map((x) => ({ nama: str(x.nama).replace(/\s+/g, ' '), qty: pos(x.qty) }));
+    const no = str(s.no_tto).slice(0, 60); if (!no) notes.push('No TTO tidak terbaca. Isi manual.');
+    // daftar barang: "NAMA (qty), …" — bila melebihi kolom, sisanya diringkas "+N lainnya"
+    const label = (x) => x.nama + (x.qty != null ? ' (' + x.qty + ')' : ''); let barang = items.map(label).join(', ');
+    if (barang.length > TTO_BARANG_MAX) {
+      let n = items.length; const build = (k) => items.slice(0, k).map(label).join(', ') + ', +' + (items.length - k) + ' lainnya';
+      do { n--; barang = n > 0 ? build(n) : ('+' + items.length + ' lainnya'); } while (n > 0 && barang.length > TTO_BARANG_MAX);
+      barang = barang.slice(0, TTO_BARANG_MAX);
+    }
+    if (!items.length) notes.push('Daftar barang tidak terbaca. Isi manual.');
+    const sum = items.reduce((a, x) => a + (x.qty || 0), 0); const total = pos(s.total); let koli = '';
+    if (total != null) { koli = total; if (items.length && sum !== total) notes.push('Total di dokumen ' + total + ', jumlah per baris ' + sum + '. Cek jumlah koli.'); }
+    else if (sum > 0) koli = sum;
+    return { no_tto: no, barang, koli, notes };
+  }
+
+  return { OPERATORS, PICS, MPP, STOCK_HEADERS, TRANSIT_HEADERS, toObjects, missingHeaders, columnLetter, rdcQuery, usDate, lpnKind, putawayLpns, productivity, PW_SALT, PW_HASH, hashPassword, checkPassword, unlockValid, stampText, scanToForm, TTO_BARANG_MAX };
 });

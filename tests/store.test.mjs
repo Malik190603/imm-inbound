@@ -72,3 +72,28 @@ test('addTto rejects INVALID for a missing field or koli < 1', async () => {
 });
 test('listTto filters by date range, newest first', async () => { await S.listTto({ from: '2026-10-01', to: '2026-10-03' }); match(fake.urls[0], /tto\?select=\*&tgl=gte\.2026-10-01&tgl=lte\.2026-10-03&order=tgl\.desc,created_at\.desc$/); });
 test('removeTto deletes the row, then its photos', async () => { await S.removeTto({ id: 5, photos: ['tto/a/1.jpg', 'tto/a/2.jpg'] }); deepEq(fake.order, ['delrow', 'remove', 'remove']); match(fake.rowsDeleted[0], /tto\?id=eq\.5$/); });
+
+// ---------- scan TTO (fungsi server scan-tto) ----------
+const scanResp = (status, body) => async (url, o = {}) => { fake.urls.push((o.method || 'GET') + ' ' + url); fake.headers.push(o.headers || {}); fake.lastBody = o.body; return json(status, body); };
+test('scanTto: foto dikirim sebagai base64 ke fungsi scan-tto dengan kunci anon, hasil scan dikembalikan', async () => {
+  S._setFetch(scanResp(200, { ok: true, provider: 'gemini', scan: { no_tto: 'TTO/1', items: [], total: 2 } }));
+  const r = await S.scanTto(blob, 'dev1');
+  deepEq(r, { no_tto: 'TTO/1', items: [], total: 2 });
+  eq(fake.urls.at(-1), 'POST ' + URL0 + '/functions/v1/scan-tto');
+  const h = fake.headers.at(-1); eq(h.apikey, 'anon-key'); eq(h.Authorization, 'Bearer anon-key'); eq(h['Content-Type'], 'application/json');
+  deepEq(JSON.parse(fake.lastBody), { image: Buffer.from([1, 2, 3]).toString('base64'), mime: 'image/jpeg', device: 'dev1' });
+});
+test('scanTto: galat server diterjemahkan ke kode yang dipahami aplikasi', async () => {
+  const cases = [[404, {}, 'NOSCAN'], [503, { error: 'NOKEY' }, 'NOSCAN'], [503, { error: 'NOLOG' }, 'NOSCAN'], [429, { error: 'QUOTA' }, 'SCANQUOTA'], [429, { error: 'AIQUOTA' }, 'SCANQUOTA'],
+    [422, { error: 'UNREADABLE' }, 'UNREADABLE'], [413, { error: 'TOOBIG' }, 'TOOBIG'], [502, { error: 'AIFAIL' }, 'SCANFAIL'], [500, {}, 'SCANFAIL'], [200, { ok: true }, 'SCANFAIL']];
+  for (const [st, body, code] of cases) { S._setFetch(scanResp(st, body)); await rejects(() => S.scanTto(blob, 'd'), new RegExp('^Error: ' + code + '$'), st + ' ' + JSON.stringify(body)); }
+});
+test('scanTto: tanpa internet → NETWORK; penyimpanan belum diatur → NOCONFIG', async () => {
+  S._setFetch(async () => { throw new Error('offline'); }); await rejects(() => S.scanTto(blob, 'd'), /^Error: NETWORK$/);
+  S._config('', ''); await rejects(() => S.scanTto(blob, 'd'), /^Error: NOCONFIG$/);
+});
+test('scanTto: server tidak menjawab → berhenti sendiri dengan TIMEOUT dan permintaan dibatalkan', async () => {
+  let aborted = false;
+  S._setFetch((url, o) => new Promise((_, rej) => { o.signal.addEventListener('abort', () => { aborted = true; rej(new Error('aborted')); }); }));
+  const t0 = Date.now(); await rejects(() => S.scanTto(blob, 'd', 60), /^Error: TIMEOUT$/); eq(aborted, true); assert.ok(Date.now() - t0 < 2000);
+});
