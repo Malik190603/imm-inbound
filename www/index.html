@@ -226,6 +226,9 @@ body::before{content:"";position:fixed;left:0;right:0;top:0;height:var(--sat);ba
 .row .a{font-weight:600;font-size:14px;display:flex;align-items:center;gap:7px;min-width:0;flex-wrap:wrap}
 .row .b{font-size:12.5px;color:var(--ink-3);grid-column:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .row .v{grid-row:1/span 2;grid-column:2;text-align:right;font-weight:700;font-variant-numeric:tabular-nums}
+.row .o{grid-column:1;display:flex;align-items:center;gap:6px;min-width:0;font-size:12.5px;font-weight:600;color:var(--ink-2)}
+.row .o svg{width:14px;height:14px;flex:none;color:var(--ink-3)}
+.row .o span{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .row .v small{display:block;font-weight:500;color:var(--ink-3);font-size:12px}
 button.row:hover{background:var(--surface-2)}
 .more{display:flex;justify-content:center;padding-top:10px}
@@ -856,7 +859,7 @@ function pageHome(){
   if(badKont.length)attn.push({n:f0(badKont.length),u:'nomor',label:'Nomor kontainer tidak seragam',sub:`Ada spasi atau tanda hubung, misalnya ${esc(badKont[0].k)}`});
   // ---- jadwal bongkar: garis waktu per jam ----
   const slots=dg?groupBy(dg.cs,c=>c.j||'',j=>({j,cs:[]}),(g,c)=>g.cs.push(c)).sort((x,y)=>x.j.localeCompare(y.j)):[];
-  const contRow=c=>{const has=c.lc&&LCSET.has(c.lc);const t=has?LCTOT[LCI[c.lc]]:null;return `<button class="row press" data-cont="${D.cont.indexOf(c)}"><span class="a"><span class="mono">${esc(c.k||'—')}</span>${buTag(c.bu)}${has?'':tag('belum di LC','crit')}</span><span class="b">${esc(c.lc||'tanpa LC')} · ${f0(c.te)} TEU</span><span class="v">${t?f1(t[0]+t[1]+t[2]):'–'}<small>CBM</small></span></button>`};
+  const contRow=c=>{const has=c.lc&&LCSET.has(c.lc);const t=has?LCTOT[LCI[c.lc]]:null;return `<button class="row press" data-cont="${D.cont.indexOf(c)}"><span class="a"><span class="mono">${esc(c.k||'—')}</span>${buTag(c.bu)}${has?'':tag('belum di LC','crit')}</span><span class="b">${esc(c.lc||'tanpa LC')} · ${f0(c.te)} TEU</span>${ndcLine(c)}<span class="v">${t?f1(t[0]+t[1]+t[2]):'–'}<small>CBM</small></span></button>`};
   const buZ=withZeros(buRows,r=>r.v+r.te,z=>`${z.length} BU lain belum ada kiriman`);
   return `
   <div class="hello slim" style="--i:0"><h1>${greet} RDC Tallo</h1><p>${dlong(TODAY)}</p></div>
@@ -874,13 +877,16 @@ function pageHome(){
 }
 
 // ======================= STORING / OUTBOUND =======================
+// Asal kiriman satu kontainer: nama NDC dari sheet monitoring (kalau LC-nya ada di sana), kalau tidak dari kolom asal di MASTER_PLAN.
+function ndcOf(c){if(!c)return '';const ri=c.lc?RDC_BY_SI[c.lc]:null;const o=ri!=null&&D.rdc[ri]?D.rdc[ri].org:'';if(o)return o;const f=String(c.fr||'').trim();return f?f.toLowerCase().replace(/(^|\s)\S/g,m=>m.toUpperCase()):''}
+const ndcLine=c=>{const n=ndcOf(c);return n?`<span class="o">${I.truck}<span>Dari ${esc(n)}</span></span>`:''};
 function lcList(rows,q){
   const g=groupBy(rows,r=>r[0],k=>({k,cbm:0,sku:0,qty:0,dep:new Set(),bu:new Set()}),(g,r)=>{g.cbm+=r[6];g.sku+=r[4];g.qty+=r[5];g.dep.add(r[3]);g.bu.add(BUS[r[7]])});
   let arr=g.map(x=>{const lc=D.lcs[x.k];const c=(CONT_BY_LC[lc]||[])[0];return {...x,lc,d:D.lcd[x.k],c}}).sort((a,b)=>(a.d+(a.c?.j||'')).localeCompare(b.d+(b.c?.j||'')));
   if(q){const Q=q.toUpperCase().replace(/\s+/g,'');arr=arr.filter(x=>x.lc.includes(Q)||(x.c&&x.c.k.toUpperCase().replace(/\s+/g,'').includes(Q)))}
   return arr;
 }
-function lcRows(arr,mode,key){const n=lim(key);return `<div class="list">${arr.slice(0,n).map(x=>`<button class="row press" data-lc="${esc(x.lc)}" data-mode="${mode}"><span class="a"><span class="mono">${esc(x.lc)}</span>${[...x.bu].map(buTag).join('')}</span><span class="b">${dday(x.d)}${x.c?` · ${x.c.j} · ${esc(x.c.k)}`:''} · ${x.dep.size} dept · ${f0(x.sku)} SKU</span><span class="v">${f2(x.cbm)}<small>CBM</small></span></button>`).join('')}</div>${moreBtn(key,arr.length,n)}`}
+function lcRows(arr,mode,key){const n=lim(key);return `<div class="list">${arr.slice(0,n).map(x=>`<button class="row press" data-lc="${esc(x.lc)}" data-mode="${mode}"><span class="a"><span class="mono">${esc(x.lc)}</span>${[...x.bu].map(buTag).join('')}</span><span class="b">${dday(x.d)}${x.c?` · ${x.c.j} · ${esc(x.c.k)}`:''} · ${x.dep.size} dept · ${f0(x.sku)} SKU</span>${ndcLine(x.c||{lc:x.lc})}<span class="v">${f2(x.cbm)}<small>CBM</small></span></button>`).join('')}</div>${moreBtn(key,arr.length,n)}`}
 function pageStock(){
   const [from,to]=range(),X=slice(from,to);const R=X.rows.filter(r=>r[1]===0);
   const cbm=R.reduce((a,r)=>a+r[6],0),qty=R.reduce((a,r)=>a+r[5],0),nLC=new Set(R.map(r=>r[0])).size;
@@ -1277,7 +1283,7 @@ function openPeriod(){
    <div class="field"><label for="pmonth">Pilih bulan</label><select id="pmonth"><option value="">—</option>${months.map(m=>{const [y,mm]=m.split('-').map(Number);return `<option value="${m}" ${f.preset==='month'&&f.month===m?'selected':''}>${BLNL[mm-1]} ${y}</option>`}).join('')}</select></div>
    <div class="field"><label>Rentang tanggal</label><div class="two"><input type="date" id="pfrom" value="${a<'1000'?TODAY:a}" aria-label="Dari"><input type="date" id="pto" value="${b>'9000'?TODAY:b}" aria-label="Sampai"></div><button class="btn block press" id="papply" style="margin-top:4px">Terapkan rentang</button></div>`)}
 function openCont(i){const c=D.cont[i];if(c.lc&&LCSET.has(c.lc)){openLC(c.lc,'all');return}
-  sheet(sHead(esc(c.k||'Tanpa no. kontainer'),`<span><b>${dlong(c.d)}</b> ${c.j}</span>${buTag(c.bu)}<span>${f0(c.te)} TEU · ${esc(c.fr)}</span>`,tag(c.lc?'LC tidak ada di MASTER_LC':'Tanpa No LC','crit')),
+  sheet(sHead(esc(c.k||'Tanpa no. kontainer'),`<span><b>${dlong(c.d)}</b> ${c.j}</span>${buTag(c.bu)}<span>${f0(c.te)} TEU</span>${ndcOf(c)?`<span>Dari ${esc(ndcOf(c))}</span>`:''}`,tag(c.lc?'LC tidak ada di MASTER_LC':'Tanpa No LC','crit')),
   `<div><h4>Plan di MASTER_PLAN</h4><div class="cmp">${[['Stock',c.ps,'var(--s-stock)'],['Store',c.pt,'var(--s-store)'],['Customer',c.pc,'var(--s-cust)']].map(([k,v,col])=>`<div><div class="k"><i class="dot" style="background:${col}"></i>${k}</div><div class="v">${f2(v)}</div><div class="p">CBM plan</div></div>`).join('')}</div></div>
    <p style="margin:0;color:var(--ink-2)">${c.lc?`No LC <span class="mono">${esc(c.lc)}</span> belum ada di MASTER_LC, jadi isi dept dan SKU-nya belum bisa ditampilkan.`:'Baris ini tidak punya No LC. Isi No LC di MASTER_PLAN agar CBM-nya ikut terhitung.'}</p>`)}
 function openLC(lc,mode){
@@ -1285,7 +1291,7 @@ function openLC(lc,mode){
   const cl=CONT_BY_LC[lc]||[];const c=cl[0];const t=LCTOT[k];const plan=c?[c.ps,c.pt,c.pc]:[0,0,0];
   const ri=RDC_BY_SI[lc],rdc=ri!=null?D.rdc[ri]:null;
   const pre=mode==='S'?0:mode==='O'?(t[1]>0?1:2):null;
-  sheet(sHead(esc(lc),`${cl.map(c=>`<span><b>${dday(c.d)}</b> ${c.j}</span><span class="mono">${esc(c.k)}</span>${buTag(c.bu)}<span>${f0(c.te)} TEU</span>`).join('')}`),
+  sheet(sHead(esc(lc),`${cl.map(c=>`<span><b>${dday(c.d)}</b> ${c.j}</span><span class="mono">${esc(c.k)}</span>${buTag(c.bu)}<span>${f0(c.te)} TEU</span>`).join('')}${ndcOf(c||{lc})?`<span>Dari ${esc(ndcOf(c||{lc}))}</span>`:''}`),
   `${rdc?`<div><h4>Posisi kontainer</h4><button class="row press" data-rdc="${ri}" style="padding-top:0"><span class="a">${esc(rdc.pos||'-')} ${rdc.p===4?tag('Delivered','good'):''}</span><span class="b">${esc(rdc.org)}${rdc.eta?` · ETA ${dshort(rdc.eta)}`:''}${rdc.ag!=null?` · aging ${rdc.ag} hari`:''}</span><span class="v" style="color:var(--ink-3)">${I.chev}</span></button></div>`:''}
    <div><h4>Tipe inbound</h4><div class="types" id="lcTypes">${['Storing','Store','Customer'].map((n,j)=>{const d=t[j]-plan[j];return `<button class="type press" data-lctype="${j}" data-lck="${k}" style="--tc:${TCOL[j]}" aria-pressed="${pre===j}" ${t[j]<=0?'disabled':''}><span class="k"><i class="dot" style="background:${TCOL[j]}"></i>${n}</span><span class="v">${f1(t[j])}</span><span class="p">plan ${f1(plan[j])}${Math.abs(d)>=.5?` · <b style="color:var(--warn)">${d>0?'+':''}${f1(d)}</b>`:''}</span></button>`}).join('')}</div></div>
    <div id="lcDetail">${pre!=null?'':'<div class="pick">Ketuk salah satu tipe inbound di atas untuk melihat rinciannya.</div>'}</div>`);
@@ -1330,7 +1336,7 @@ function openRdc(i){const r=D.rdc[i];if(!r)return;const pl=CONT_BY_LC[r.si]||[];
    <div><h4>Jadwal bongkar</h4>${pl.length?pl.map(c=>`<button class="row press" data-lc="${esc(r.si)}" data-mode="all"><span class="a">${dlong(c.d)}</span><span class="b">${c.j} · ${esc(c.k)}</span><span class="v" style="color:var(--ink-3)">${I.chev}</span></button>`).join(''):`<p style="margin:0;color:var(--ink-2)">${r.p===4?'Sudah delivered.':'Belum ada di MASTER_PLAN. Jadwalkan bongkar setelah kontainer tiba di Yard.'}</p>`}</div>`)}
 function openMissing(){const [from,to]=range();const m=slice(from,to).cont.filter(c=>!c.lc||!LCSET.has(c.lc));
   sheet(sHead('Kontainer belum terhitung',`<span><b>${f0(teu(m))}</b> TEUs</span><span>${esc(rlabel())}</span>`,'',false),
-  `<div class="list">${m.map(c=>`<button class="row press" data-cont="${D.cont.indexOf(c)}"><span class="a"><span class="mono">${esc(c.k||'—')}</span>${buTag(c.bu)}${tag(c.lc?'LC tidak ada':'Tanpa LC',c.lc?'crit':'warn')}</span><span class="b">${dday(c.d)} ${c.j} · ${esc(c.lc||'—')} · ${f0(c.te)} TEU</span><span class="v">${f1(c.ps+c.pt+c.pc)}<small>CBM plan</small></span></button>`).join('')}</div>`)}
+  `<div class="list">${m.map(c=>`<button class="row press" data-cont="${D.cont.indexOf(c)}"><span class="a"><span class="mono">${esc(c.k||'—')}</span>${buTag(c.bu)}${tag(c.lc?'LC tidak ada':'Tanpa LC',c.lc?'crit':'warn')}</span><span class="b">${dday(c.d)} ${c.j} · ${esc(c.lc||'—')} · ${f0(c.te)} TEU</span>${ndcLine(c)}<span class="v">${f1(c.ps+c.pt+c.pc)}<small>CBM plan</small></span></button>`).join('')}</div>`)}
 function openLpp(no){const items=D.lp.filter(x=>x.no===no);const f=items[0];
   sheet(sHead(esc(no),`<span><b>${dlong(f.d)}</b></span>${buTag(f.bu)}<span>Asal <b>${esc(f.si)}</b></span>`),
   `<div class="list">${items.map(i=>`<div class="row"><span class="a" style="font-size:13px">${esc(i.ds)}</span><span class="b" style="white-space:normal"><span class="mono">${esc(i.a)}</span> · ${KAT[i.k]||esc(i.k)} · OD ${f0(i.od)} / terima ${f0(i.rc)}${i.rm?`<br>${esc(i.rm)}`:''}</span><span class="v">${f0(i.q)}<small>${esc(i.up)} · ${esc(i.st)}</small></span></div>`).join('')}</div>`)}
