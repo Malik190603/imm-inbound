@@ -15,23 +15,23 @@ description: "Task list: Mini Monitoring DC Tallo Makassar"
 
 ## Phase 1: Setup
 
-- [ ] T001 Tambah data tiruan e2e Mini Monitoring di `test/mock-mm.json` (master user 9 Role × 8 Jabatan dengan NIK uji, satu baris per sumber registri, nilai penanda `PRIVATE_MARK_*` di setiap kolom privat) dan harness rute gviz/Supabase tiruan di `test/h.js`
-- [ ] T002 [P] Salin 10 logo ke `www/brand/` (sudah: ataru, azko, chatime, eyesoul, informa, informa-custom, informa-electronics, krisbow, selma, toys-kingdom) dan daftarkan di `scripts/check.mjs` agar file wajib ada
+- [x] T001 Tambah data tiruan e2e Mini Monitoring di `test/mock-mm.json` (master user 9 Role × 8 Jabatan dengan NIK uji, satu baris per sumber registri, nilai penanda `PRIVATE_MARK_*` di setiap kolom privat) dan harness rute gviz/Supabase tiruan di `test/h.js`
+- [x] T002 [P] Salin 10 logo ke `www/brand/` (sudah: ataru, azko, chatime, eyesoul, informa, informa-custom, informa-electronics, krisbow, selma, toys-kingdom) dan daftarkan di `scripts/check.mjs` agar file wajib ada
 
 ---
 
 ## Phase 2: Foundational (blocking)
 
-- [ ] T003 [P] Tes `tests/parse.test.mjs` untuk semua fungsi di contracts/core-modules.md `IMMParse` (num: "Rp 1.234.567", "RP1,234", "99.57%", "262 kg", "-", "#N/A", "#DIV/0!", "#VALUE!", "#REF!"; date: M/D/YYYY, DD/MM/YYYY, "10 Oct 26", " 1 Oct-26", "1 Januari 2026", serial 46304 = 2026-10-09, "09/10/2026 14.05.00", "Thursday, 1 Oct" & "1 July" dengan ctx.year; sepDate "Kamis 01/01/2026"; codeDate "260923T036"; weekTab 2026-10-10 = "W41"; monthTab; col/hasHeaders toleran spasi & huruf; fillSep; matrixDay; stripPrivate)
-- [ ] T004 Implementasi `www/parse-core.js` sampai T003 lulus
-- [ ] T005 [P] Tes `tests/auth.test.mjs`: normNik, parseMaster (ID di depan kolom USER, baris terakhir menang, alias "Asst Manager"→"ASST. MANAGER"), `can()` untuk semua baris tabel FR-010, ADMIN semua menu, WAREHOUSEMAN hanya `demand`, Role LP/MHE melihat dashboard departemennya, `visibleMenus`, `dashDepts`
-- [ ] T006 Implementasi `www/auth-core.js` (MENUS, ACCESS persis FR-010) sampai T005 lulus
-- [ ] T007 [P] Tes `tests/wo.test.mjs`: fmtNo("WO", 2026-10-10, 4) = "WO-20261010-0004"; daftar ALAT (9), PEKERJAAN (12), LOKASI (13), CHECKLIST (8), KONDISI (9) persis FR-050/062/063; WO_NEXT; canMove (setujui hanya MANAGER; selesai hanya MHE dengan 1–4 foto, pesan "Lampirkan minimal 1 foto dokumentasi"); validateWo (detail wajib ≤ 1000, tim wajib ≤ 200, biaya ≥ 0, catatan ≤ 1000); validateObsEntry (kondisi ≥ 1, detail ≤ 500, foto ≤ 4); validateSchedule (selesai ≥ mulai); reminders
-- [ ] T008 Implementasi `www/wo-core.js` sampai T007 lulus
-- [ ] T009 Registri `www/sources.js`: 29 sumber (ID, sheet, need, private, ttl) dari research.md R6 dan `research/*.md`; `load(key, {tq})` dengan validasi `hasHeaders` (tab salah → error `WRONGTAB`), `stripPrivate` sebelum cache, cache memori + `localStorage` (`imm.src.<key>`, dengan waktu), konkurensi maks 4, parameter unik anti-cache; tes unit loader dengan fetch tiruan di `tests/sources.test.mjs`
-- [ ] T010 Migrasi Supabase di `supabase/schema.sql` (tanpa drop/delete): tabel `run_no`, `work_order`, `wo_event`, `observasi`, `obs_entry`, `dc_schedule`, `notif`; kolom `tto.penyerah`, `tto.input_by`; fungsi `imm_next_no`, `imm_wo_create`, `imm_wo_move`, `imm_obs_create`, `imm_obs_move`, `imm_obs_add`, `imm_schedule_save`, `imm_notif_read` sesuai contracts/supabase.md; RLS select/insert anon, tanpa delete; `search_path = public`. Uji di Postgres lokal (`/var/tmp/pgt`): nomor urut, transisi sah/tak sah, foto 0/1/5
-- [ ] T011 Terapkan T010 ke project IMM lewat connector (`apply_migration`), lalu uji `imm_next_no` dan satu alur WO dengan baris bertanda `tim='UJI'`
-- [ ] T012 `www/store.js`: fungsi `rpc(name, args)`, `woList/woCreate/woMove`, `obsList/obsCreate/obsMove/obsAdd/obsEntries`, `schedList/schedSave`, `notifList/notifRead`, `uploadPhotos(prefix, files)` (pakai `preparePhoto` 1600 px), pemetaan error NETWORK/TIMEOUT/RULE; tes di `tests/store.test.mjs`
+- [x] T003 [P] Tes `tests/parse.test.mjs` untuk semua fungsi di contracts/core-modules.md `IMMParse` (num: "Rp 1.234.567", "RP1,234", "99.57%", "262 kg", "-", "#N/A", "#DIV/0!", "#VALUE!", "#REF!"; date: M/D/YYYY, DD/MM/YYYY, "10 Oct 26", " 1 Oct-26", "1 Januari 2026", serial 46304 = 2026-10-09, "09/10/2026 14.05.00", "Thursday, 1 Oct" & "1 July" dengan ctx.year; sepDate "Kamis 01/01/2026"; codeDate "260923T036"; weekTab 2026-10-10 = "W41"; monthTab; col/hasHeaders toleran spasi & huruf; fillSep; matrixDay; stripPrivate)
+- [x] T004 Implementasi `www/parse-core.js` sampai T003 lulus
+- [x] T005 [P] Tes `tests/auth.test.mjs`: normNik, parseMaster (ID di depan kolom USER, baris terakhir menang, alias "Asst Manager"→"ASST. MANAGER"), `can()` untuk semua baris tabel FR-010, ADMIN semua menu, WAREHOUSEMAN hanya `demand`, Role LP/MHE melihat dashboard departemennya, `visibleMenus`, `dashDepts`
+- [x] T006 Implementasi `www/auth-core.js` (MENUS, ACCESS persis FR-010) sampai T005 lulus
+- [x] T007 [P] Tes `tests/wo.test.mjs`: fmtNo("WO", 2026-10-10, 4) = "WO-20261010-0004"; daftar ALAT (9), PEKERJAAN (12), LOKASI (13), CHECKLIST (8), KONDISI (9) persis FR-050/062/063; WO_NEXT; canMove (setujui hanya MANAGER; selesai hanya MHE dengan 1–4 foto, pesan "Lampirkan minimal 1 foto dokumentasi"); validateWo (detail wajib ≤ 1000, tim wajib ≤ 200, biaya ≥ 0, catatan ≤ 1000); validateObsEntry (kondisi ≥ 1, detail ≤ 500, foto ≤ 4); validateSchedule (selesai ≥ mulai); reminders
+- [x] T008 Implementasi `www/wo-core.js` sampai T007 lulus
+- [x] T009 Registri `www/sources.js`: 29 sumber (ID, sheet, need, private, ttl) dari research.md R6 dan `research/*.md`; `load(key, {tq})` dengan validasi `hasHeaders` (tab salah → error `WRONGTAB`), `stripPrivate` sebelum cache, cache memori + `localStorage` (`imm.src.<key>`, dengan waktu), konkurensi maks 4, parameter unik anti-cache; tes unit loader dengan fetch tiruan di `tests/sources.test.mjs`
+- [x] T010 Migrasi Supabase di `supabase/schema.sql` (tanpa drop/delete): tabel `run_no`, `work_order`, `wo_event`, `observasi`, `obs_entry`, `dc_schedule`, `notif`; kolom `tto.penyerah`, `tto.input_by`; fungsi `imm_next_no`, `imm_wo_create`, `imm_wo_move`, `imm_obs_create`, `imm_obs_move`, `imm_obs_add`, `imm_schedule_save`, `imm_notif_read` sesuai contracts/supabase.md; RLS select/insert anon, tanpa delete; `search_path = public`. Uji di Postgres lokal (`/var/tmp/pgt`): nomor urut, transisi sah/tak sah, foto 0/1/5
+- [x] T011 Terapkan T010 ke project IMM lewat connector (`apply_migration`), lalu uji `imm_next_no` dan satu alur WO dengan baris bertanda `tim='UJI'`
+- [x] T012 `www/store.js`: fungsi `rpc(name, args)`, `woList/woCreate/woMove`, `obsList/obsCreate/obsMove/obsAdd/obsEntries`, `schedList/schedSave`, `notifList/notifRead`, `uploadPhotos(prefix, files)` (pakai `preparePhoto` 1600 px), pemetaan error NETWORK/TIMEOUT/RULE; tes di `tests/store.test.mjs`
 
 **Checkpoint**: modul murni + data siap.
 

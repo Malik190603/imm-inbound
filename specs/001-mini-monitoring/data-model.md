@@ -93,10 +93,11 @@ Riwayat semua perubahan status (termasuk pembuatan).
 ref text (no WO), pesan text, at timestamptz, dibaca_oleh text[]`.
 
 ### tto (perubahan)
-Tambah kolom `penyerah text` (Yang menyerahkan, teks bebas) dan `input_by text` (NIK). Kolom
-PIC lama tetap untuk data lama.
+Kolom `pic` kini berisi "Yang menyerahkan" (teks bebas, tanpa dropdown); tambah kolom
+`input_by text` (NIK pengguna yang menginput).
 
 ## Kebijakan akses (RLS, peran anon)
-- `select` dan `insert` untuk tabel di atas; `update` hanya lewat fungsi `security definer`
-  (`imm_wo_move`, `imm_obs_move`, `imm_notif_read`, `imm_schedule_save`).
+- Hanya `select` untuk tabel di atas; semua penulisan lewat fungsi `security definer`
+  (`imm_wo_create`, `imm_wo_move`, `imm_obs_create`, `imm_obs_move`, `imm_obs_add`, `imm_obs_cancel`,
+  `imm_schedule_save`, `imm_notif_read`). `imm_next_no` tidak bisa dipanggil langsung oleh anon.
 - Tidak ada kebijakan `delete` untuk tabel baru.

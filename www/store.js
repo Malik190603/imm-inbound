@@ -67,7 +67,7 @@
     const q = 'tto?select=*' + (f && f > '1000' ? '&tgl=gte.' + f : '') + (t && t < '9000' ? '&tgl=lte.' + t : '') + '&order=tgl.desc,created_at.desc';
     return (await rest(q, { headers: headers() })).json();
   }
-  async function addTto(entry, blobs, device) {
+  async function addTto(entry, blobs, device, inputBy) {
     need(); blobs = blobs || [];
     if (!validTto(entry)) throw new Error('INVALID');
     if (blobs.length > MAX_PHOTOS) throw new Error('MAX');
@@ -75,7 +75,7 @@
     const undo = async () => { for (const p of paths) { try { await removeObject(p); } catch (_) { /* objek yatim dibiarkan */ } } };
     try {
       for (let i = 0; i < blobs.length; i++) { const p = dir + i + '-' + rand() + '.jpg'; await upload(p, blobs[i]); paths.push(p); }
-      return await insert('tto', { tgl: t(entry.tgl), no_tto: t(entry.no_tto), barang: t(entry.barang), koli: Number(entry.koli), pic: t(entry.pic), penerima: t(entry.penerima), photos: paths, device: device || '' });
+      return await insert('tto', { tgl: t(entry.tgl), no_tto: t(entry.no_tto), barang: t(entry.barang), koli: Number(entry.koli), pic: t(entry.pic), penerima: t(entry.penerima), photos: paths, device: device || '', input_by: inputBy ? t(inputBy) : null });
     } catch (e) { await undo(); throw e; }
   }
   async function removeTto(row) {
@@ -107,6 +107,59 @@
     try { return await Promise.race([work, late]); } finally { clearTimeout(timer); }
   }
 
+
+  // ---------- Mini Monitoring: Work Order, Observasi, Project & Schedule, pemberitahuan ----------
+  // Semua penulisan lewat fungsi Supabase (rpc) yang memeriksa aturan; galat aturan → Error('RULE') dengan .why.
+  async function rpc(name, args) {
+    need();
+    let r; try { r = await doFetch(SUPA.url + '/rest/v1/rpc/' + name, { method: 'POST', headers: headers({ 'Content-Type': 'application/json' }), body: JSON.stringify(args || {}) }); } catch (e) { throw new Error('NETWORK'); }
+    let j = null; try { j = await r.json(); } catch (_) { /* tanpa isi */ }
+    if (r.ok) return j;
+    const msg = (j && (j.message || j.details)) || '';
+    const m = /IMM_RULE:\s*(.*)$/.exec(msg);
+    if (m) { const e = new Error('RULE'); e.why = m[1]; throw e; }
+    throw new Error('HTTP ' + r.status);
+  }
+  const get = async (q) => (await rest(q, { headers: headers() })).json();
+  const enc = encodeURIComponent;
+  async function uploadPhotos(dir, blobs) {
+    blobs = blobs || [];
+    if (blobs.length > MAX_PHOTOS) throw new Error('MAX');
+    const base = dir + '/' + Date.now() + '-', paths = [];
+    for (let i = 0; i < blobs.length; i++) { const p = base + i + '-' + rand() + '.jpg'; await upload(p, blobs[i]); paths.push(p); }
+    return paths;
+  }
+  const str = (v) => String(v == null ? '' : v).trim();
+  const woList = () => (need(), get('work_order?select=*&order=created_at.desc&limit=300'));
+  const woEvents = (no) => (need(), get('wo_event?select=*&no=eq.' + enc(no) + '&order=at.asc'));
+  function woCreate(v, nik) {
+    const p = { alat: v.alat, pekerjaan: v.pekerjaan, detail: str(v.detail), mulai: str(v.mulai), tim: str(v.tim), biaya: v.biaya == null ? '' : String(v.biaya), catatan: str(v.catatan), nik: str(nik) };
+    return rpc('imm_wo_create', { p });
+  }
+  async function woMove(no, to, user, blobs, note) {
+    need();
+    const photos = blobs && blobs.length ? await uploadPhotos('wo/' + safe(no), blobs) : (to === 'selesai' ? [] : null);
+    return rpc('imm_wo_move', { p_no: no, p_to: to, p_nik: user.nik, p_role: user.role, p_jabatan: user.jabatan, p_photos: photos, p_note: note || '' });
+  }
+  const obsList = () => (need(), get('observasi?select=*&order=created_at.desc&limit=200'));
+  const obsEntries = (no) => (need(), get('obs_entry?select=*&no=eq.' + enc(no) + '&batal=is.false&order=at.asc'));
+  const obsCreate = (v, u) => rpc('imm_obs_create', { p: { mulai: str(v.mulai), tim: str(v.tim), nik: u.nik, role: u.role, jabatan: u.jabatan } });
+  const obsMove = (no, to, u) => rpc('imm_obs_move', { p_no: no, p_to: to, p_nik: u.nik, p_role: u.role, p_jabatan: u.jabatan });
+  async function obsAdd(v, blobs, u) {
+    need();
+    const photos = await uploadPhotos('obs/' + safe(v.no), blobs);
+    return rpc('imm_obs_add', { p: { no: v.no, jenis: v.jenis, objek: v.objek, kondisi: v.kondisi || [], detail: str(v.detail), photos, nik: u.nik } });
+  }
+  const obsCancel = (id, u) => rpc('imm_obs_cancel', { p_id: id, p_nik: u.nik });
+  const schedList = () => (need(), get('dc_schedule?select=*&order=mulai.asc&limit=500'));
+  function schedSave(v, u) {
+    const p = { jenis: v.jenis, nama: str(v.nama), mulai: str(v.mulai), selesai: str(v.selesai), status: v.status, keterangan: str(v.keterangan), nik: u.nik, jabatan: u.jabatan };
+    if (v.id) p.id = String(v.id);
+    return rpc('imm_schedule_save', { p });
+  }
+  const notifList = (since) => (need(), get('notif?select=*&untuk=eq.MANAGER&at=gte.' + enc(since) + '&order=at.desc&limit=100'));
+  const notifRead = (ids, nik) => rpc('imm_notif_read', { p_ids: ids, p_nik: nik });
+
   // ---------- penyiapan foto (hanya di browser) ----------
   async function preparePhoto(file, lines, maxSide) {
     const MAXS = maxSide || 1280;
@@ -128,6 +181,7 @@
   }
 
   return {
+    rpc, uploadPhotos, woList, woEvents, woCreate, woMove, obsList, obsEntries, obsCreate, obsMove, obsAdd, obsCancel, schedList, schedSave, notifList, notifRead,
     configured, photoUrl, listPutawayPhotos, addPutawayPhoto, removePutawayPhoto, listTto, addTto, removeTto, validTto, scanTto, preparePhoto, MAX_PHOTOS,
     _setFetch(f) { fetchImpl = f; }, _config(url, key) { SUPA.url = url; SUPA.key = key; },
     _internals: { rest, upload, removeObject, insert, headers, safe, rand, need },
