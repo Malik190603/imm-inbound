@@ -142,3 +142,28 @@ a.set-row{text-decoration:none;color:inherit}
 
 /* gambar logo selalu di atas latar terang, juga di tema gelap */
 .brand-img{max-height:28px;width:auto}
+
+/* ---------- tabel ringkas dashboard ---------- */
+.mrows{display:grid}
+.mr{display:flex;justify-content:space-between;align-items:baseline;gap:12px;padding:9px 0;border-top:1px solid var(--line);min-width:0}
+.mr:first-child{border-top:0;padding-top:2px}
+.mr.sub{padding-left:14px}
+.mr.sub .ml{color:var(--ink-3)}
+.ml{font-size:13px;color:var(--ink-2);min-width:0;overflow-wrap:anywhere}
+.ml small{color:var(--ink-3);font-size:12px}
+.mv{font-weight:800;font-variant-numeric:tabular-nums;white-space:nowrap}
+.mv small{font-size:12px;font-weight:600;color:var(--ink-3);margin-left:3px}
+.mtab-w{overflow-x:auto;margin:0 -4px;padding:0 4px}
+.mtab{width:100%;border-collapse:collapse;font-size:13px;font-variant-numeric:tabular-nums}
+.mtab th{font-size:12px;font-weight:700;color:var(--ink-3);text-align:left;padding:0 6px 8px;white-space:nowrap}
+.mtab td{padding:9px 6px;border-top:1px solid var(--line);white-space:nowrap}
+.mtab td:first-child{white-space:normal;color:var(--ink-2);min-width:96px}
+.mtab .r{text-align:right}
+.mtab td.r{font-weight:700}
+.mtab small{font-size:12px;color:var(--ink-3);font-weight:600}
+.mtab tr.sub td:first-child{padding-left:16px;color:var(--ink-3)}
+.lo{color:var(--crit)}.ok{color:var(--good)}
+b.lo,b.ok{font-weight:800}
+.dtag{font-size:12px;font-weight:700;color:var(--ink-3);background:var(--surface-2);border-radius:99px;padding:3px 9px;white-space:nowrap;align-self:flex-start}
+.lead .btn.sm{margin-top:12px}
+.lead .btn.sm svg{width:16px;height:16px}

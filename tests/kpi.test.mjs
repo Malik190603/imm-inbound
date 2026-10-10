@@ -73,3 +73,74 @@ test('incoming containers: POO, OTW, POD counts and TEUs', () => {
   deepEq(K.incoming(r, 'ALL'), { poo: { n: 1, te: 1 }, otw: { n: 2, te: 3 }, pod: { n: 1, te: 2 }, total: { n: 4, te: 6 } });
   deepEq(K.incoming(r, 'AHI').otw, { n: 1, te: 2 });
 });
+
+// ---------- Dashboard ----------
+const LDROWS = [['', 'RDC Tallo AHI'], ['', 'PERFORMANCE', 'STANDARD', '', ' 9 Oct-26', '10 Oct-26'], ['', 'SLA Customer', '99%', 'ACHIVEMENT', '100%', ''],
+  ['', 'MHE', 'ASSET', 'PEMAKAIAN', '', ''], ['', 'Hand Pallet', '6', '', '4', ''], ['', 'Forklift', '0', '', '', ''],
+  ['', 'UNLOADING', 'UoM', 'PLAN', '', ''], ['', '- Container', 'teus', '', '4', '6'], ['', '- Darat', 'armada', '', '1', ''],
+  ['', 'OUTSTANDING ORDER', 'UoM', 'AKAN DATANG', '', ''], ['', 'Customer', 'cbm', '', '3.5', '2'], ['', '- DC', 'cbm', '', '3.5', '2'], ['', '- Transit', 'cbm', '', '0', '0'], ['', 'Customer', 'OD', '', '16', '9'], ['', '- DC', 'OD', '', '16', '9'],
+  ['', 'DC Process', 'UoM', 'Realisasi', '', ''], ['', 'STORING', '', '', '', ''], ['', 'Pressing', 'cbm', '', '7.5', ''], ['', 'Putaway (ke racking)', 'cbm', '', '20', '']];
+test('ld: sections, parents, units, last filled day', () => {
+  const L = K.ld(LDROWS, T);
+  deepEq(L.dates, ['2026-10-09', '2026-10-10']);
+  eq(L.get('OUTSTANDING ORDER|AKAN DATANG', 'DC', '2026-10-10', 'Customer'), 2);
+  eq(L.find('OUTSTANDING ORDER|AKAN DATANG', 'DC', 'Customer').unit, 'cbm');
+  eq(L.lastDay('DC PROCESS|REALISASI', T), '2026-10-09');
+  eq(L.get('DC PROCESS|REALISASI', 'Pressing', '2026-10-09'), 7.5);
+  eq(L.std('SLA Customer'), '99%');
+  const sec = K.ldSection([L, L], 'UNLOADING|PLAN', T, T);
+  eq(sec.date, T); eq(sec.items.find((x) => x.label === 'Container').v, 12);
+  eq(K.ldSection([L], 'DC PROCESS|REALISASI', T, T).date, '2026-10-09');
+  eq(K.ld([['x']], T), null);
+});
+
+const CASE = [['ADDDATE', 'TYPE', 'Level', 'count CASEID'], ['2026-10-9', 'GRW', 'Level Atas', '160'], ['2026-10-10', 'Customer', 'Level Atas', '10'], ['2026-10-10', 'GRW', 'Level Atas', '24'], ['2026-10-10', 'GRW', 'Level Bawah', '78'], ['2026-10-10', 'GRW', 'Floor', '7']];
+const TRANS = [['ADDDATE', 'Level', 'LVL', 'BATCH', 'count No', 'sum QTY', 'sum CM3'], ['2026-10-10', 'Level Atas', '3', 'PAGI', '30', '40', '1000000'], ['2026-10-10', 'Level Bawah', '1', 'PAGI', '70', '90', '2500000'], ['2026-10-10', 'Floor', 'flr', 'SIANG', '7', '9', '500000']];
+test('storing: released/picked/open per level for the latest day', () => {
+  const s = K.storing(CASE, TRANS, T);
+  eq(s.date, T); eq(s.released, 119); eq(s.picked, 107); eq(s.open, 12); near(s.pct, 89.92);
+  deepEq(s.levels.map((x) => [x.k, x.released, x.picked, x.open]), [['bawah', 78, 70, 8], ['atas', 34, 30, 4], ['floor', 7, 7, 0]]);
+  eq(s.cbm, 4); deepEq(s.rak.map((x) => x[0]), ['1', '3', 'FLR']); eq(s.shift.PAGI, 100);
+  eq(K.storing([CASE[0]], [TRANS[0]], T).missing, true);
+});
+
+const DP = [['diman picking'], ['tgl'], ['', 'OD'], ['Friday, 9 Oct ', '142', '540', '285', '1629', '24.96', '6', '12', '7', '15', '1.76', '148', '552', '292', '1644', '26.72']];
+test('dpDay: demand picking groups for one day (no year in sheet)', () => {
+  const d = K.dpDay(DP, '2026-10-09', T);
+  deepEq(d.total, { od: 148, cid: 552, sku: 292, qty: 1644, cbm: 26.72 }); eq(d.grw.cid, 540);
+  eq(K.dpDay(DP, T, T), null);
+});
+
+const PLR = [['10', 'DASHBOARD PLANNER 2026'], ['', 'SATURDAY 10 OCTOBER 2026'], ['', 'BY CUSTOMER'], ['', 'HCI'], ['', 'TYPE'],
+  ['', 'Customer RDC', '', '138', '65.75', '511', '0', '0.00', '0', '0.00%', '', '38', '17.86', '128', '', '94', '46.55', '295', '', '55', '41.82', '255', '', '164', '145.18', '1205'],
+  ['', 'TOTAL', '', '175', '84.82', '576', '10', '5.00', '20', '5.89%', '', '45', '20.82', '153', '', '107', '48.14', '316', '', '87', '105.51', '932', '', '219', '215.20', '1590'],
+  ['', 'AHI'], ['', 'TOTAL', '', '35', '21.88', '66', '0', '0.00', '0', '0.00%', '', '0', '0.00', '0', '', '9', '1.55', '18', '', '6', '1.65', '15', '', '1', '0.30', '1'],
+  ['', 'BY STORE (GRW)', '', '', '', '', '', '', '', '', '', 'AGING INTRANSIT CUSTOMER IN DC'], ['', 'HCI', '', '', '', '', '', '', '', '', '', 'STORE/DAY', '', '1-3', '4-7', '8-15'],
+  ['', 'TYPE', '', '', '', '', '', '', '', '', '', 'Latanete', '', '29.01', '', '12.32', '2.09']];
+test('planner: plan vs realisasi, outstanding by day, aging per store', () => {
+  const p = K.planner(PLR, 'ALL');
+  eq(p.date, T); near(p.total.plan.cbm, 106.7); eq(p.total.real.od, 10);
+  deepEq(p.outstanding.map((x) => x.od), [45, 116, 93, 220]);
+  eq(p.types[0].plan.od, 138); eq(p.aging[0].store, 'Latanete'); deepEq(p.aging[0].v, [29.01, 0, 12.32, 2.09, 0]);
+  eq(K.planner(PLR, 'AHI').total.plan.od, 35);
+  eq(K.planner(PLR, 'KWI').missing, true);
+});
+
+const VIRT = [['', '10 Oct 2026'], ['', 'HCI'], ['', 'INTRANSIT', '0', '0'], ['', 'PACK', '527', '398', '3', '3', '9', '9', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '539', '410', '68', '12', '12'], ['', 'FLOOR', '2008', '157', '760', '141', '39', '12', '59', '15', '46', '45', '6', '4', '0', '0', '0', '0', '2749', '349', '259', '910', '217'], ['', 'AHI'], ['', 'FLOOR', '1000', '100', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '0', '1310', '161', '18.41', '97', '9']];
+test('virtual & floor aging', () => {
+  const v = K.virtualLoc(VIRT, 'ALL');
+  eq(v.date, T); eq(v.floor.qty, 4059); eq(v.floor.old.qty, 1007); eq(v.pack.sku, 410); eq(v.floor.buckets[0].qty, 3008);
+  eq(K.virtualLoc(VIRT, 'AHI').floor.qty, 1310);
+});
+
+const SLOC = [['', '8 Oct 2026', '0', '0', 'RP0', '0', '0', 'RP0', '219', '678', 'RP413,847,710', '84', '245', 'RP166,768,404', '', '0', '0', 'RP0', '0', '0', 'RP0', '18', '36', 'RP12,545,082', '26', '122', 'RP13,280,106'], ['', '9 Oct 2026', '', '', '']];
+test('sloc 1007/1009: latest filled day, HCI and AHI blocks', () => {
+  const s = K.sloc(SLOC, 'ALL', T);
+  eq(s.date, '2026-10-08'); deepEq(s.items[2], { k: '1009-', sku: 237, qty: 714, value: 426392792 });
+  eq(K.sloc(SLOC, 'HCI', T).items[3].value, 166768404); eq(K.sloc(SLOC, 'TGI', T).missing, true);
+});
+
+test('barus budget per BU', () => {
+  const b = K.barusBudget([['', 'KODE STORE', 'H019', 'RP46,758,915', 'RP46,758,915', 'RP0', 'RP0', 'A017', 'RP0', '-RP785,660', 'RP3,980', 'RP781,680']], 'ALL');
+  eq(b.limit, 46758915); eq(b.sisa, 46758915 - 785660); eq(b.store, 781680);
+});

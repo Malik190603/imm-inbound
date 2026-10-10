@@ -1444,7 +1444,7 @@ function render(anim){
   let body=({home:pageHome,inb:pageInbound,role:pageRole,mon:pageMon,set:pageMMSet,mmhome:pageMMHome,hub:pageHub,mm:pageMM})[S.page]();
   if(S.tab==='list'&&S.route.menu&&!(S.page==='inb'&&!S.inbFree&&S.inb)){
     body=S.page==='inb'&&S.inbFree?body.replace(/<div class="inb-head"[^>]*>[\s\S]*?<\/div><\/div>/,''):body.replace(/<div class="hello[^"]*"[^>]*>[\s\S]*?<\/div>/,'');
-    body=listHead()+body}
+    body=listHead()+body;if(S.page==='home'&&typeof dashInboundExtra==='function')body+=dashInboundExtra()}
   const html=(window.IMM_SNAPSHOT&&['home','role','mon'].includes(S.page)?`<div class="preview-note">Pratinjau dengan data contoh dari spreadsheet. Di aplikasi, semua data dibaca langsung dari Google Sheets.</div>`:'')+body;
   m.className='';if(anim&&!reduced()){void m.offsetWidth;m.className='enter'}m.innerHTML=html;placeKnobs();requestAnimationFrame(placeKnobs);if(anim)countUp(m);
   const hh=mmHash();if(location.hash.slice(1)!==hh)history.replaceState(null,'','#'+hh);

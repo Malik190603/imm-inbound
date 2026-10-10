@@ -69,8 +69,8 @@
     dp: { doc: 'DP', sheet: (c) => DP_TAB[mon(c)], range: 'A1:AN40', headers: 0, mark: [], dateCol: 0, ttl: HOUR, group: 'Storing', title: 'Demand Picking' },
     plDash: { doc: 'PL', sheet: 'Dashboard', range: 'A1:Z70', headers: 0, mark: ['Customer RDC'], ttl: 15 * MIN, group: 'Planner', title: 'Dashboard Planner' },
     plPending: { doc: 'PL', sheet: 'Pending', tq: 'select A,O,Q,S,T,U', headers: 1, need: ['PLANDELIVERYDATE', 'CBM'], ttl: 15 * MIN, group: 'Planner', title: 'Pending kirim' },
-    ldH: { doc: 'LD', sheet: ldTab('HCI'), range: 'A1:AN160', headers: 0, mark: ['PERFORMANCE', 'SLA Customer'], ttl: 15 * MIN, group: 'Outbound', title: 'Laporan Daily Update HCI' },
-    ldA: { doc: 'LD', sheet: ldTab('AHI'), range: 'A1:AN160', headers: 0, mark: ['PERFORMANCE', 'SLA Customer'], ttl: 15 * MIN, group: 'Outbound', title: 'Laporan Daily Update AHI' },
+    ldH: { doc: 'LD', sheet: ldTab('HCI'), range: 'A1:AN230', headers: 0, mark: ['PERFORMANCE', 'SLA Customer'], ttl: 15 * MIN, group: 'Outbound', title: 'Laporan Daily Update HCI' },
+    ldA: { doc: 'LD', sheet: ldTab('AHI'), range: 'A1:AN230', headers: 0, mark: ['PERFORMANCE', 'SLA Customer'], ttl: 15 * MIN, group: 'Outbound', title: 'Laporan Daily Update AHI' },
     rit: { doc: 'LB', sheet: 'SEMESTER 2', tq: (c) => `select A,B,J where A starts with '${c.today.slice(2).replace(/-/g, '')}' or A starts with '${P.addDays(c.today, 1).slice(2).replace(/-/g, '')}'`, headers: 0, mark: [], allowEmpty: true, ttl: 15 * MIN, group: 'Outbound', title: 'Logbook barang keluar (Rit)' },
     // ---------- LP ----------
     lbSum: { doc: 'LB', sheet: 'SUMMARY', tq: 'select * limit 40', headers: 0, mark: ['TOTAL OD'], ttl: HOUR, group: 'LP', title: 'Logbook keluar — Summary' },
