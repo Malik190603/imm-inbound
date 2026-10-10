@@ -94,6 +94,7 @@ function normalizeRoute(){
   const subs=subsFor(r.menu);if(subs.indexOf(r.sub)<0)r.sub=subs[0]||'';
 }
 function legacyPage(){
+  if(S.inbFree)S.inb=''; // keluar dari TTO & Dokumen: halaman alat Inbound kembali ke daftarnya
   S.inbFree=false;
   if(S.tab==='home'){S.page='mmhome';return}
   if(S.tab==='set'){S.page='set';return}
@@ -113,9 +114,10 @@ function go(tab,menu,sub,opt){
   const same=S.tab===tab&&S.route.menu===(menu||'')&&(!sub||S.route.sub===sub);
   if(same&&!(opt&&opt.force)){window.scrollTo({top:0,behavior:'smooth'});return}
   S.tab=tab;S.route={menu:menu||'',sub:sub||''};if(tab==='list'&&menu==='dashboard'&&sub==='tools')S.inb='';
-  routeFix();S.more={};buzz(6);render(true);window.scrollTo({top:0});
-  if(S.page==='inb'&&typeof inbTilesStale==='function')inbTilesStale();
+  const was=S.page;routeFix();S.more={};buzz(6);inbEnter(was);render(true);window.scrollTo({top:0});
 }
+// Masuk ke alat Inbound dari halaman lain → hitungan kartu dimuat ulang.
+function inbEnter(was){if(S.page==='inb'&&was!=='inb'&&typeof inbTilesStale==='function')inbTilesStale()}
 // Tombol kembali: sub menu → List, List/Settings → Home. Mengembalikan true bila sudah ditangani.
 function mmBack(){
   if(S.tab==='list'&&S.route.menu==='dashboard'&&S.route.sub==='tools'){go('list','dashboard','inbound');return true}
@@ -347,7 +349,7 @@ function mmClick(e){
   return false;
 }
 document.addEventListener('click',e=>{if(mmClick(e)!==false)e.stopPropagation()},true);
-addEventListener('hashchange',()=>{if(mmHash()!==location.hash.slice(1)){readHash();render(true)}});
+addEventListener('hashchange',()=>{if(mmHash()!==location.hash.slice(1)){const was=S.page;readHash();inbEnter(was);render(true)}});
 document.addEventListener('visibilitychange',()=>{if(!document.hidden){rollDay();notifPoll(false);if(SES&&Date.now()-USERS.at>30*60e3)loadUsers(false).catch(()=>{})}});
 setInterval(rollDay,60e3);
 readHash(); // halaman awal sesuai alamat (#home, #list/…, #set)
