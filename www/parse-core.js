@@ -65,7 +65,7 @@
     if ((m = s.match(/^Date\((\d{4}),(\d{1,2}),(\d{1,2})/))) return mk(m[1], +m[2] + 1, m[3]);
     if (/^\d{5}(\.\d+)?$/.test(s)) return serial(+s);
     if ((m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/))) return mk(m[1], m[2], m[3]);
-    if ((m = s.match(/^(\d{1,2})[/.](\d{1,2})[/.](\d{2,4})\b/))) return ctx.dmy ? mk(m[3], m[2], m[1]) : mk(m[3], m[1], m[2]);
+    if ((m = s.match(/^(\d{1,2})[/.](\d{1,2})[/.](\d{2,4})\b/))) return ctx.dmy || +m[1] > 12 ? mk(m[3], m[2], m[1]) : mk(m[3], m[1], m[2]);
     const t = s.toUpperCase().replace(/^[A-Z]+,\s*/, '').replace(/[-,]/g, ' ').replace(/\s+/g, ' ').trim();
     if ((m = t.match(/^(\d{1,2}) ([A-Z]+)(?: (\d{2,4}))?\b/)) && MON[m[2]]) {
       const y = m[3] || ctx.year;

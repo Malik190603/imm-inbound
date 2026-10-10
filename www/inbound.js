@@ -254,10 +254,10 @@ function inbTto(){
   const q=(S.q.tto||'').toLowerCase().trim();
   const fl=q?TTO.rows.filter(r=>(r.no_tto+' '+r.barang+' '+r.penerima+' '+r.pic).toLowerCase().includes(q)):TTO.rows;const n=lim('tto',20);
   const koli=TTO.rows.reduce((a,r)=>a+(+r.koli||0),0),N=TTO.rows.length,withPh=TTO.rows.filter(r=>(r.photos||[]).length).length,pics=new Set(TTO.rows.map(r=>r.pic).filter(Boolean)).size;
-  const top=lead({tone:'inb',i:1,empty:!N,headline:N?`Serah terima ${inbWhen()}: <b>${fC(koli)} koli</b> lewat ${f0(pics)} PIC.${withPh<N?` ${f0(N-withPh)} TTO belum ada fotonya.`:' Semua sudah berfoto.'}`:`Belum ada serah terima yang dicatat ${inbWhen()}.`,
+  const top=lead({tone:'inb',i:1,empty:!N,headline:N?`Serah terima ${inbWhen()}: <b>${fC(koli)} koli</b> dari ${f0(pics)} penyerah.${withPh<N?` ${f0(N-withPh)} TTO belum ada fotonya.`:' Semua sudah berfoto.'}`:`Belum ada serah terima yang dicatat ${inbWhen()}.`,
     value:cnt(N),unit:'TTO',stats:[{l:'Koli',v:fC(koli)},{l:'Berfoto',v:f0(withPh),u:`dari ${f0(N)}`},{l:'Penerima',v:f0(new Set(TTO.rows.map(r=>r.penerima).filter(Boolean)).size),u:'orang'}]});
   return head+top+add+`<section class="card" style="--i:3">${secHead({icon:I.doc,title:'Daftar TTO',hint:`${f0(fl.length)} TTO`,sub:'Urut dari yang terbaru. Ketuk untuk rincian dan foto.',gloss:['tto']})}<div class="tools">${searchBox('tto','Cari No TTO / barang')}</div>
-    <div class="cb" style="padding-top:8px">${fl.length?`<div class="list">${fl.slice(0,n).map(r=>`<button class="tto-row press" data-tto="${r.id}"><div class="tto-top"><span class="mono tto-no">${esc(r.no_tto)}</span>${(r.photos||[]).length?`<span class="lpn-cam">${I.cam}${r.photos.length}</span>`:''}<span class="lpn-time">${dshort(r.tgl)}</span></div><div class="tto-b">${esc(r.barang)}</div><div class="tto-m"><span>${f0(r.koli)} koli</span><span>${esc(r.pic)} → ${esc(r.penerima)}</span></div></button>`).join('')}</div>${moreBtn('tto',fl.length,n)}`
+    <div class="cb" style="padding-top:8px">${fl.length?`<div class="list">${fl.slice(0,n).map(r=>`<button class="tto-row press" data-tto="${r.id}"><div class="tto-top"><span class="mono tto-no">${esc(r.no_tto)}</span>${(r.photos||[]).length?`<span class="lpn-cam">${I.cam}${r.photos.length}</span>`:''}<span class="lpn-time">${dshort(r.tgl)}</span></div><div class="tto-b">${esc(r.barang)}</div><div class="tto-m"><span>${f0(r.koli)} koli</span><span>${esc(r.pic)} → ${esc(r.penerima)}</span>${r.input_by?`<span class="mono">oleh ${esc(r.input_by)}</span>`:''}</div></button>`).join('')}</div>${moreBtn('tto',fl.length,n)}`
       :emptyState(q?'Tidak ditemukan':'Belum ada TTO',q?'Tidak ada TTO yang cocok.':`Belum ada serah terima yang dicatat ${esc(rlabel())}.`,!q,I.doc)}</div></section>`;
 }
 function ttoPhotosHtml(){
@@ -310,7 +310,7 @@ function openTtoForm(){
       ${fld('ttoNo','No TTO',`<input id="ttoNo" type="text" autocomplete="off" autocapitalize="characters" maxlength="60">`)}
       ${fld('ttoBarang','Nama barang',`<textarea id="ttoBarang" rows="1" autocomplete="off" maxlength="${IMMCore.TTO_BARANG_MAX}"></textarea>`)}
       ${fld('ttoKoli','Jumlah koli',`<input id="ttoKoli" type="number" inputmode="numeric" min="1" step="1">`)}
-      ${fld('ttoPic','PIC yang menyerahkan',`<select id="ttoPic"><option value="">Pilih PIC</option>${IMMCore.PICS.map(p=>`<option>${esc(p)}</option>`).join('')}</select>`)}
+      ${fld('ttoPic','Yang menyerahkan',`<input id="ttoPic" type="text" autocomplete="off" maxlength="60" placeholder="Nama atau bagian yang menyerahkan">`)}
       ${fld('ttoPenerima','Penerima',`<input id="ttoPenerima" type="text" autocomplete="off" maxlength="60">`)}
       <div id="ttoPhotos">${ttoPhotosHtml()}</div>
       <button type="button" class="btn block press" id="ttoSave">Simpan TTO</button>
@@ -322,7 +322,7 @@ function ttoValidate(e){
   if(!/^\d{4}-\d{2}-\d{2}$/.test(e.tgl))bad.ttoTgl='Pilih tanggal';
   if(!e.no_tto)bad.ttoNo='Wajib diisi';if(!e.barang)bad.ttoBarang='Wajib diisi';
   if(e.koli===''||!Number.isInteger(k)||k<1)bad.ttoKoli='Isi angka bulat, minimal 1';
-  if(!e.pic)bad.ttoPic='Pilih PIC';if(!e.penerima)bad.ttoPenerima='Wajib diisi';
+  if(!e.pic)bad.ttoPic='Wajib diisi';if(!e.penerima)bad.ttoPenerima='Wajib diisi';
   document.querySelectorAll('#ttoForm .inb-field').forEach(f=>{const m=bad[f.dataset.f]||'';f.classList.toggle('bad',!!m);if(m)f.classList.remove('scanned');f.querySelector('.inb-msg').textContent=m||(f.classList.contains('scanned')?SCAN_MARK:'')});
   return !Object.keys(bad).length;
 }
@@ -331,7 +331,7 @@ async function ttoSave(){
   if(!ttoValidate(e)){buzz(30);const f=document.querySelector('#ttoForm .inb-field.bad input,#ttoForm .inb-field.bad select,#ttoForm .inb-field.bad textarea');f&&f.focus();return}
   const btn=document.getElementById('ttoSave');TTO_DRAFT.saving=true;btn.disabled=true;btn.textContent='Menyimpan…';
   try{const blobs=[];for(const p of TTO_DRAFT.photos)blobs.push(await IMMStore.preparePhoto(p.file,[IMMCore.stampText(p.at),'TTO '+e.no_tto]));
-    const row=await IMMStore.addTto({...e,koli:Number(e.koli)},blobs,deviceId());
+    const row=await IMMStore.addTto({...e,koli:Number(e.koli)},blobs,deviceId(),SES?SES.nik:'');
     ttoDraftClear();closeSheet();buzz(12);toast('TTO tersimpan');
     const [from,to]=range();if(row&&row.tgl>=from&&row.tgl<=to){TTO.rows.unshift(row);TTO.rows.sort((a,b)=>(b.tgl+(b.created_at||'')).localeCompare(a.tgl+(a.created_at||'')))}
     if(S.page==='inb'&&S.inb==='tto')render()}
@@ -345,10 +345,12 @@ function ttoPick(file){
 function openTto(id){
   const r=TTO.rows.find(x=>String(x.id)===String(id));if(!r)return;const ph=r.photos||[];
   sheet(sHead(esc(r.no_tto),`<span><b>${dlong(r.tgl)}</b></span><span>${f0(r.koli)} koli</span>`),
-    `<dl class="kv"><dt>Nama barang</dt><dd>${esc(r.barang)}</dd><dt>Jumlah koli</dt><dd>${f0(r.koli)} koli</dd><dt>Yang menyerahkan</dt><dd>${esc(r.pic)}</dd><dt>Penerima</dt><dd>${esc(r.penerima)}</dd><dt>Tanggal</dt><dd>${dlong(r.tgl)}</dd></dl>
+    `<dl class="kv"><dt>Nama barang</dt><dd>${esc(r.barang)}</dd><dt>Jumlah koli</dt><dd>${f0(r.koli)} koli</dd><dt>Yang menyerahkan</dt><dd>${esc(r.pic)}</dd><dt>Penerima</dt><dd>${esc(r.penerima)}</dd><dt>Tanggal</dt><dd>${dlong(r.tgl)}</dd><dt>Input by</dt><dd class="mono">${r.input_by?esc(r.input_by):'–'}</dd></dl>
      <div><h4>Dokumentasi (${ph.length})</h4>${ph.length?`<div class="ph-grid">${ph.map(p=>`<div class="ph-item"><button class="ph-thumb press" data-photo-view="${esc(p)}" aria-label="Lihat foto"><img loading="lazy" src="${esc(IMMStore.photoUrl(p))}" alt="Foto TTO ${esc(r.no_tto)}"></button></div>`).join('')}</div>`:'<p class="foot" style="padding:0">Tidak ada foto.</p>'}</div>
-     <button class="btn ghost block press tto-del" id="ttoDel" data-id="${r.id}">${I.trash}Hapus TTO</button>`);
+     ${ttoCanDelete(r)?`<button class="btn ghost block press tto-del" id="ttoDel" data-id="${r.id}">${I.trash}Hapus TTO</button>`:''}`);
 }
+// Hapus hanya oleh yang menginput, Manager, atau Admin (data lama tanpa Input by: siapa pun yang punya akses)
+function ttoCanDelete(r){if(!SES)return false;return !r.input_by||r.input_by===SES.nik||['MANAGER','ADMIN'].includes(SES.jabatan)}
 async function ttoDelete(id){
   const r=TTO.rows.find(x=>String(x.id)===String(id));if(!r)return;
   if(!confirm(`Hapus TTO ${r.no_tto}? Data dan fotonya tidak bisa dikembalikan.`))return;
@@ -356,6 +358,7 @@ async function ttoDelete(id){
 }
 const INB_PAGES={mpp:inbMpp,put:inbPutaway,tto:inbTto,prod:inbProd};
 function pageInbound(){
+  if(S.inbFree)return inbTto(); // TTO & Dokumen dari menu List: akses diatur oleh login, tanpa sandi Inbound
   if(!inbUnlocked())return inbLock();
   loadInbound();
   if(!S.inb||!INB_PAGES[S.inb])return inbList();
@@ -363,13 +366,13 @@ function pageInbound(){
 }
 // Muat ulang data halaman Inbound yang sedang dibuka (tombol sinkron, tarik-untuk-segarkan, "Coba lagi").
 function inbRefresh(){PH.state='idle';inbTilesStale();if(S.inb==='tto'){inbSyncTto(true);return Promise.resolve()}return loadInbound(true)}
-function inboundBack(){if(S.page!=='inb'||!S.inb||!inbUnlocked())return false;S.inb='';inbTilesStale();S.more={};render(true);window.scrollTo({top:0});return true}
+function inboundBack(){if(S.page!=='inb'||!S.inb||!inbUnlocked()||S.inbFree)return false;S.inb='';inbTilesStale();S.more={};render(true);window.scrollTo({top:0});return true}
 function inboundClick(e){
   if(S.page!=='inb')return false;const g=s=>e.target.closest(s);let t;
   if(g('[data-pv-x]')||(e.target&&e.target.id==='photoView')){inboundOverlayBack();return true}
   if(g('#inbGo')){inbTryUnlock();return true}
   if(g('[data-inb-back]')){inboundBack();return true}
-  if(!inbUnlocked())return false;
+  if(!inbUnlocked()&&!S.inbFree)return false;
   if(g('#sync')||g('[data-inb-reload]')){buzz(6);inbRefresh();render();return true}
   if(t=g('[data-putf]')){const k=t.dataset.putf;S.putF=(k==='all'||S.putF===k)?'':k;S.more.put=0;buzz(5);render();return true}
   if(g('[data-put-reset]')){S.putF='';S.putLoc='';S.q.put='';S.more.put=0;buzz(5);render();return true}

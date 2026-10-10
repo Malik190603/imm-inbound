@@ -49,6 +49,11 @@ test('date: many sheet formats to ISO yyyy-mm-dd', () => {
   eq(P.date('17 Agustus 2026'), '2026-08-17');
   eq(P.date('10 October 2026'), '2026-10-10');
   eq(P.date('2026-10-10'), '2026-10-10');
+  eq(P.date('2026-10-9'), '2026-10-09');           // tanggal hasil group by gviz
+  eq(P.date('22/09/2026 11:10:40'), '2026-09-22'); // hari > 12 pasti hari/bulan
+  eq(P.date('28-Jul-2026'), '2026-07-28');
+  eq(P.date('10 October ', { year: 2026 }), '2026-10-10');
+  eq(P.date('04 Oct 2026'), '2026-10-04');
   eq(P.date(46304), '2026-10-09');
   eq(P.date('46304'), '2026-10-09');
   eq(P.date('Thursday, 1 Oct', { year: 2026 }), '2026-10-01');
