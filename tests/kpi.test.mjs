@@ -144,3 +144,58 @@ test('barus budget per BU', () => {
   const b = K.barusBudget([['', 'KODE STORE', 'H019', 'RP46,758,915', 'RP46,758,915', 'RP0', 'RP0', 'A017', 'RP0', '-RP785,660', 'RP3,980', 'RP781,680']], 'ALL');
   eq(b.limit, 46758915); eq(b.sisa, 46758915 - 785660); eq(b.store, 781680);
 });
+
+// ---------- Menu List ----------
+test('lcAging: containers arrived but not unloaded, buckets 0-7 / 8-14 / 15+', () => {
+  const rdc = [{ si: 'A', ata: '2026-10-08', bu: 'HCI', te: 2 }, { si: 'B', ata: '2026-09-28', acd: '2026-10-09', bu: 'AHI', te: 1 }, { si: 'C', ata: '2026-09-20', bu: 'HCI', te: 1 },
+    { si: 'D', ata: '2026-10-01', bk: '2026-10-05', bu: 'HCI', te: 1 }, { si: 'E', ata: '2026-09-01', bk: '2026-09-20', bu: 'HCI', te: 1 }, { si: 'F', bu: 'HCI' }];
+  const a = K.lcAging(rdc, T, 'ALL');
+  deepEq(a.rows.map((r) => [r.lc, r.ag]), [['C', 20], ['B', 12], ['A', 2]]);
+  deepEq(a.buckets.map((b) => b.n), [1, 1, 1]); eq(a.buckets[0].te, 2); eq(a.atDc, 1);
+  eq(a.sla, 50); eq(a.done30, 2);
+  eq(K.lcAging(rdc, T, 'AHI').total, 1);
+});
+test('reportStatus: per-report rules, idle days excluded from the percentage', () => {
+  const day = T;
+  const src = { rep1: [['count B'], ['3']], rep2: [['count B'], ['0']], rep9: [['count B']],
+    rep3: [['', 'INBOUND', '', '', ' 9 Oct-26', '10 Oct-26'], ['', 'REALISASI', '', '', '5', '7']],
+    rep4: [['', 'INBOUND', '', '', ' 9 Oct-26', '10 Oct-26'], ['', 'REALISASI', '', '', '5', '']],
+    rep5: [['10', '', '', '', '10 October '], ['', 'RDC TALLO', '', '12', '9']], rep6: [['', 'PLAN BONGKAR', '09 Oct 26', '10 Oct 26'], ['', 'MAKASSAR', '161', '-']],
+    rep7: [['', '', ''], ['10 Oct 2026', '', '0'], ['09 Oct 2026', '99.73%', '732']],
+    ldH: [['', 'X'], ['', 'PERFORMANCE', 'STANDARD', '', '10 Oct-26'], ['', 'SLA Customer', '99%', '', '100%']], ldA: [['', 'X'], ['', 'PERFORMANCE', 'STANDARD', '', '10 Oct-26'], ['', 'SLA Customer', '99%', '', '']] };
+  const r = K.reportStatus(src, day, T, false);
+  deepEq(r.st, { rep1: 'ok', rep2: 'no', rep9: 'no', rep3: 'ok', rep4: 'no', rep5: 'ok', rep6: 'ok', rep7: 'no', rep8: 'no' });
+  eq(r.filled, 4); eq(r.of, 9); eq(r.pct, 44);
+  const idle = K.reportStatus(src, day, T, true);
+  deepEq(idle.idle, ['rep2', 'rep9']); eq(idle.of, 7); eq(idle.pct, 57);
+  const none = K.reportStatus({}, day, T, false); eq(none.pct, null); eq(none.unknown.length, 9);
+});
+test('layout: zones per BU from location codes', () => {
+  const rows = [['Location', 'Zone', 'Cubic Capacity', 'Location Level', 'Section'], ['A01.066.5', 'LORONG.A1', '2,798,400', '5', 'HCI'], ['A01.066.4', 'LORONG.A1', '2,798,400', '4', 'HCI'], ['A01.067.1', 'LORONG.A1', '1,000,000', '1', 'HCI'], ['C09.001.1', 'LORONG.C9', '1,000,000', '1', 'FBI'], ['TOTAL', '', '9', '', '']];
+  const l = K.layout(rows, 'ALL');
+  eq(l.total, 4); eq(l.zones[1].zone, 'A1'); eq(l.zones[1].n, 3); eq(l.zones[1].bays, 2); near(l.zones[1].cap, 6.5968);
+  eq(K.layout(rows, 'FBI').zones.length, 1); eq(K.layout(rows, 'KWI').missing, true);
+});
+
+test('lpStats: counts per period from LP sheets, date separators, LC codes, kardus units', () => {
+  const src = {
+    visitor: [['Timestamp', 'Tujuan Kunjungan', 'Jam Masuk', 'Jam Keluar'], ['10/10/2026 08:10:00', 'Service', '08:10:00', ''], ['09/10/2026 11:00:00', 'Service', '11:00', '12:00'], ['22/09/2026 11:10:40', 'Interview', '', '']],
+    karyawan: [['Timestamp', 'Kode Store', 'Bagian', 'Status', 'Keterangan', 'Jam Keluar', 'Jam Masuk'], ['10/10/2026 12:00:00', 'H019', 'Inbound', 'Keluar', 'ISOMA', '12:00:00', '']],
+    jemput: [['Kamis 08/10/2026', '', '', ''], ['RT1', 'OD1', '3', 'J337 / HCI LATANETE'], ['RT2', 'OD2', '2', ''], ['Sabtu 10/10/2026', '', '', ''], ['RT3', 'OD3', '5', 'A390 / AHI']],
+    seal: [['', '', 'TUJUAN'], ['Jumat 09/10/2026', '', ''], ['1', '1234567', 'J387+J305'], ['2', '1234568', ' A390 ']],
+    ttoOut: [['TANGGAL', 'NO TTO'], ['10/10/2026', 'T1'], ['18/09/2026', 'T2']],
+    ttoIn: [['Kamis 08/10/2026', 'BAIK', 'TTO/1'], ['', 'BAIK', 'TTO/2']],
+    palopo: [['261001C001'], ['261006C002'], ['260930C001']], lbSum: [['TOTAL OD 2026 SEMESTER 2', '42,677'], ['RUPA-RUPA SEMESTER 2', '332']],
+    tugu: [['count NO.DOKUMEN'], ['622']],
+    kardus: [['TGL PROSES', 'JUMLAH /KG', 'TOTAL HASIL PENJUALAN', 'KETERANGAN', 'Total'], ['2-Oct-2026', '198 kg', '218', 'KARDUS', ''], ['5-Oct-2026', '254', 'Rp280,000', 'BESI WO', ''], ['6-Oct-2026', '10 kg', '', 'KARDUS', '']],
+  };
+  const L = K.lpStats(src, '2026-10-01', '2026-10-10', '2026-10-10');
+  eq(L.tamu.n, 2); eq(L.tamu.didalam, 1); deepEq(L.tamu.by[0], ['Service', 2]);
+  eq(L.karyawan.n, 1); eq(L.karyawan.belum, 1);
+  eq(L.jemput.n, 3); eq(L.jemput.koli, 10); eq(L.jemput.rows[1].store, 'J337 / HCI LATANETE'); eq(L.jemput.last, '2026-10-10');
+  eq(L.seal.date, '2026-10-09'); eq(L.seal.armada, 2); deepEq(L.seal.tujuan, ['J387', 'J305', 'A390']);
+  eq(L.ttoOut.n, 1); eq(L.ttoIn.n, 2);
+  eq(L.palopo.n, 2); eq(L.palopo.total, 3); eq(L.summary.odS2, 42677); eq(L.summary.rupaS2, 332); eq(L.tugu, 622);
+  eq(L.kardus.kg, 462); eq(L.kardus.rp, 218000 + 280000); eq(L.kardus.unpaid, 1);
+  eq(K.lpStats({}, '2026-10-01', '2026-10-10', '2026-10-10').tamu, undefined);
+});

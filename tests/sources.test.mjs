@@ -24,7 +24,7 @@ test('url: month tab names, encoded sheet, unique cache buster, date filters', (
   const u = decodeURIComponent(S.url('ldH', ctx));
   assert.match(u, /sheet=RDC Tallo HCI Okt 2026/);
   assert.match(u, /^https:\/\/docs\.google\.com\/spreadsheets\/d\/1-DrDOPp/);
-  assert.match(u, /range=A1:AN160/);
+  assert.match(u, /range=A1:AN230/); // seluruh matriks sampai blok WH Man Hadir
   assert.match(decodeURIComponent(S.url('rep3', ctx)), /sheet=RDC Tallo HCI Okt&/);
   assert.match(decodeURIComponent(S.url('rep6', ctx)), /sheet=W41/);
   assert.match(decodeURIComponent(S.url('dp', ctx)), /sheet=okt/);

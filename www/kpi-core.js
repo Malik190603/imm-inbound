@@ -294,5 +294,113 @@
     return { limit: t('limit'), sisa: t('sisa'), dc: t('dc'), store: t('store'), perBu: per };
   }
 
-  return { miss, wtw, akurasi, occSeries, occupancy, damage, ldMatrix, slaOutbound, incoming, ld, ldSection, storing, dpDay, dpRange, planner, virtualLoc, sloc, SLOCS, ccTotal, barusBudget };
+  // ---------- Aging LC di DC: dari tiba di pelabuhan (ATA) sampai dibongkar ----------
+  function lcAging(rdc, today, bu) {
+    const rows = (rdc || []).filter((r) => r.ata && !r.bk && r.ata <= today && (bu === 'ALL' || r.bu === bu))
+      .map((r) => ({ lc: r.si, k: r.k, bu: r.bu, te: r.te || 1, ata: r.ata, door: r.acd || '', ag: P.diffDays(r.ata, today) }))
+      .map((r) => ({ ...r, b: r.ag <= 7 ? 0 : r.ag <= 14 ? 1 : 2 })).sort((a, b) => b.ag - a.ag);
+    const buckets = [0, 1, 2].map((i) => ({ label: ['0–7 hari', '8–14 hari', '15+ hari'][i], n: rows.filter((r) => r.b === i).length, te: sum(rows.filter((r) => r.b === i), (r) => r.te) }));
+    const done = (rdc || []).filter((r) => r.ata && r.bk && (bu === 'ALL' || r.bu === bu) && P.diffDays(r.bk, today) <= 30);
+    const sla = done.length ? r2(done.filter((r) => P.diffDays(r.ata, r.bk) <= 7).length / done.length * 100) : null;
+    return { rows, buckets, total: rows.length, atDc: rows.filter((r) => r.door).length, sla, done30: done.length };
+  }
+
+  // ---------- Status pengisian 9 laporan harian (aturan: research/reports.md) ----------
+  const cnt1 = (rows) => (Array.isArray(rows) && rows.length > 1 ? n0(rows[1][0]) : Array.isArray(rows) && rows.length === 1 && P.num(rows[0][0]) != null ? n0(rows[0][0]) : 0);
+  function dateCols(rows, day, today) {
+    const ctx = { year: yearOf(today) }, hits = [];
+    (rows || []).forEach((r, i) => r.forEach((c, j) => { if (P.date(c, ctx) === day) hits.push([i, j]); }));
+    return hits;
+  }
+  function repMatrixFilled(rows, day, today, label) {
+    const hits = dateCols(rows, day, today); if (!hits.length) return false;
+    const L = P.norm(label);
+    return hits.some(([hr, hc]) => (rows || []).slice(hr + 1).some((r) => P.norm(r[1]).indexOf(L) >= 0 && P.str(r[hc]) !== ''));
+  }
+  function reportStatus(src, day, today, idle) {
+    const R = (k) => src[k];
+    const st = {};
+    const known = (k) => Array.isArray(R(k));
+    st.rep1 = known('rep1') ? (cnt1(R('rep1')) > 0 ? 'ok' : idle ? 'idle' : 'no') : 'unknown';
+    st.rep2 = known('rep2') ? (cnt1(R('rep2')) > 0 ? 'ok' : idle ? 'idle' : 'no') : 'unknown';
+    st.rep9 = known('rep9') ? (cnt1(R('rep9')) > 0 ? 'ok' : idle ? 'idle' : 'no') : 'unknown';
+    st.rep3 = known('rep3') ? (repMatrixFilled(R('rep3'), day, today, 'REALISASI') ? 'ok' : 'no') : 'unknown';
+    st.rep4 = known('rep4') ? (repMatrixFilled(R('rep4'), day, today, 'REALISASI') ? 'ok' : 'no') : 'unknown';
+    if (known('rep5')) {
+      const rows = R('rep5'); const stamp = rows.slice(0, 3).flat().map((c) => P.date(c, { year: yearOf(today) })).find(Boolean);
+      const tallo = rows.find((r) => r.some((c) => /TALLO/i.test(P.str(c))));
+      st.rep5 = stamp === day && tallo && tallo.slice(2).some((c) => P.str(c) !== '' && P.str(c) !== '-') ? 'ok' : 'no';
+    } else st.rep5 = 'unknown';
+    if (known('rep6')) {
+      const rows = R('rep6'); const hits = dateCols(rows, day, today);
+      st.rep6 = hits.some(([hr, hc]) => rows.slice(hr + 1).some((r) => r.some((c) => /MAKASSAR/i.test(P.str(c))) && P.str(r[hc]) !== '')) ? 'ok' : 'no';
+    } else st.rep6 = 'unknown';
+    if (known('rep7')) { const r = R('rep7').find((x) => P.date(x[0], { year: yearOf(today) }) === day); st.rep7 = r && P.str(r[1]) !== '' && n0(r[2]) > 0 ? 'ok' : 'no'; } else st.rep7 = 'unknown';
+    const ldOk = (rows) => { const L = ld(rows, today); return !!L && ['SLA Customer', 'SLA Store', 'LPPB DO', 'Accuracy'].some((l) => L.get('PERFORMANCE', l, day) != null); };
+    st.rep8 = known('ldH') || known('ldA') ? ((!known('ldH') || ldOk(R('ldH'))) && (!known('ldA') || ldOk(R('ldA'))) ? 'ok' : 'no') : 'unknown';
+    const ids = Object.keys(st).sort();
+    const counted = ids.filter((k) => st[k] === 'ok' || st[k] === 'no');
+    const filled = counted.filter((k) => st[k] === 'ok');
+    return { day, st, pct: counted.length ? Math.round(filled.length / counted.length * 100) : null, filled: filled.length, of: counted.length, missing: counted.filter((k) => st[k] === 'no'), idle: ids.filter((k) => st[k] === 'idle'), unknown: ids.filter((k) => st[k] === 'unknown') };
+  }
+
+  // ---------- Layout gudang: master lokasi (A01.066.5 = lorong.bay.level) ----------
+  function layout(rows, bu) {
+    if (!Array.isArray(rows) || rows.length < 2) return miss('Master lokasi belum terbaca');
+    const h = rows[0], iL = P.col(h, 'Location'), iZ = P.col(h, 'Zone'), iC = P.col(h, 'Cubic Capacity'), iV = P.col(h, 'Location Level'), iS = P.col(h, 'Section');
+    const zones = {};
+    rows.slice(1).forEach((r) => {
+      const loc = P.str(r[iL]); const m = /^([A-Z]+\d*)\.(\d+)\.(\d+)$/.exec(loc); if (!m) return;
+      const sec = P.str(r[iS]).toUpperCase() || '-'; if (bu !== 'ALL' && sec !== bu) return;
+      const zone = P.str(r[iZ]).replace(/^LORONG\./i, '') || m[1];
+      const z = zones[sec + '|' + zone] || (zones[sec + '|' + zone] = { bu: sec, zone, n: 0, cap: 0, bays: new Set(), levels: {} });
+      z.n++; z.cap += n0(r[iC]) / 1e6; z.bays.add(m[2]); const lv = m[3]; z.levels[lv] = (z.levels[lv] || 0) + 1;
+    });
+    const list = Object.values(zones).map((z) => ({ bu: z.bu, zone: z.zone, n: z.n, cap: r2(z.cap), bays: z.bays.size, levels: Object.entries(z.levels).sort((a, b) => +a[0] - +b[0]) }))
+      .sort((a, b) => (a.bu === b.bu ? (a.zone < b.zone ? -1 : 1) : a.bu < b.bu ? -1 : 1));
+    if (!list.length) return miss(bu === 'ALL' ? 'Master lokasi kosong' : 'Tidak ada lokasi untuk BU ' + bu);
+    return { zones: list, total: sum(list, (z) => z.n), cap: r2(sum(list, (z) => z.cap)) };
+  }
+
+  // ---------- LP (Loss Prevention): hitungan per periode dari sheet LP; kolom privat tidak pernah diminta ----------
+  const inR = (d, from, to) => !!d && d >= from && d <= to;
+  function lpStats(src, from, to, today) {
+    const ctx = { year: yearOf(today) }, dmy = { year: yearOf(today), dmy: true };
+    const out = {};
+    const rowsOf = (k) => (Array.isArray(src[k]) ? src[k] : null);
+    // tamu
+    const vis = rowsOf('visitor');
+    if (vis) { const r = vis.slice(1).map((x) => ({ d: P.date(x[0], dmy), at: P.str(x[0]), tujuan: P.str(x[1]), masuk: P.str(x[2]), keluar: P.str(x[3]) })).filter((x) => inR(x.d, from, to));
+      const by = {}; r.forEach((x) => { by[x.tujuan || '-'] = (by[x.tujuan || '-'] || 0) + 1; });
+      out.tamu = { n: r.length, didalam: r.filter((x) => x.d === today && !x.keluar).length, by: Object.entries(by).sort((a, b) => b[1] - a[1]), rows: r.reverse() }; }
+    const kar = rowsOf('karyawan');
+    if (kar) { const r = kar.slice(1).map((x) => ({ d: P.date(x[0], dmy), at: P.str(x[0]), store: P.str(x[1]), bagian: P.str(x[2]), status: P.str(x[3]), ket: P.str(x[4]), keluar: P.str(x[5]), masuk: P.str(x[6]) })).filter((x) => inR(x.d, from, to));
+      out.karyawan = { n: r.length, belum: r.filter((x) => x.d === today && x.keluar && !x.masuk).length, rows: r.reverse() }; }
+    const jem = rowsOf('jemput');
+    if (jem) { let store = ''; const r = P.fillSep(jem, 0).map((x) => { if (P.str(x.row[3])) store = P.str(x.row[3]); return { d: x.date, rt: P.str(x.row[0]), od: P.str(x.row[1]), koli: n0(x.row[2]), store }; }).filter((x) => x.od && inR(x.d, from, to));
+      out.jemput = { n: r.length, koli: sum(r, (x) => x.koli), rows: r.reverse(), last: P.fillSep(jem, 0).map((x) => x.date).pop() || null }; }
+    const seal = rowsOf('seal');
+    if (seal) { let d = null; const r = []; seal.forEach((x) => { const sd = P.sepDate(x[0]) || (P.num(x[0]) > 40000 ? P.date(+P.num(x[0])) : null); if (sd) { d = sd; return; } if (d && P.str(x[1])) r.push({ d, seal: P.str(x[1]), tujuan: P.str(x[2]).split('+').map((t) => P.str(t)).filter(Boolean) }); });
+      out.seal = { date: d, armada: r.length, seal: r.length, rows: r, tujuan: [...new Set(r.flatMap((x) => x.tujuan))] }; }
+    const cntDated = (k, col, opt) => { const rows = rowsOf(k); if (!rows) return null; let last = null; const r = rows.slice(opt && opt.head ? 1 : 0).map((x) => { let d = P.date(x[col], opt && opt.dmy ? dmy : ctx) || P.sepDate(x[col]); if (!d && opt && opt.fill) d = last; if (d) last = d; return { d, x }; }).filter((y) => inR(y.d, from, to)); return { n: r.length, rows: r }; };
+    out.ttoOut = cntDated('ttoOut', 0, { head: true });
+    out.ttoIn = cntDated('ttoIn', 0, { fill: true, dmy: true });
+    out.nmIn = cntDated('nmIn', 0, { head: true, dmy: true });
+    out.nmOut = cntDated('nmOut', 0, { head: true, dmy: true });
+    out.ret3pl = cntDated('ret3pl', 0, { dmy: true });
+    const armada = (k) => { const rows = rowsOf(k); if (!rows) return null; const ds = rows.map((x) => P.codeDate(x[0])).filter(Boolean); return { n: ds.filter((d) => inR(d, from, to)).length, total: ds.length, last: ds.sort().pop() || null }; };
+    out.palopo = armada('palopo'); out.mamuju = armada('mamuju'); out.palu = armada('palu');
+    const sm = rowsOf('lbSum');
+    if (sm) { const find = (re) => { const r = sm.find((x) => re.test(P.str(x[0]))); return r ? r.slice(1).map((c) => P.num(c)).find((v) => v != null) : null; };
+      out.summary = { odS1: find(/TOTAL OD.*SEMESTER 1/i), odS2: find(/TOTAL OD.*SEMESTER 2/i), rupaS1: find(/RUPA.*SEMESTER 1/i), rupaS2: find(/RUPA.*SEMESTER 2/i) }; }
+    const tot = (k) => { const rows = rowsOf(k); return rows ? cnt1(rows) : null; };
+    out.tugu = tot('tugu'); out.sj = tot('sj');
+    const kd = rowsOf('kardus');
+    if (kd) { const r = kd.slice(1).map((x) => { let rp = P.num(x[2]); if (rp != null && rp > 0 && rp < 10000) rp *= 1000; return { d: P.date(x[0], ctx), kg: P.num(x[1]) || 0, rp, jenis: P.str(x[3]) || 'Lainnya' }; }).filter((x) => inR(x.d, from, to));
+      const by = {}; r.forEach((x) => { const b = by[x.jenis] || (by[x.jenis] = { kg: 0, rp: 0, n: 0 }); b.kg += x.kg; b.rp += x.rp || 0; b.n++; });
+      out.kardus = { n: r.length, kg: r2(sum(r, (x) => x.kg)), rp: sum(r, (x) => x.rp || 0), unpaid: r.filter((x) => x.rp == null).length, by: Object.entries(by) }; }
+    return out;
+  }
+
+  return { lpStats, lcAging, reportStatus, layout, miss, wtw, akurasi, occSeries, occupancy, damage, ldMatrix, slaOutbound, incoming, ld, ldSection, storing, dpDay, dpRange, planner, virtualLoc, sloc, SLOCS, ccTotal, barusBudget };
 });
