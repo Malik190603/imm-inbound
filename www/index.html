@@ -327,24 +327,6 @@ button.row:hover{background:var(--surface-2)}
 .set-group{display:grid}
 .uv.rl .uv-r{grid-template-columns:118px minmax(0,1fr) 38px}
 .uv.rl .uv-v{font-family:var(--f-sans);font-weight:600;font-size:12.5px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-#roleGate{position:fixed;inset:0;z-index:95;display:grid;place-items:end center;padding:16px 12px calc(16px + var(--sab));background:rgba(8,12,16,.42);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);opacity:0;transition:opacity .4s var(--ease)}
-#roleGate.in{opacity:1} #roleGate.out{opacity:0}
-.rg-card{width:100%;max-width:460px;background:var(--surface);border-radius:28px;padding:18px 18px 16px;box-shadow:0 30px 80px -30px rgba(0,0,0,.5);transform:translateY(40px);transition:transform .55s var(--ease);max-height:calc(100dvh - 32px - var(--sat));overflow:auto}
-#roleGate.in .rg-card{transform:none} #roleGate.out .rg-card{transform:translateY(40px)}
-.rg-top{display:flex;justify-content:space-between;align-items:center;min-height:40px}
-.rg-logo{display:inline-grid}
-.rg-card h2{font-size:22px;font-weight:800;letter-spacing:-.02em;margin:14px 0 4px}
-.rg-card>p{margin:0 0 16px;color:var(--ink-3);font-size:13px}
-.rg-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-bottom:16px}
-.rg-opt{display:flex;align-items:center;gap:10px;padding:12px;border-radius:16px;border:1.5px solid var(--line);background:var(--surface-2);font:inherit;font-weight:700;font-size:13.5px;color:var(--ink);text-align:left;min-width:0;animation:rise .5s var(--ease) both;transition:border-color .2s,background .2s}
-.rg-opt>span:last-child{min-width:0;overflow-wrap:anywhere;line-height:1.2}
-.rg-opt .ic{width:30px;height:30px;border-radius:10px;display:grid;place-items:center;background:var(--sunk);color:var(--ink-2);flex:none;transition:background .2s,color .2s}
-.rg-opt .ic svg{width:17px;height:17px}
-.rg-opt[aria-pressed="true"]{border-color:var(--accent);background:var(--surface)}
-.rg-opt[aria-pressed="true"] .ic{background:var(--accent);color:var(--accent-ink)}
-.rg-opt:last-child:nth-child(odd){grid-column:1/-1}
-.rg-go{padding:14px 18px;font-size:15px}
-.rg-go:disabled{opacity:.35}
 .uv{display:grid;gap:8px;margin-top:10px}
 .uv-r{display:grid;grid-template-columns:44px minmax(0,1fr) 28px;gap:10px;align-items:center}
 .uv-v{font-family:var(--f-mono);font-size:12px;color:var(--ink-2)}
@@ -1123,38 +1105,6 @@ function monLpp(){
     <div class="cb" style="padding-top:4px">${docList.length?`<div class="list">${docList.slice(0,n).map(d=>`<button class="row press" data-lpp="${esc(d.k)}"><span class="a"><span class="mono" style="font-size:12.5px">${esc(d.k)}</span>${buTag(d.bu)}${d.open?tag('Pending','crit'):''}</span><span class="b">${dshort(d.d)} · ${esc(d.si)} · ${d.kat.map(k=>KAT[k]||k).join(', ')}</span><span class="v">${f0(d.q)}<small>${d.items.length} item</small></span></button>`).join('')}</div>${moreBtn('lpp',docList.length,n)}`:emptyState('Tidak ditemukan','Tidak ada dokumen yang cocok.',false,I.search)}</div></section>`;
 }
 
-// ======================= PENGATURAN =======================
-function pageSet(){
-  const v=currentVersion();const at=D?D.snap.split('T'):null;
-  const nCont=D?D.cont.length:0,nLc=D?D.lcs.length+D.un.length:0,nLp=D?D.lp.length:0,nRdc=D?(D.rdc||[]).length:0;
-  const liveOk=!!livePlugin();const me=(LS.get('imm.role')||{}).role;const nG=Object.keys(IMMUi.GLOSSARY).length;
-  return `
-  <header class="set-head" style="--i:0"><span class="mark">${(document.getElementById('brandMark')||{}).innerHTML||''}</span>
-    <div class="set-id"><h1>Pengaturan</h1><p>IMM · Inbound Mini Monitoring DC Tallo</p></div>
-    <dl class="set-meta"><div><dt>Versi</dt><dd>${esc(v)}</dd></div><div><dt>Role kamu</dt><dd>${me?esc(me):'Belum dipilih'}</dd></div><div><dt>Data</dt><dd>${at?`${at[0]===TODAY?'Hari ini':dshort(at[0])} ${at[1]}`:'–'}</dd></div></dl>
-  </header>
-  <section class="card" style="--i:1"><div class="ch"><span class="hic">${I.sun}</span><h2>Tampilan</h2></div><div class="cb">
-    <div style="margin-bottom:12px">${seg('theme',[['auto','Otomatis'],['light','Terang'],['dark','Malam']],S.theme)}</div>
-    <div class="set-group">
-      <button class="set-row press" data-toggle="calm"><span class="ic">${I.motion}</span><span><div class="t">Kurangi animasi</div><div class="x">Matikan animasi masuk, angka berjalan, dan transisi</div></span><span class="end">${S.calm?tag('Aktif','good'):tag('Mati')}</span></button>
-    </div></div></section>
-  <section class="card" style="--i:2"><div class="ch"><span class="hic">${I.users}</span><h2>Pengguna</h2></div><div class="cb">${rolesBlock()}</div></section>
-  <section class="card" style="--i:3"><div class="ch"><span class="hic">${I.dl}</span><h2>Pembaruan</h2></div><div class="cb"><div class="set-group">
-    <button class="set-row press" id="updCheck"><span class="ic">${I.dl}</span><span><div class="t">Periksa pembaruan</div><div class="x">Versi terpasang ${esc(v)}${S.updChecked?` · dicek ${esc(S.updChecked)}`:''}</div></span><span class="end">${I.chev}</span></button>
-    <div class="set-row"><span class="ic">${I.info}</span><span><div class="t">Update kilat</div><div class="x">${liveOk?'Aktif: perubahan tampilan dipasang tanpa instal APK':'Tersedia di aplikasi Android'}</div></span><span class="end">${liveOk?tag('Aktif','good'):''}</span></div>
-  </div></div></section>
-  <section class="card" style="--i:4"><div class="ch"><span class="hic">${I.db}</span><h2>Data</h2></div><div class="cb"><div class="set-group">
-    <div class="set-row"><span class="ic">${I.db}</span><span><div class="t">Spreadsheet IMM</div><div class="x">${f0(nCont)} baris plan · ${f0(nLc)} LC · ${f0(nLp)} item LPPBDO</div></span><span class="end">${STATUS.state==='error'?tag('Gagal','crit'):tag('OK','good')}</span></div>
-    <div class="set-row"><span class="ic">${I.ship}</span><span><div class="t">Monitoring kontainer</div><div class="x">${D&&D.rdcErr?esc(D.rdcErr):`${f0(nRdc)} kontainer BU Makassar`}</div></span><span class="end">${D&&D.rdcErr?tag('Gagal','crit'):tag('OK','good')}</span></div>
-    <div class="set-row"><span class="ic">${I.box}</span><span><div class="t">Inbound (stock & transit)</div><div class="x">${inbSourceText()}</div></span><span class="end">${INB.state==='idle'||INB.state==='loading'?tag('–'):(INB.err.stock||INB.err.transit)?tag('Gagal','crit'):tag('OK','good')}</span></div>
-  </div></div></section>
-  <section class="card" style="--i:5"><div class="ch"><span class="hic">${I.info}</span><h2>Kamus istilah</h2></div><div class="cb"><div class="set-group">
-    <button class="set-row press" data-gloss=""><span class="ic">${I.doc}</span><span><div class="t">Buka kamus</div><div class="x">${nG} istilah: ${Object.values(IMMUi.GLOSSARY).slice(0,6).map(x=>esc(x.t)).join(', ')}, dan lainnya</div></span><span class="end">${I.chev}</span></button>
-  </div></div></section>
-  <section class="card" style="--i:6"><div class="ch"><span class="hic">${I.star}</span><h2>Tentang</h2></div><div class="cb">
-    <dl class="kv"><dt>Aplikasi</dt><dd>IMM – Inbound Mini Monitoring</dd><dt>Lokasi</dt><dd>DC Tallo Makassar</dd><dt>Perangkat</dt><dd>${NATIVE?'Android':'Browser'}</dd></dl>
-  </div></section>`;
-}
 
 // ======================= ROLE PENGGUNA (ditanya sekali per HP) =======================
 // Jawaban dikirim ke Google Form (tanpa login, tanpa GAS); responsnya masuk ke tab ROLE di spreadsheet IMM lalu dibaca lewat gviz.
@@ -1170,52 +1120,14 @@ async function formFields(){
   if(!f.role){const ids=[...h.matchAll(/name="(entry\.\d+)"/g)].map(x=>x[1]).filter((v,i,a)=>a.indexOf(v)===i);[f.role,f.dev,f.ver]=[ids[0]||'',ids[1]||'',ids[2]||'']}
   if(!f.role)throw new Error('kolom form tidak ditemukan');LS.set('imm.form',f);return f;
 }
-const ROLES=[['Manager',I.star],['Assistant Manager',I.star],['Inbound',I.box],['Storing',I.stock],['Outbound',I.truck],['Inventory',I.db],['Planner',I.cal],['MHE',I.motion],['Ekspediter',I.ship],['LP','<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M10 2.8 4 5v4.6c0 3.6 2.4 6.4 6 7.6 3.6-1.2 6-4 6-7.6V5z"/><path d="m7.6 10 1.7 1.7 3.2-3.4"/></svg>']];
 function deviceId(){let d=LS.get('imm.dev');if(!d){d='d'+Date.now().toString(36)+Math.random().toString(36).slice(2,8);LS.set('imm.dev',d)}return d}
 async function sendRole(){
   const r=LS.get('imm.role');if(!r||LS.get('imm.role.sent')===r.t||!ROLE_FORM.id||window.IMM_SNAPSHOT)return;
   try{const f=await formFields();const b=new URLSearchParams();b.set(f.role,r.role);if(f.dev)b.set(f.dev,deviceId());if(f.ver)b.set(f.ver,currentVersion());
     const res=await fetch(`https://docs.google.com/forms/d/e/${ROLE_FORM.id}/formResponse`,{method:'POST',mode:'no-cors',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:b.toString()});
     if(res.type!=='opaque'&&!res.ok){if(res.status===400)LS.del('imm.form');return}
-    LS.set('imm.role.sent',r.t);S.roles=null;if(S.page==='set')loadRoles()}catch(e){}
+    LS.set('imm.role.sent',r.t)}catch(e){}
 }
-function roleGate(onDone,canClose){
-  if(document.getElementById('roleGate'))return;const cur=(LS.get('imm.role')||{}).role||'';let pick=cur;
-  const el=document.createElement('div');el.id='roleGate';el.setAttribute('role','dialog');el.setAttribute('aria-modal','true');
-  el.innerHTML=`<div class="rg-card"><div class="rg-top"><span class="rg-logo"><span class="mark">${(document.getElementById('brandMark')||{}).innerHTML||''}</span></span>${canClose?`<button class="icon-btn press" data-rg-x aria-label="Tutup">${I.x}</button>`:''}</div>
-    <h2>What Role you are?</h2><p>Pilih peranmu di DC Tallo. Cukup sekali di HP ini.</p>
-    <div class="rg-grid">${ROLES.map(([r,ic],i)=>`<button class="rg-opt press" data-role="${esc(r)}" aria-pressed="${r===cur}" style="animation-delay:${80+i*35}ms"><span class="ic">${ic}</span><span>${esc(r)}</span></button>`).join('')}</div>
-    <button class="btn block press rg-go" ${cur?'':'disabled'}>Lanjut</button></div>`;
-  document.body.appendChild(el);requestAnimationFrame(()=>el.classList.add('in'));
-  const close=()=>{el.classList.remove('in');el.classList.add('out');setTimeout(()=>el.remove(),450)};
-  el.addEventListener('click',e=>{const o=e.target.closest('[data-role]');
-    if(o){pick=o.dataset.role;buzz(6);el.querySelectorAll('[data-role]').forEach(b=>b.setAttribute('aria-pressed',b===o));el.querySelector('.rg-go').disabled=false;return}
-    if(e.target.closest('[data-rg-x]')){close();return}
-    if(e.target.closest('.rg-go')&&pick){LS.set('imm.role',{role:pick,t:Date.now()});buzz(12);close();sendRole();if(S.page==='set')render();toast('Terima kasih! Role: '+pick);onDone&&onDone()}});
-}
-async function loadRoles(){
-  if(!ROLE_FORM.id||S.rolesBusy||(S.roles&&Date.now()-S.roles.at<10*60e3))return;S.rolesBusy=true;
-  const known=new Set(ROLES.map(x=>x[0]));
-  try{let rows=null,lastErr=null;
-    for(const sh of ROLE_FORM.sheets){try{const rs=await gviz({doc:DOC_IMM,sheet:sh,tq:'select B,C',h:1});if(rs.some(r=>known.has(cs(r[0])))){rows=rs;break}if(!rows)rows=[]}catch(e){lastErr=e}}
-    if(rows==null)throw lastErr||new Error('tab ROLE tidak ditemukan');
-    rows=rows.filter(r=>known.has(cs(r[0])));const by=new Map();let anon=0;
-    rows.forEach(r=>{const role=cs(r[0]),dev=cs(r[1]);if(!role)return;if(dev)by.set(dev,role);else anon++,by.set('#'+anon,role)});
-    const cnt={};by.forEach(v=>{cnt[v]=(cnt[v]||0)+1});S.roles={at:Date.now(),n:by.size,cnt}}
-  catch(e){S.roles={at:Date.now()-9*60e3,err:e.message||String(e)}}
-  S.rolesBusy=false;if(S.page==='set')render();
-}
-function rolesBlock(){
-  const me=(LS.get('imm.role')||{}).role;const R=S.roles;
-  const mine=`<button class="set-row press" id="roleEdit"><span class="ic">${I.users}</span><span><div class="t">${me?'Ganti role':'Pilih role'}</div><div class="x">Dipakai untuk menghitung pengguna per role</div></span><span class="end">${I.chev}</span></button>`;
-  if(!ROLE_FORM.id)return `<div class="set-group" style="margin-top:14px">${mine}</div>`;
-  if(!R||R.err)return `<div class="set-group" style="margin-top:14px">${mine}</div><p class="foot" style="padding:8px 0 0">${R&&R.err?'Data role belum bisa dibaca: '+esc(R.err):'Memuat data role…'}</p>`;
-  const list=ROLES.map(([r])=>({k:r,v:R.cnt[r]||0})).concat(Object.keys(R.cnt).filter(k=>!ROLES.some(x=>x[0]===k)).map(k=>({k,v:R.cnt[k]}))).filter(x=>x.v).sort((a,b)=>b.v-a.v);
-  return `<div class="lt-sec">Per role <span>${f0(R.n)} HP menjawab</span></div>
-    ${list.length?`<div class="uv rl">${list.map(x=>`<div class="uv-r"><span class="uv-v">${esc(x.k)}</span><div class="uv-b"><div class="seg3" style="width:${Math.max(12,x.v/Math.max(1,R.n)*100)}%"><span style="flex:1;--c:var(--lg2);--o:var(--on2)">${x.v}</span></div></div><span class="uv-n">${pc(x.v,R.n)}%</span></div>`).join('')}</div>`:'<p class="foot" style="padding:0">Belum ada jawaban.</p>'}
-    <div class="set-group" style="margin-top:10px">${mine}</div>`;
-}
-
 // ======================= UPDATE (seperti Active Coach) =======================
 function verParts(v){return String(v||'').replace(/^v/i,'').split('.').map(x=>parseInt(x,10)||0)}
 function verNewer(a,b){const x=verParts(a),y=verParts(b);for(let i=0;i<Math.max(x.length,y.length);i++){if((x[i]||0)!==(y[i]||0))return (x[i]||0)>(y[i]||0)}return false}
@@ -1277,7 +1189,7 @@ async function runUpdate(){
   }catch(e){updBusy=false;updFile='';if(go){go.disabled=false;go.textContent='Coba lagi'}updSet(null,'Unduhan gagal: '+esc(e.message||e)+'. Periksa internet lalu coba lagi.')}
   finally{try{h&&h.remove()}catch(x){}}
 }
-async function installApk(){try{await PL.FileOpener.open({filePath:updFile,contentType:'application/vnd.android.package-archive',openWithDefault:true});updSet(100,'Penginstal Android terbuka. Kalau diminta, izinkan <b>Instal aplikasi tidak dikenal</b> untuk IMM, lalu kembali dan ketuk tombol lagi.')}
+async function installApk(){try{await PL.FileOpener.open({filePath:updFile,contentType:'application/vnd.android.package-archive',openWithDefault:true});updSet(100,'Penginstal Android terbuka. Kalau diminta, izinkan <b>Instal aplikasi tidak dikenal</b> untuk Mini Monitoring, lalu kembali dan ketuk tombol lagi.')}
   catch(e){updSet(100,'Tidak bisa membuka penginstal ('+esc(e.message||e)+').')}}
 (function livePendingCheck(){const pend=LS.get('imm.live.pending');if(!pend||!pend.v)return;LS.del('imm.live.pending');if(pend.v===currentVersion())return;const f=LS.get('imm.live.failed')||[];if(f.indexOf(pend.v)<0)f.push(pend.v);LS.set('imm.live.failed',f.slice(-10))})();
 function liveReady(){const L=livePlugin();if(L)L.notifyAppReady().catch(()=>{})}
@@ -1431,7 +1343,7 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')closeSheet()});
 document.addEventListener('keydown',e=>{if((e.key==='Enter'||e.key===' ')&&e.target&&e.target.matches&&e.target.matches('.hb[role="button"]')){e.preventDefault();e.target.click()}});
 addEventListener('resize',()=>{placePills();placeKnobs()});
 if(document.fonts&&document.fonts.ready)document.fonts.ready.then(()=>{placePills();placeKnobs()});
-try{PL.App&&PL.App.addListener&&PL.App.addListener('backButton',()=>{if(document.getElementById('updGate'))return;const rg=document.getElementById('roleGate');if(rg){const x=rg.querySelector('[data-rg-x]');x&&x.click();return}if(inboundOverlayBack())return;if(document.querySelector('.sheet')){closeSheet();return}if(document.getElementById('login')){PL.App.exitApp&&PL.App.exitApp();return}if(inboundBack())return;if(mmBack())return;PL.App.exitApp&&PL.App.exitApp()})}catch(e){}
+try{PL.App&&PL.App.addListener&&PL.App.addListener('backButton',()=>{if(document.getElementById('updGate'))return;if(inboundOverlayBack())return;if(document.querySelector('.sheet')){closeSheet();return}if(document.getElementById('login')){PL.App.exitApp&&PL.App.exitApp();return}if(inboundBack())return;if(mmBack())return;PL.App.exitApp&&PL.App.exitApp()})}catch(e){}
 (function(){const ptr=document.getElementById('ptr');let y0=null,dy=0;
   addEventListener('touchstart',e=>{if(scrollY<=0&&!document.querySelector('.sheet'))y0=e.touches[0].clientY;else y0=null},{passive:true});
   addEventListener('touchmove',e=>{if(y0==null)return;dy=e.touches[0].clientY-y0;if(dy>0){ptr.style.transition='none';ptr.style.transform=`translateY(${Math.min(dy*.5,70)-70}px) rotate(${dy*2}deg)`}},{passive:true});

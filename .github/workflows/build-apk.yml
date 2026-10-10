@@ -90,12 +90,12 @@ jobs:
           if grep -q "application-debuggable" badging.txt; then echo "::error::APK masih bisa di-debug. Rilis dibatalkan."; exit 1; fi
 
       - name: Beri nama file
-        run: cp android/app/build/outputs/apk/release/app-release.apk "IMM-Tallo-v${{ steps.ver.outputs.version }}.apk"
+        run: cp android/app/build/outputs/apk/release/app-release.apk "Mini-Monitoring-Tallo-v${{ steps.ver.outputs.version }}.apk"
 
       - uses: actions/upload-artifact@v4
         with:
-          name: IMM-Tallo-APK
-          path: IMM-Tallo-*.apk
+          name: Mini-Monitoring-Tallo-APK
+          path: Mini-Monitoring-Tallo-*.apk
 
       - name: Catatan rilis (dari pesan commit)
         run: node scripts/release-notes.mjs
@@ -112,5 +112,5 @@ jobs:
           prerelease: ${{ steps.ver.outputs.beta == 'true' }}
           make_latest: ${{ steps.ver.outputs.beta == 'true' && 'false' || 'true' }}
           files: |
-            IMM-Tallo-*.apk
+            Mini-Monitoring-Tallo-*.apk
             IMM-web-*.zip

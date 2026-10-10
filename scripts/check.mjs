@@ -32,9 +32,17 @@ for (const f of jsFiles) {
   catch (e) { fail(f + ': ' + e.message); }
 }
 ok(jsFiles.length + ' file .js di www/');
-for (const f of ['inbound-core.js', 'store.js', 'inbound.js', 'inbound.css', 'ui-core.js', 'ui.js', 'ui.css']) {
+for (const f of ['inbound-core.js', 'store.js', 'inbound.js', 'inbound.css', 'ui-core.js', 'ui.js', 'ui.css', 'parse-core.js', 'auth-core.js', 'wo-core.js', 'sources.js', 'kpi-core.js', 'mm.js', 'mm.css', 'dash.js', 'menus.js', 'forms.js', 'lp.js']) {
   if (!fs.existsSync(path.join(ROOT, 'www', f))) fail('www/' + f + ' tidak ada');
   else if (!html.includes('"' + f + '"')) fail('index.html tidak memuat ' + f);
+}
+// Logo brand: setiap brand/*.png yang disebut di www/ harus ada (gambar hilang = kotak kosong di HP).
+{
+  const src = fs.readdirSync(path.join(ROOT, 'www')).filter((f) => /\.(js|html)$/.test(f)).map((f) => fs.readFileSync(path.join(ROOT, 'www', f), 'utf8')).join('\n');
+  const named = new Set([...src.matchAll(/brand\/([a-z-]+)\.png/g)].map((x) => x[1]));
+  for (const k of ['informa', 'informa-custom', 'informa-electronics', 'selma', 'azko', 'ataru', 'krisbow', 'toys-kingdom', 'chatime', 'eyesoul']) named.add(k);
+  const miss = [...named].filter((k) => !fs.existsSync(path.join(ROOT, 'www', 'brand', k + '.png')));
+  if (miss.length) fail('logo brand tidak ada: ' + miss.join(', ')); else ok(named.size + ' logo brand');
 }
 const allWww = fs.readdirSync(path.join(ROOT, 'www')).filter((f) => /\.(js|css|html)$/.test(f)).map((f) => fs.readFileSync(path.join(ROOT, 'www', f), 'utf8')).join('\n');
 for (const gid of ['349104626', '2022396471']) if (!allWww.includes(gid)) fail('sheet inbound gid ' + gid + ' tidak dibaca aplikasi');

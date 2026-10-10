@@ -1,22 +1,28 @@
-# IMM – Inbound Mini Monitoring DC Tallo
+# Mini Monitoring – DC Tallo Makassar
 
-Aplikasi Android untuk tim Inbound DC Tallo Makassar. Datanya dibaca langsung dari spreadsheet **IMM** di Google Sheets. Semua edit tetap dilakukan di spreadsheet, dan aplikasi mengambil data terbaru setiap kali dibuka, saat tombol **Muat ulang** diketuk, atau setelah aplikasi ditinggal lebih dari 5 menit.
+Aplikasi Android untuk tim DC Tallo Makassar (sebelum v2.0 bernama **IMM – Inbound Mini Monitoring**). Angka dibaca langsung dari spreadsheet kerja tim di Google Sheets; yang memang diisi di aplikasi (Work Order, Observasi LP, Project & Schedule, TTO, foto) disimpan di Supabase. Data dimuat ulang saat aplikasi dibuka, saat layar ditarik ke bawah, atau setelah ditinggal lebih dari 5 menit.
 
-## Menu
-- **Beranda** (bawaan: Semua BU, hari ini): ringkasan pintar, CBM masuk (storing vs outbound), kontainer dalam TEUs, jadwal bongkar, hal yang perlu dicek, CBM per hari, per BU.
-- **Storing** (bawaan: Semua BU, besok): CBM ke gudang stock per dept, per BU, per No LC. Ketuk LC untuk isi SKU dan posisinya.
-- **Outbound** (bawaan: Semua BU, besok): CBM ke store dan customer; daftar per tujuan hanya store.
-- **Monitoring** (bawaan: Semua BU, 30 hari terakhir)
-  - *Kontainer*: posisi kontainer dari sheet RDC (hanya BU NAME Makassar), dalam TEUs: POO → Berlayar → Yard → Dooring → Delivered, aging, ETA, jadwal bongkar, CBM per LC, lead time.
-  - *LPPBDO*: ringkasan pintar per kategori, asal kiriman, dept, artikel berulang, rasio per 100 TEUs, daftar dokumen.
-- **Pengaturan**: mode terang/malam/otomatis, kurangi animasi, periksa & pasang pembaruan (titik merah di menu bila ada versi baru), status data, muat ulang, hapus data tersimpan.
+## Masuk
+Login dengan **NIK** yang terdaftar di sheet **Master User APK** (kolom USER berisi `NIK.NAMA`, ROLE, JABATAN). Role × Jabatan menentukan menu yang tampil; NIK yang dihapus dari sheet otomatis keluar saat data pengguna dimuat ulang. Tidak ada PIN: siapa pun yang tahu NIK orang lain bisa masuk sebagai orang itu (risiko diterima pemilik).
 
-Setiap menu punya filter BU dan periode sendiri. Tarik layar ke bawah atau ketuk jam di pojok kanan atas untuk memuat ulang data.
+## Tab dan menu
+- **Home**: kalimat "perlu perhatian", lalu 5 kartu KPI: Akurasi DC Tallo, Occupancy, Barang damage (Sloc 1001), SLA Outbound, Incoming container. Manager melihat banner notifikasi Work Order.
+- **List**: menu sesuai hak akses
+  - *Dashboard* per dept: Inbound (termasuk alat Inbound lama: Putaway, TTO, Productivity, MPP – terkunci sandi 2 jam), Storing, Outbound, Inventory, Planner, MHE.
+  - *Monitoring*: LC DC (aging), Container (sheet RDC).
+  - *Occupancy & Capacity* (dan Layout Gudang), *Sloc* (Value, Qty), *Project & Schedule* (DC Project, Official Schedule; diisi Manager, Asst Manager, Supervisor, Admin), *Demand* (Inbound, Storing, Inventory, Planner, Outbound), *LPPBDO / LPPBPO* (Inbound; Outbound belum tersambung), *Report* (Daily Report, Status 9 report), *TTO & Dokumen*, *Infrastructure* (Work Order dengan persetujuan Manager, penyelesaian MHE dengan 1–4 foto; Reminder), *MPP* (Kebutuhan: menunggu data standar dari pemilik), *LP Menu* (In/Out tamu, karyawan, armada, kardus; Observasi LP Open → Ongoing → Closed).
+  - ADMIN melihat semua menu; WAREHOUSEMAN hanya Home dan Demand.
+- **Settings**: akun, tampilan, versi & pembaruan, daftar spreadsheet sumber, data yang belum tersedia, kamus istilah, keluar.
+
+Filter bawaan: **Hari ini** dan **Semua BU** (LPPB: Bulan ini); tiap menu menyimpan filternya sendiri. Filter BU memakai logo brand: HCI (Informa, Informa Custom, Informa Electronics, Selma), AHI (Azko, Ataru), KWI (Krisbow), TGI (Toys Kingdom), FBI (Chatime). Angka yang belum punya sumber ditampilkan "Belum tersambung", bukan nol.
 
 Warna: Storing hijau, Store oranye, Customer biru. BU: HCI biru, AHI merah, TGI biru muda, FBI ungu, KWI oranye.
 
+## Sumber data
+Semua spreadsheet terdaftar di `www/sources.js` (`DOCS`, `REG`) dan tampil di Settings → Database Spreadsheet. Kolom yang berisi data pribadi (nama tamu/driver/customer, nomor telepon, nomor dokumen, nomor polisi) **tidak pernah diminta** dari sheet; tes `tests/sources.test.mjs` memeriksanya. Sheet yang salah nama tab ditolak (bukan diam-diam membaca tab pertama).
+
 ## Cara pasang & update
-1. Pertama kali: unduh `IMM-Tallo-vX.apk` dari halaman **Releases**, buka, izinkan "Instal aplikasi tidak dikenal".
+1. Pertama kali: unduh `Mini-Monitoring-Tallo-vX.apk` (sebelum v2.0: `IMM-Tallo-vX.apk`) dari halaman **Releases**, buka, izinkan "Instal aplikasi tidak dikenal".
 2. Update bersifat **wajib**: setiap dibuka, aplikasi mengecek rilis terbaru. Kalau ada versi lebih baru, layar terkunci sampai diperbarui (tanpa internet aplikasi tetap bisa dibuka).
    - Perubahan tampilan/logika saja → **update kilat** (±1 MB), langsung dipakai tanpa instal APK.
    - Perubahan native (plugin, izin, ikon) → APK diunduh di dalam aplikasi lalu dipasang menimpa versi lama. Tidak perlu uninstall.
@@ -50,6 +56,7 @@ Untuk dua sheet inbound, kolom boleh digeser asalkan **judulnya tidak diganti**.
 2. SQL Editor → tempel isi `supabase/schema.sql` → Run (membuat tabel `putaway_photos`, `tto`, dan bucket `imm-photos`).
 3. Project Settings → API: salin **Project URL** dan **anon public key** ke `SUPA` di `www/store.js`. Jangan pernah memakai kunci `service_role` (pemeriksaan rilis akan menolaknya).
 4. Karena anon key ada di aplikasi dan repo ini publik, data TTO dan foto bisa diakses orang yang paham teknis di luar aplikasi.
+5. Mini Monitoring (v2.0) menambah tabel `work_order`, `wo_event`, `observasi`, `obs_entry`, `dc_schedule`, `notif`, `run_no` dan kolom `tto.input_by`. Anon hanya boleh membaca tabel; semua perubahan lewat fungsi `imm_wo_create`, `imm_wo_move`, `imm_obs_create`, `imm_obs_move`, `imm_obs_add`, `imm_obs_cancel`, `imm_schedule_save`, `imm_notif_read` yang memeriksa aturan (persetujuan hanya jabatan MANAGER, penyelesaian hanya role MHE dengan 1–4 foto, dst.).
 
 ## Scan TTO dari foto
 Di form **Tambah TTO** ada bagian "Scan dari foto". Foto dokumen dikirim ke fungsi server `scan-tto` di Supabase, dibaca AI (Gemini atau Claude), lalu No TTO (dari *Document No*), daftar barang, dan jumlah koli terisi sendiri untuk dicek sebelum disimpan. Kunci AI hanya ada di Supabase, tidak di aplikasi dan tidak di repo ini.
@@ -65,7 +72,7 @@ Batas harian berlaku untuk semua HP bersama-sama dan `SCAN_DAILY_LIMIT=0` memati
 Sebelum langkah di atas selesai, tombol scan menampilkan "Scan belum diaktifkan di server" dan form tetap bisa diisi manual. Foto dokumen dikirim ke penyedia AI yang kuncinya dipasang. Fungsi memakai `SUPABASE_SERVICE_ROLE_KEY` bawaan Supabase hanya untuk mencatat pemakaian.
 
 ## Tes
-- `npm test` — logika inti dan penyimpanan (dijalankan juga saat rilis).
+- `npm test` — logika inti (parse, login & hak akses, Work Order/Observasi, sumber data, KPI) dan penyimpanan (dijalankan juga saat rilis).
 - `npm run check` — sintaks, konfigurasi, kunci rahasia, sandi tidak tertulis terang.
 
 ## Aturan perhitungan

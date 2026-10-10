@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">IMM</string>
-    <string name="title_activity_main">IMM</string>
+    <string name="app_name">Mini Monitoring</string>
+    <string name="title_activity_main">Mini Monitoring</string>
     <string name="package_name">id.imm.inbound</string>
     <string name="custom_url_scheme">id.imm.inbound</string>
 </resources>

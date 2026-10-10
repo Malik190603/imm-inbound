@@ -1,6 +1,6 @@
 {
   "appId": "id.imm.inbound",
-  "appName": "IMM",
+  "appName": "Mini Monitoring",
   "webDir": "www",
   "android": {
     "allowMixedContent": false,

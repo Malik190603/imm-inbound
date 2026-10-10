@@ -1,5 +1,5 @@
 ---
-name: IMM – Inbound Mini Monitoring DC Tallo
+name: Mini Monitoring DC Tallo Makassar
 description: Mobile-first warehouse monitoring app (Capacitor Android, Indonesian UI, light and dark) that answers the day's inbound question first and lists the detail after.
 colors:
   # light theme (normative source: :root in www/index.html, --ink-3 overridden in www/ui.css)
@@ -209,13 +209,13 @@ components:
     rounded: "18px"
 ---
 
-# Design System: IMM – Inbound Mini Monitoring DC Tallo
+# Design System: Mini Monitoring DC Tallo Makassar
 
 ## Overview
 
 **Creative North Star: "Jawaban Dulu" (answer first, detail after)**
 
-IMM is an Operate-mode tool read one-handed on an Android phone on the warehouse floor, and glanced at by managers. Every page opens with one near-black answer card that states the day's situation as a plain Indonesian sentence and one large figure with its unit; everything below it is a work list. The surrounding world is quiet on purpose: a warm-grey ground, borderless white cards, pill-shaped controls, and one amber mark.
+Mini Monitoring (formerly IMM) is an Operate-mode tool read one-handed on an Android phone on the warehouse floor, and glanced at by managers. Every page opens with one near-black answer card that states the day's situation as a plain Indonesian sentence and one large figure with its unit; everything below it is a work list. The surrounding world is quiet on purpose: a warm-grey ground, borderless white cards, pill-shaped controls, and one amber mark.
 
 Colour carries meaning, never decoration. Green, orange and blue are bound to the three flows (Storing, Store/Outbound, Customer); five fixed hues are bound to the business units; amber, red and green tints mark what needs action. The answer card inverts with the theme (near-black in light, near-white in dark), so it stays the loudest surface on the page in both.
 
@@ -325,7 +325,7 @@ Icons are inline SVG line icons, stroke 1.5–2.2 with round caps, sized 13–22
 
 ## Components
 
-Components are HTML string builders in `www/ui.js` (shared) with pure helpers in `www/ui-core.js`; styles are in `www/ui.css` and `www/inbound.css` over the base in `www/index.html`.
+Components are HTML string builders in `www/ui.js` (shared) with pure helpers in `www/ui-core.js`; styles are in `www/ui.css` and `www/inbound.css` over the base in `www/index.html`. The Mini Monitoring layer (v2.0) adds `www/mm.js` + `www/mm.css` (session, navigation, BU filter, KPI cards, hub, Settings), `www/dash.js` (department dashboards), `www/menus.js`, `www/forms.js` and `www/lp.js`.
 
 ### Answer card (`lead`)
 The signature. `lead({tone, headline, value, unit, delta, body, stats, foot, empty})`.
@@ -382,8 +382,35 @@ A `sunk` pill with a sliding `surface` knob carrying the card shadow (400 ms); o
 - **Schedule timeline:** a 54 px mono time column, a 2 px `line` rail, a 10 px `mark` dot with a 3 px `surface` ring, and the container rows for that hour beside it.
 
 ### Navigation
-- **Bottom bar (phones):** `surface` at 90% with an 18 px blur, 24 px radius, five tabs with a 21 px icon over a 12px/600 label; an `accent` pill (18 px radius) slides under the selected tab over 450 ms and its label turns `accent-ink`. A 9 px `crit` dot marks a tab with something pending.
-- **Top tabs (≥ 900 px):** the same five tabs as a `sunk` pill group with a sliding `accent` pill.
+- **Three tabs:** Home, List, Settings. **Bottom bar (phones):** `surface` at 90% with an 18 px blur, 24 px radius, a 21 px icon over a 12.5px/600 label; an `accent` pill (18 px radius) slides under the selected tab over 450 ms and its label turns `accent-ink`. A 9 px `crit` dot or a count badge marks a tab with something pending (Work Order waiting for approval, unread notifications).
+- **Top tabs (≥ 900 px):** the same three tabs as a `sunk` pill group with a sliding `accent` pill.
+- **Routes** live in the hash (`#home`, `#list`, `#list/<menu>/<sub>`, `#set`); the Android back button goes sub menu → List → Home → exit.
+- **List head (`listHead`):** back chevron, menu title, and either a department picker (`dept-pick`, 56 px row with a 40 px icon) for Dashboard or a segmented control for the menu's sub pages.
+
+### Hub (List tab)
+A two-column grid of menu tiles (`hub-i`, 140 px minimum, `surface`, `--r-lg`), each with an icon tile, title (14px/700) and a one-line description; only the menus the signed-in role and jabatan may open are drawn (`IMMAuth.visibleMenus`).
+
+### KPI card (`kc`)
+The Home and dashboard unit. `surface`, `--r-lg`, card shadow, 132 px minimum, padding 14/14/16.
+- **Head row:** 36 px icon tile (tinted `good`/`warn`/`crit` by state), a date pill (`kc-d`) and a chevron when it links somewhere. The label (13px/700 `ink-2`) sits under the head row, never squeezed beside it.
+- **Figure:** 30px/800 tabular, unit in `small`; optional 8 px progress bar (`kc-bar`) and one sub-line (12px `ink-3`).
+- **States:** loading draws two skeleton bars (`kc-sk`); error shows a `crit` line "Data belum bisa dimuat" with "Ketuk untuk coba lagi"; missing shows an info line "Belum tersambung ke data". A card never shows 0 for data it could not read.
+- `kc.wide` spans both columns.
+
+### Not wired (`notWired`)
+A plain card with an info icon, a bold title and one sentence saying which source is missing. Used for figures the owner has not supplied a sheet for yet; the full list is in Settings → Data yang belum tersedia.
+
+### BU filter (`buChip` / `openBU`)
+A chip showing the brand logos of the selected BU (28 px high on a fixed light plate `#F6F7F4`, 8 px radius, so logos stay legible in dark mode) or a grid icon with "Semua BU". It opens a sheet of 56 px options: logo stack, BU code (bold) and brand names (12px `ink-3`), a check on the selected one. HCI = Informa, Informa Custom, Informa Electronics, Selma; AHI = Azko, Ataru; KWI = Krisbow; TGI = Toys Kingdom; FBI = Chatime.
+
+### Login gate
+A full-screen dialog over the scrim with one 28 px-radius card (max 420 px): app mark, "Mini Monitoring / DC Tallo Makassar", a strip of eight brand logos, a single NIK field (text keyboard with capitals, since some NIK start with a letter, 44 px+) and a block primary button. Errors appear under the field in `crit`. The NIK is checked against the Master User APK sheet; only the signed-in user's own name is kept, the user list is cached as NIK, role and jabatan only.
+
+### Notification banner
+A 56 px `mark-soft` row at the top of Home with a 36 px icon, a one-line message and a chevron; it opens the notification sheet.
+
+### Forms (Work Order, Observasi, Jadwal)
+`mm-form` fields reuse the Inbound form field. Choice lists use chips (`kchips`) that wrap; photos use a three-column thumbnail grid (`ph-grid`, 1–4 photos) with Kamera and Galeri buttons. Status changes are buttons in the detail sheet, shown only when the signed-in user may make that move; a refused move explains why in a toast.
 
 ### Sheets
 Bottom sheet with a grab handle, 26 px top corners and a scrim (`rgba(8,12,15,.45)`), sliding in over 450 ms; a centred dialog from 760 px. The header carries an 18px/800 title, a meta line and a 40 px close button.
@@ -394,7 +421,8 @@ One easing, `--ease: cubic-bezier(.22,.8,.24,1)`. Page children rise 16 px and f
 ## Do's and Don'ts
 
 ### Do:
-- **Do** open every page with exactly one answer card: a sentence, one figure with its unit, and the page's tone (`mark`, `stock`, `out`, `mon`).
+- **Do** open every legacy page (Inbound, Demand Storing/Outbound, Monitoring Kontainer, LPPBDO) with exactly one answer card: a sentence, one figure with its unit, and the page's tone (`mark`, `stock`, `out`, `mon`). Home and the department dashboards use KPI cards instead.
+- **Do** show "Belum tersambung" rather than a zero when a figure has no source sheet.
 - **Do** put what needs action directly under the answer card, at most three items, and show the calm green line when there are none.
 - **Do** keep text at 12 px or larger, controls at 44 px or taller, and icon-only buttons at 40 px.
 - **Do** set codes and clock times in JetBrains Mono, and all figures in tabular numerals with a unit.

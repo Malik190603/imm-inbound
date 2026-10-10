@@ -22,6 +22,6 @@ for (const raw of lines) {
 const clean = (a) => a.join('\n').replace(/\n{3,}/g, '\n\n').trim();
 let out = '## Yang baru\n' + (title ? title + '\n\n' : '') + clean(user);
 if (clean(dev)) out += '\n\n## Catatan developer\n' + clean(dev);
-out += '\n\nUnduh file .apk di bawah dari HP lalu pasang menimpa versi lama. Data tetap dibaca dari spreadsheet IMM.\n';
+out += '\n\nUnduh file .apk di bawah dari HP lalu pasang menimpa versi lama. Data tetap dibaca dari spreadsheet DC Tallo.\n';
 fs.writeFileSync('release-notes.md', out);
 console.log(out);

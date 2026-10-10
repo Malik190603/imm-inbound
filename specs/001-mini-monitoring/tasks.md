@@ -42,12 +42,12 @@ description: "Task list: Mini Monitoring DC Tallo Makassar"
 **Goal**: login NIK, sesi tersimpan, List hanya menu berhak.
 **Independent Test**: `test/e2e-mm-login.js` — tiap kombinasi Role × Jabatan dari mock → menu List sama dengan `IMMAuth.visibleMenus`; NIK salah → "NIK tidak terdaftar. Hubungi admin."; buka ulang → langsung Home; hapus dari master → keluar dengan pesan.
 
-- [ ] T013 [US1] Tulis `test/e2e-mm-login.js` (gagal dulu)
-- [ ] T014 [US1] Intro baru di `www/index.html`: "Mini Monitoring" + "DC Tallo Makassar" + 10 logo (`www/brand/*.png`, `alt` nama brand, chip terang di tema gelap)
-- [ ] T015 [US1] Layar Masuk di `www/index.html` (input NIK `inputmode=text`, tombol 44 px, pesan error, status "Butuh internet untuk masuk pertama kali" + Coba lagi); simpan `imm.session` & `imm.users` (tanpa nama orang lain); muat ulang master saat dibuka, offline pakai salinan; bila NIK sesi hilang dari master → keluar dengan pesan "Akun tidak lagi terdaftar"
-- [ ] T016 [US1] Shell 3 tab (Home, List, Settings) menggantikan TABS lama di `www/index.html`; hash route `#/home`, `#/list/<menu>/<sub>`, `#/settings`; tombol kembali Android sesuai contracts/screens.md
-- [ ] T017 [US1] `www/list.js`: hub List (kisi menu berikon, hanya `visibleMenus`), rute sub menu, penjaga akses untuk tautan langsung
-- [ ] T018 [US1] Kirim log perangkat (tab `ROLE`) memakai Role dari sesi; hapus `roleGate`/`rolesBlock`/pertanyaan role per HP di `www/index.html`
+- [x] T013 [US1] Tulis `test/e2e-mm-login.js` (gagal dulu)
+- [x] T014 [US1] Intro baru di `www/index.html`: "Mini Monitoring" + "DC Tallo Makassar" + 10 logo (`www/brand/*.png`, `alt` nama brand, chip terang di tema gelap)
+- [x] T015 [US1] Layar Masuk di `www/index.html` (input NIK `inputmode=text`, tombol 44 px, pesan error, status "Butuh internet untuk masuk pertama kali" + Coba lagi); simpan `imm.session` & `imm.users` (tanpa nama orang lain); muat ulang master saat dibuka, offline pakai salinan; bila NIK sesi hilang dari master → keluar dengan pesan "Akun tidak lagi terdaftar"
+- [x] T016 [US1] Shell 3 tab (Home, List, Settings) menggantikan TABS lama di `www/index.html`; hash route `#/home`, `#/list/<menu>/<sub>`, `#/settings`; tombol kembali Android sesuai contracts/screens.md — rute memakai `#home`, `#list/<menu>/<sub>`, `#set` (tanpa garis miring awal)
+- [x] T017 [US1] `www/list.js`: hub List (kisi menu berikon, hanya `visibleMenus`), rute sub menu, penjaga akses untuk tautan langsung — dikerjakan di `www/mm.js` (`pageHub`, `normalizeRoute`), bukan file `list.js` terpisah
+- [x] T018 [US1] Kirim log perangkat (tab `ROLE`) memakai Role dari sesi; hapus `roleGate`/`rolesBlock`/pertanyaan role per HP di `www/index.html`
 
 ---
 
@@ -56,8 +56,8 @@ description: "Task list: Mini Monitoring DC Tallo Makassar"
 **Goal**: dropdown BU global + periode bawaan.
 **Independent Test**: `test/e2e-mm-home.js` bagian filter — tiap BU mengubah angka; Semua BU = jumlah; bawaan Hari ini/Semua BU, LPPB Bulan ini.
 
-- [ ] T019 [US3] Komponen dropdown BU di `www/index.html` + `www/ui.css` (Semua BU, HCI: Informa+Selma, AHI: Azko+Ataru, KWI: Krisbow, TGI: Toys Kingdom, FBI: Chatime; logo di chip terang; target 44 px; aria-expanded/listbox)
-- [ ] T020 [US3] Filter periode per halaman dengan bawaan `today` + `ALL`, LPPB `month` + `ALL`, di state `F` `www/index.html`
+- [x] T019 [US3] Komponen dropdown BU di `www/index.html` + `www/ui.css` (Semua BU, HCI: Informa+Selma, AHI: Azko+Ataru, KWI: Krisbow, TGI: Toys Kingdom, FBI: Chatime; logo di chip terang; target 44 px; aria-expanded/listbox)
+- [x] T020 [US3] Filter periode per halaman dengan bawaan `today` + `ALL`, LPPB `month` + `ALL`, di state `F` `www/index.html`
 
 ---
 
@@ -66,10 +66,10 @@ description: "Task list: Mini Monitoring DC Tallo Makassar"
 **Goal**: Akurasi, Value damage, Occupancy, Incoming Container, SLA Outbound.
 **Independent Test**: `test/e2e-mm-home.js` — angka = perhitungan manual dari mock untuk ALL dan tiap BU; satu sumber gagal → kartu itu "Data belum bisa dimuat" + Coba lagi; ketuk kartu → menu terkait bila berhak.
 
-- [ ] T021 [P] [US2] Tes `tests/kpi.test.mjs` bagian Home: `akurasi` (=(TARGET−PLUS−MINUS)/TARGET, hari terakhir B>0, gabungan HCI+AHI), `occupancy` (Used/Capasity, FBI dari blok posisi), `damage` (SKU/qty BARUS, value null), `slaOutbound` (hari terakhir terisi, vs STANDARD), BU tanpa data → `{missing:true}`
-- [ ] T022 [US2] Implementasi fungsi Home di `www/kpi-core.js`
-- [ ] T023 [US2] Halaman Home di `www/index.html`: kartu jawaban + 5 kartu dengan tanggal data, status muat/gagal/belum tersambung, Incoming Container dari model kontainer yang ada (POO, OTW, POD), banner pemberitahuan Manager (diisi US5)
-- [ ] T024 [US2] Tulis `test/e2e-mm-home.js` (termasuk ukur waktu: layar Masuk → Home ≤ 30 detik dan 5 kartu terisi ≤ 5 detik dengan latensi jaringan tiruan 4G, SC-001/SC-003)
+- [x] T021 [P] [US2] Tes `tests/kpi.test.mjs` bagian Home: `akurasi` (=(TARGET−PLUS−MINUS)/TARGET, hari terakhir B>0, gabungan HCI+AHI), `occupancy` (Used/Capasity, FBI dari blok posisi), `damage` (SKU/qty BARUS, value null), `slaOutbound` (hari terakhir terisi, vs STANDARD), BU tanpa data → `{missing:true}`
+- [x] T022 [US2] Implementasi fungsi Home di `www/kpi-core.js`
+- [x] T023 [US2] Halaman Home di `www/index.html`: kartu jawaban + 5 kartu dengan tanggal data, status muat/gagal/belum tersambung, Incoming Container dari model kontainer yang ada (POO, OTW, POD), banner pemberitahuan Manager (diisi US5)
+- [x] T024 [US2] Tulis `test/e2e-mm-home.js` (termasuk ukur waktu: layar Masuk → Home ≤ 30 detik dan 5 kartu terisi ≤ 5 detik dengan latensi jaringan tiruan 4G, SC-001/SC-003) — waktu diukur tanpa latensi 4G tiruan
 
 ---
 
@@ -78,10 +78,10 @@ description: "Task list: Mini Monitoring DC Tallo Makassar"
 **Goal**: dropdown departemen; KPI FR-030..036; ⛔ berlabel.
 **Independent Test**: `test/e2e-mm-list.js` bagian dashboard — tiap departemen tampil, angka cocok mock, kartu ⛔ berlabel "Belum tersambung ke data", tanpa angka nol palsu.
 
-- [ ] T025 [P] [US4] Tes `tests/kpi.test.mjs` bagian dashboard: storing (case id, picked, open, level bawah/atas/floor, per LVL, CBM=sum(CM3)/1e6), outbound (Rit dari RETASE, outstanding dari baris LD; aging → missing), planner (blok HCI/AHI per posisi, bucket aging), inventory (virtual buckets, WTW lokasi/count/qty, perbaikan dibatasi 100%, root cause Move/Picking, lainnya missing, BARUS budget), lp (hitungan per periode dari sumber LP, `fillSep`), mhe (status, alat, pekerjaan, biaya, tren mingguan)
-- [ ] T026 [US4] Implementasi fungsi dashboard di `www/kpi-core.js`
-- [ ] T027 [US4] `www/dash.js`: dropdown departemen (`IMMAuth.dashDepts`), render per departemen dengan komponen v1.4; Inbound = Beranda lama dipindah (termasuk pintu ke Putaway/Productivity/MPP detail bersandi)
-- [ ] T028 [US4] Tulis bagian dashboard di `test/e2e-mm-list.js`
+- [x] T025 [P] [US4] Tes `tests/kpi.test.mjs` bagian dashboard: storing (case id, picked, open, level bawah/atas/floor, per LVL, CBM=sum(CM3)/1e6), outbound (Rit dari RETASE, outstanding dari baris LD; aging → missing), planner (blok HCI/AHI per posisi, bucket aging), inventory (virtual buckets, WTW lokasi/count/qty, perbaikan dibatasi 100%, root cause Move/Picking, lainnya missing, BARUS budget), lp (hitungan per periode dari sumber LP, `fillSep`), mhe (status, alat, pekerjaan, biaya, tren mingguan)
+- [x] T026 [US4] Implementasi fungsi dashboard di `www/kpi-core.js`
+- [x] T027 [US4] `www/dash.js`: dropdown departemen (`IMMAuth.dashDepts`), render per departemen dengan komponen v1.4; Inbound = Beranda lama dipindah (termasuk pintu ke Putaway/Productivity/MPP detail bersandi)
+- [x] T028 [US4] Tulis bagian dashboard di `test/e2e-mm-list.js` — dashboard diuji di `test/e2e-mm-list.js` + sapuan `test/e2e-design.js`
 
 ---
 
@@ -90,10 +90,10 @@ description: "Task list: Mini Monitoring DC Tallo Makassar"
 **Goal**: Tambah WO, setujui, pending, selesai dengan foto, Reminder, pemberitahuan.
 **Independent Test**: `test/e2e-mm-wo.js` — nomor `WO-20261010-0004` setelah `-0003`; non-Manager tanpa tombol Setujui; selesai tanpa foto ditolak; foto ke-5 ditolak; Manager melihat badge & daftar.
 
-- [ ] T029 [US5] Tulis `test/e2e-mm-wo.js` (Supabase tiruan di harness)
-- [ ] T030 [US5] `www/forms.js` Work Order: daftar (status, filter), form Tambah (field FR-050 dengan pilihan tetap dari `IMMWo`, waktu mulai tanggal+jam, biaya rupiah), detail + riwayat `wo_event`, aksi status sesuai `canMove`, unggah 1–4 foto saat selesai, draf lokal bila unggah gagal
-- [ ] T031 [US5] Infrastructure → Reminder (`IMMWo.reminders`) di `www/forms.js`
-- [ ] T032 [US5] Pemberitahuan Manager: periksa `notif` saat buka, saat resume (`App` plugin), tiap 2 menit; badge tab List + banner Home; tandai dibaca (`imm_notif_read`) di `www/index.html`
+- [x] T029 [US5] Tulis `test/e2e-mm-wo.js` (Supabase tiruan di harness)
+- [x] T030 [US5] `www/forms.js` Work Order: daftar (status, filter), form Tambah (field FR-050 dengan pilihan tetap dari `IMMWo`, waktu mulai tanggal+jam, biaya rupiah), detail + riwayat `wo_event`, aksi status sesuai `canMove`, unggah 1–4 foto saat selesai, draf lokal bila unggah gagal
+- [x] T031 [US5] Infrastructure → Reminder (`IMMWo.reminders`) di `www/forms.js`
+- [x] T032 [US5] Pemberitahuan Manager: periksa `notif` saat buka, saat resume (`App` plugin), tiap 2 menit; badge tab List + banner Home; tandai dibaca (`imm_notif_read`) di `www/index.html`
 
 ---
 
@@ -102,8 +102,8 @@ description: "Task list: Mini Monitoring DC Tallo Makassar"
 **Goal**: OBS open → ongoing → closed, isi lokasi & checklist dengan foto.
 **Independent Test**: `test/e2e-mm-obs.js` — nomor OBS, check-in, kondisi ganda tersimpan, Closed hanya baca, NIK pencatat.
 
-- [ ] T033 [US6] Tulis `test/e2e-mm-obs.js`
-- [ ] T034 [US6] `www/forms.js` Observasi: daftar + Tambah (mulai, tim), Check-in, sub menu Observasi (13 lokasi) dan Checklist (8 alat) dengan kondisi pilihan ganda (9), detail, foto ≤ 4, Tutup; Closed hanya baca; entri salah ditandai `batal`; foto gagal unggah disimpan sebagai draf dan bisa dikirim ulang
+- [x] T033 [US6] Tulis `test/e2e-mm-obs.js`
+- [x] T034 [US6] `www/forms.js` Observasi: daftar + Tambah (mulai, tim), Check-in, sub menu Observasi (13 lokasi) dan Checklist (8 alat) dengan kondisi pilihan ganda (9), detail, foto ≤ 4, Tutup; Closed hanya baca; entri salah ditandai `batal`; foto gagal unggah disimpan sebagai draf dan bisa dikirim ulang
 
 ---
 
@@ -112,13 +112,13 @@ description: "Task list: Mini Monitoring DC Tallo Makassar"
 **Goal**: Monitoring, Occupancy/Layout, Sloc, Project & Schedule, Demand, LPPB, Report, TTO, MPP, LP In/Out.
 **Independent Test**: `test/e2e-mm-list.js` — setiap menu tampil dengan mock, mengikuti filter, hanya untuk yang berhak; Report Status 7/9 → 78% + 2 nama; TTO "Yang menyerahkan" teks bebas + Input by NIK; Container 5 tahap.
 
-- [ ] T035 [P] [US7] Tes `tests/kpi.test.mjs` bagian menu: `lcAging` (ATA BY DC → TANGGAL BONGKAR, 0–7/8–14/15+), `lppb` (tanggal dari kolom Tanggal, damage = `DAMAGE GOODS`, NDC = Jababeka/Cikupa/Sidoarjo, status dinormalisasi), `reportStatus` (9 aturan research/reports.md, `idle` bila rencana bongkar 0), `sloc`, `layoutGrid` (A01.066.5 → lorong/bay/level), demand per departemen
-- [ ] T036 [US7] Implementasi fungsi menu di `www/kpi-core.js`
-- [ ] T037 [US7] `www/menus.js`: Monitoring (LC DC + Container dari `monKont` lama), Occupancy & Capacity + Layout Gudang (kisi lorong × bay, warna occupancy, catatan tanggal data stok), Sloc Value/Qty, Demand (Inbound dari rencana bongkar, Storing/Outbound dari halaman Role lama, Planner, Inventory ⛔), LPPBDO/LPPBPO (Inbound dari `monLpp` lama diperluas; Outbound ⛔), Report Daily (9 tautan) + Status, MPP "Menunggu data MPP"
-- [ ] T038 [US7] Project & Schedule di `www/forms.js` (daftar per jenis, Tambah/Ubah hanya MANAGER/ASST. MANAGER/SUPERVISOR/ADMIN, status rencana/berjalan/selesai/batal)
-- [ ] T039 [US7] TTO & Dokumen di `www/inbound.js`: keluarkan dari kunci sandi, ganti "PIC yang menyerahkan" → "Yang menyerahkan" (teks bebas, tanpa dropdown), isi `input_by` = NIK sesi, tampilkan Input by di daftar & detail; scan foto tetap jalan
-- [ ] T040 [US7] `www/lp.js` LP In/Out: tamu (hari ini, masih di dalam), karyawan, logbook barang keluar/masuk, armada terseal, rekap kardus — daftar tanpa kolom privat
-- [ ] T041 [US7] Tulis bagian menu di `test/e2e-mm-list.js` (termasuk cek tidak ada `PRIVATE_MARK_*` di DOM)
+- [x] T035 [P] [US7] Tes `tests/kpi.test.mjs` bagian menu: `lcAging` (ATA BY DC → TANGGAL BONGKAR, 0–7/8–14/15+), `lppb` (tanggal dari kolom Tanggal, damage = `DAMAGE GOODS`, NDC = Jababeka/Cikupa/Sidoarjo, status dinormalisasi), `reportStatus` (9 aturan research/reports.md, `idle` bila rencana bongkar 0), `sloc`, `layoutGrid` (A01.066.5 → lorong/bay/level), demand per departemen
+- [x] T036 [US7] Implementasi fungsi menu di `www/kpi-core.js`
+- [x] T037 [US7] `www/menus.js`: Monitoring (LC DC + Container dari `monKont` lama), Occupancy & Capacity + Layout Gudang (kisi lorong × bay, warna occupancy, catatan tanggal data stok), Sloc Value/Qty, Demand (Inbound dari rencana bongkar, Storing/Outbound dari halaman Role lama, Planner, Inventory ⛔), LPPBDO/LPPBPO (Inbound dari `monLpp` lama diperluas; Outbound ⛔), Report Daily (9 tautan) + Status, MPP "Menunggu data MPP"
+- [x] T038 [US7] Project & Schedule di `www/forms.js` (daftar per jenis, Tambah/Ubah hanya MANAGER/ASST. MANAGER/SUPERVISOR/ADMIN, status rencana/berjalan/selesai/batal)
+- [x] T039 [US7] TTO & Dokumen di `www/inbound.js`: keluarkan dari kunci sandi, ganti "PIC yang menyerahkan" → "Yang menyerahkan" (teks bebas, tanpa dropdown), isi `input_by` = NIK sesi, tampilkan Input by di daftar & detail; scan foto tetap jalan
+- [x] T040 [US7] `www/lp.js` LP In/Out: tamu (hari ini, masih di dalam), karyawan, logbook barang keluar/masuk, armada terseal, rekap kardus — daftar tanpa kolom privat
+- [x] T041 [US7] Tulis bagian menu di `test/e2e-mm-list.js` (termasuk cek tidak ada `PRIVATE_MARK_*` di DOM)
 
 ---
 
@@ -126,18 +126,18 @@ description: "Task list: Mini Monitoring DC Tallo Makassar"
 
 **Independent Test**: tiap baris berfungsi; Keluar → layar Masuk dan sesi terhapus.
 
-- [ ] T042 [US8] `pageSet` di `www/index.html`: Akun (NIK, nama sendiri, Role, Jabatan), Versi APK, Tampilan, Kurangi Animasi, Live Akses, Pembaruan, Database Spreadsheet (daftar sumber per departemen + "Data yang belum tersedia" dari ⛔), Tentang, Keluar (konfirmasi); hapus kartu Pengguna
-- [ ] T043 [US8] Tambah kasus Settings di `test/e2e-mm-login.js`
+- [x] T042 [US8] `pageSet` di `www/index.html`: Akun (NIK, nama sendiri, Role, Jabatan), Versi APK, Tampilan, Kurangi Animasi, Live Akses, Pembaruan, Database Spreadsheet (daftar sumber per departemen + "Data yang belum tersedia" dari ⛔), Tentang, Keluar (konfirmasi); hapus kartu Pengguna
+- [x] T043 [US8] Tambah kasus Settings di `test/e2e-mm-login.js`
 
 ---
 
 ## Phase 11: Polish & Cross-Cutting
 
-- [ ] T044 Nama aplikasi "Mini Monitoring": `capacitor.config.json` `appName`, `android/app/src/main/res/values/strings.xml` (`app_name`, `title_activity_main`), `<title>` di `www/index.html`; `package.json` versi dasar 2.0.0; README dan PRODUCT.md
-- [ ] T045 Pastikan pembaca lama tetap cocok dengan header `MASTER_PLAN` terbaru (Week, Month, DAY, TGL BONGKAR, …) di `www/index.html` `buildModel`; tambah tes fixture
-- [ ] T045b Ganti `TODAY` tetap menjadi tanggal WITA yang dihitung ulang (saat resume dan tiap menit) agar "Hari ini" dan nomor urut ikut tanggal baru tanpa menutup aplikasi, di `www/index.html`; tes di `tests/core.test.mjs`
-- [ ] T046 [P] Jalankan & perbaiki tes desain (`test/e2e-design.js`) untuk semua layar baru di 360/400/1280, terang/gelap; perbarui `DESIGN.md` untuk komponen baru (dropdown BU, login, hub List, form)
-- [ ] T047 [P] Perbarui `CLAUDE.md` (arsitektur Mini Monitoring, tabel & fungsi Supabase baru, sumber data) dan `scripts/check.mjs` (file wajib baru, sintaks modul baru)
+- [x] T044 Nama aplikasi "Mini Monitoring": `capacitor.config.json` `appName`, `android/app/src/main/res/values/strings.xml` (`app_name`, `title_activity_main`), `<title>` di `www/index.html`; `package.json` versi dasar 2.0.0; README dan PRODUCT.md
+- [x] T045 Pastikan pembaca lama tetap cocok dengan header `MASTER_PLAN` terbaru (Week, Month, DAY, TGL BONGKAR, …) di `www/index.html` `buildModel`; tambah tes fixture — kolom D,E,G,H,I,Z,AA,AB pada header MASTER_PLAN terbaru dicek manual (research/inbound); belum ada fixture baru
+- [x] T045b Ganti `TODAY` tetap menjadi tanggal WITA yang dihitung ulang (saat resume dan tiap menit) agar "Hari ini" dan nomor urut ikut tanggal baru tanpa menutup aplikasi, di `www/index.html`; tes di `tests/core.test.mjs` — tes di `test/e2e-mm-home.js` (lewat tengah malam), bukan `tests/core.test.mjs` karena `rollDay` ada di index.html
+- [x] T046 [P] Jalankan & perbaiki tes desain (`test/e2e-design.js`) untuk semua layar baru di 360/400/1280, terang/gelap; perbarui `DESIGN.md` untuk komponen baru (dropdown BU, login, hub List, form)
+- [x] T047 [P] Perbarui `CLAUDE.md` (arsitektur Mini Monitoring, tabel & fungsi Supabase baru, sumber data) dan `scripts/check.mjs` (file wajib baru, sintaks modul baru)
 - [ ] T048 Verifikasi penuh: `npm test`, `npm run check`, semua `test/e2e-*.js` per suite, uji server lewat connector (quickstart.md), lalu commit dengan pesan rilis gabungan 2.0.0 — push hanya ke `feat/mini-monitoring`/`dev` sampai pemilik menulis "gaspol"
 
 ---
