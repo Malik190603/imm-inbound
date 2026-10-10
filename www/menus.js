@@ -39,9 +39,8 @@ function pageLayout(){
   const L=IMMKpi.layout(R.locH,bu);
   if(L.missing)return lead({tone:'mark',i:1,empty:true,headline:esc(L.reason)})+srcFail(['locH']);
   const by={};L.zones.forEach(z=>{(by[z.bu]=by[z.bu]||[]).push(z)});
-  const maxN=Math.max(...L.zones.map(z=>z.n));
   return lead({tone:'mark',i:1,headline:`<b>${f0(L.total)} lokasi</b> rak di ${f0(L.zones.length)} lorong, kapasitas ${fC(L.cap)} CBM.`,value:cnt(L.total),unit:'lokasi',stats:Object.entries(by).map(([b,zs])=>({l:b,v:f0(zs.reduce((a,z)=>a+z.n,0)),u:'lokasi'})).slice(0,4)})
-  +Object.entries(by).map(([b,zs],k)=>`<section class="card" style="--i:${2+k}">${secHead({icon:I.layers,title:'Lorong '+esc(b),hint:`${f0(zs.length)} lorong`,sub:'Tiap kotak satu lorong: jumlah bay, lokasi, dan kapasitas. Batang kecil = lokasi per level rak.'})}<div class="cb"><div class="lay">${zs.map(z=>`<div class="lay-z" style="--w:${Math.max(.35,z.n/maxN)}"><b>${esc(z.zone)}</b><span>${f0(z.bays)} bay · ${f0(z.n)} lokasi</span><small>${f1(z.cap)} CBM</small><span class="lay-lv">${z.levels.map(([lv,n])=>`<i title="Level ${esc(lv)}: ${n} lokasi" style="height:${Math.max(3,n/z.n*36)}px"></i>`).join('')}</span></div>`).join('')}</div></div></section>`).join('')
+  +Object.entries(by).map(([b,zs],k)=>`<section class="card" style="--i:${2+k}">${secHead({icon:I.layers,title:'Lorong '+esc(b),hint:`${f0(zs.length)} lorong`,sub:'Tiap kotak satu lorong: jumlah bay, lokasi, dan kapasitas. Batang kecil = lokasi per level rak.'})}<div class="cb"><div class="lay">${zs.map(z=>`<div class="lay-z"><b>${esc(z.zone)}</b><span>${f0(z.bays)} bay · ${f0(z.n)} lokasi</span><small>${f1(z.cap)} CBM</small><span class="lay-lv">${z.levels.map(([lv,n])=>`<i title="Level ${esc(lv)}: ${n} lokasi" style="height:${Math.max(3,n/z.n*36)}px"></i>`).join('')}</span></div>`).join('')}</div></div></section>`).join('')
   +notWired('Isi per lokasi','Warna isi per lokasi (heat map) butuh ekspor stok per lokasi terbaru. Data stok di file layout terakhir diperbarui 2025.',9);
 }
 

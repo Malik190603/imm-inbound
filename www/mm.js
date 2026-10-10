@@ -12,13 +12,16 @@ I.clip='<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width=
 I.user='<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="10" cy="7" r="3.2"/><path d="M3.8 16.5a6.2 6.2 0 0 1 12.4 0"/></svg>';
 I.ext='<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4h5v5M16 4l-7 7M14 11.5V15a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h3.5"/></svg>';
 I.down='<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m5.5 8 4.5 4.5L14.5 8"/></svg>';
+I.swap='<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h11l-3-3M16 13H5l3 3"/></svg>';
 I.pulse='<svg viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 10.5h3.2l2-5 3.3 9 2-4h4.5"/></svg>';
 
 const BRAND={informa:'Informa','informa-custom':'Informa Custom Furniture','informa-electronics':'Informa Electronics',selma:'Selma',azko:'Azko',krisbow:'Krisbow','toys-kingdom':'Toys Kingdom',ataru:'Ataru',eyesoul:'Eyesoul',chatime:'Chatime'};
 const BU_BRANDS={HCI:['informa','selma'],AHI:['azko','ataru'],KWI:['krisbow'],TGI:['toys-kingdom'],FBI:['chatime']};
 const BU_NAME={HCI:'Home Center Indonesia',AHI:'Aspirasi Hidup Indonesia',KWI:'Kawan Lama Wira Indonesia',TGI:'Toys Games Indonesia',FBI:'Food & Beverages Indonesia'};
 const brandImg=(k,cls)=>`<img class="${cls||'brand-img'}" src="brand/${k}.png" alt="${esc(BRAND[k]||k)}" decoding="async">`;
-const MENU_IC={dashboard:I.pulse,monitoring:I.ship,occupancy:I.layers,sloc:I.db,schedule:I.cal,demand:I.trend,lppb:I.doc,report:I.clip,tto:I.doc,infra:I.wrench,mpp:I.users,lp:I.shield};
+const MENU_IC={dashboard:I.pulse,monitoring:I.ship,occupancy:I.layers,sloc:I.db,schedule:I.cal,demand:I.trend,lppb:I.swap,report:I.clip,tto:I.doc,infra:I.wrench,mpp:I.users,lp:I.shield};
+// "Manager · Manager" → "Manager": role dan jabatan ditulis sekali bila sama.
+const whoAmI=(order)=>{if(!SES)return '';const r=ROLE_LABEL[SES.role]||tc(SES.role||''),j=tc(SES.jabatan||'');if(!j||r.toLowerCase()===j.toLowerCase())return r;return order==='jr'?j+' '+r:r+' · '+j};
 const DEPT_IC={inbound:I.box,storing:I.stock,outbound:I.truck,inventory:I.db,planner:I.cal,lp:I.shield,mhe:I.wrench};
 const ROLE_LABEL={'INBOUND':'Inbound','STORING':'Storing','OUTBOUND':'Outbound','INVENTORY':'Inventory','PLANNER':'Planner','LP':'LP','MHE':'MHE','MANAGER':'Manager','ASST. MANAGER':'Assistant Manager'};
 const tc=s=>String(s||'').toLowerCase().replace(/(^|[\s.])([a-z])/g,(m,a,b)=>a+b.toUpperCase());
@@ -211,7 +214,7 @@ function pageMMHome(){
   const headline=notes.length?`Perlu perhatian: ${notes.join(', ')}.`:(sOc==='ok'||sAk==='ok')?'Semua angka utama dalam batas normal.':'Mengambil angka terbaru dari spreadsheet…';
   const occTone=sOc!=='ok'?'':oc.pct>=100?'crit':oc.pct>=90?'warn':'good';
   const unread=NOTIF.unread.length;
-  return `<div class="hello" style="--i:0"><h1>${greet}${SES&&SES.name?', '+esc(firstName(SES.name)):''}</h1><p>${dlong(TODAY)}${SES?` · ${esc(ROLE_LABEL[SES.role]||SES.role)} · ${esc(tc(SES.jabatan))}`:''}</p></div>
+  return `<div class="hello" style="--i:0"><h1>${greet}${SES&&SES.name?', '+esc(firstName(SES.name)):''}</h1><p>${dlong(TODAY)}${SES?` · ${esc(whoAmI())}`:''}</p></div>
   ${IMMAuth.isManager(SES)&&unread?`<button class="notif-banner press" style="--i:1" data-open-notif>${I.bell}<span><b>${f0(unread)} pemberitahuan baru</b><small>${esc(NOTIF.unread[0].pesan)}</small></span>${I.chev}</button>`:''}
   ${lead({tone:'mark',i:1,headline,foot:`<p class="lead-note">${bu==='ALL'?'Semua BU':esc(bu)} · angka terbaru yang tersedia di spreadsheet, tanggalnya tertulis di tiap kartu.</p>`})}
   <div class="kgrid" style="--i:2">
@@ -233,7 +236,7 @@ function pageMMHome(){
 function pageHub(){
   const ids=IMMAuth.visibleMenus(SES);
   const badge=id=>id==='infra'&&WOS.pending>0?`<span class="hub-badge">${f0(WOS.pending)}</span>`:'';
-  return `<div class="hello slim" style="--i:0"><h1>List</h1><p>${f0(ids.length)} menu sesuai akses ${esc(tc(SES?SES.jabatan:''))} ${esc(ROLE_LABEL[SES&&SES.role]||'')}</p></div>
+  return `<div class="hello slim" style="--i:0"><h1>List</h1><p>${f0(ids.length)} menu sesuai akses ${esc(whoAmI('jr'))}</p></div>
   <div class="hub" style="--i:1">${ids.map((id,i)=>{const m=IMMAuth.menu(id);const subs=subsFor(id);
     return `<button class="hub-i press" data-go-list="${id}" style="animation-delay:${i*30}ms"><span class="hub-ic">${MENU_IC[id]||I.grid}</span>${badge(id)}<span class="hub-t">${esc(m.label)}</span><span class="hub-d">${esc(m.desc)}</span><span class="hub-s">${subs.length>1?f0(subs.length)+' bagian':esc((m.subs.find(s=>s.id===subs[0])||{}).label||'')}</span></button>`}).join('')}</div>
   ${ids.length<=1?`<p class="foot">Menu lain mengikuti jabatan di Master User. Hubungi admin bila aksesmu perlu ditambah.</p>`:''}`;
